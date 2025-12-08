@@ -144,7 +144,8 @@ if "validations" not in st.session_state:
 if "data_source" not in st.session_state:
     st.session_state.data_source = {
         "table": DEFAULT_TABLE,
-        "filters": {}
+        "filters": {},
+        "distinct": False
     }
 
 if "current_mode" not in st.session_state:
@@ -198,7 +199,9 @@ if st.session_state.current_mode == "edit":
                 st.session_state.validations = data.get("validations", [])
                 loaded_data_source = data.get("data_source")
                 if not isinstance(loaded_data_source, dict):
-                    loaded_data_source = {"table": DEFAULT_TABLE, "filters": {}}
+                    loaded_data_source = {"table": DEFAULT_TABLE, "filters": {}, "distinct": False}
+                else:
+                    loaded_data_source.setdefault("distinct", False)
                 st.session_state.data_source = loaded_data_source
 
                 st.success(f"✅ Loaded suite: {selected_file_name}")
@@ -351,7 +354,8 @@ else:
                     st.session_state.validations = []
                     st.session_state.data_source = {
                         "table": DEFAULT_TABLE,
-                        "filters": {}
+                        "filters": {},
+                        "distinct": False
                     }
                     st.session_state.current_mode = "new"
                     st.session_state.confirm_delete = False
@@ -374,6 +378,13 @@ table_value = st.text_input(
     help="Fully qualified table or view name used in the generated query",
 )
 st.session_state.data_source["table"] = table_value.strip() or DEFAULT_TABLE
+
+distinct_rows = st.checkbox(
+    "Select distinct rows in base CTE",
+    value=st.session_state.data_source.get("distinct", False),
+    help="Apply SELECT DISTINCT when building the base data set to remove duplicates.",
+)
+st.session_state.data_source["distinct"] = distinct_rows
 
 st.caption(
     "Filters can target any column from the source table. Distinct values are shown when "
@@ -1197,7 +1208,8 @@ if st.session_state.suite_metadata["suite_name"]:
             st.session_state.validations = []
             st.session_state.data_source = {
                 "table": DEFAULT_TABLE,
-                "filters": {}
+                "filters": {},
+                "distinct": False
             }
             st.rerun()
 
