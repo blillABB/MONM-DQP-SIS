@@ -20,6 +20,11 @@ CACHE_DIR = os.path.join(
     "cache"
 )
 
+VALIDATION_RESULTS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "validation_results",
+)
+
 
 def _ensure_cache_dir():
     """Ensure the cache directory exists."""
@@ -34,6 +39,13 @@ def _safe_suite_name(suite_name: str) -> str:
 def _get_cache_path(suite_name: str) -> str:
     """Get the cache file path for a validation suite."""
     return os.path.join(CACHE_DIR, f"{_safe_suite_name(suite_name)}_cache.json")
+
+
+def _get_suite_results_dir(suite_name: str) -> str:
+    """Get or create the persistent validation_results directory for a suite."""
+    suite_dir = os.path.join(VALIDATION_RESULTS_DIR, _safe_suite_name(suite_name))
+    os.makedirs(suite_dir, exist_ok=True)
+    return suite_dir
 
 
 def _get_failures_csv_path(suite_name: str, date_str: str) -> str:
@@ -53,6 +65,15 @@ def _remove_stale_failures_csv(suite_name: str, keep_date: str) -> None:
     for path in glob.glob(pattern):
         if not path.endswith(f"_{keep_date}.csv"):
             os.remove(path)
+
+
+def _daily_suite_artifacts_exist(suite_name: str, date_str: str) -> bool:
+    """Check if daily JSON/CSV artifacts already exist for the suite for the given date."""
+    safe_name = _safe_suite_name(suite_name)
+    suite_dir = _get_suite_results_dir(suite_name)
+    json_pattern = os.path.join(suite_dir, f"{safe_name}_{date_str}*.json")
+    csv_pattern = os.path.join(suite_dir, f"{safe_name}_{date_str}*.csv")
+    return bool(glob.glob(json_pattern) or glob.glob(csv_pattern))
 
 
 def get_cached_results(suite_name: str) -> Optional[dict]:
@@ -164,6 +185,56 @@ def save_cached_failures_csv(suite_name: str, df) -> None:
 
     df.to_csv(csv_path, index=False)
     print(f"📦 Cached raw results CSV for {suite_name} at {csv_path}")
+
+
+def save_daily_suite_artifacts(
+    suite_name: str,
+    results: list,
+    validated_materials: list,
+    raw_results_df,
+    data_date: Optional[str] = None,
+) -> None:
+    """Persist the day's JSON and raw CSV results to the suite's validation_results folder once per day."""
+
+    target_date = data_date or _get_today_date_str()
+    suite_dir = _get_suite_results_dir(suite_name)
+    safe_name = _safe_suite_name(suite_name)
+
+    if _daily_suite_artifacts_exist(suite_name, target_date):
+        print(
+            f"📦 Daily artifacts already exist for {suite_name} ({target_date}); skipping write",
+            flush=True,
+        )
+        return
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    base_filename = f"{safe_name}_{timestamp}"
+    json_path = os.path.join(suite_dir, f"{base_filename}.json")
+    csv_path = os.path.join(suite_dir, f"{base_filename}.csv")
+
+    payload = {
+        "cached_at": datetime.now().isoformat(),
+        "data_date": target_date,
+        "results": results or [],
+        "validated_materials": validated_materials or [],
+    }
+
+    with open(json_path, "w") as f:
+        json.dump(payload, f, indent=2, default=str)
+
+    if raw_results_df is None:
+        print(f"⚠️ No raw results DataFrame available to persist for {suite_name}", flush=True)
+        return
+
+    try:
+        raw_results_df.to_csv(csv_path, index=False)
+    except Exception as e:
+        print(f"⚠️ Could not write raw results CSV for {suite_name}: {e}", flush=True)
+    else:
+        print(
+            f"📦 Persisted daily artifacts for {suite_name} to {json_path} and {csv_path}",
+            flush=True,
+        )
 
 
 def clear_cache(suite_name: str = None) -> None:
