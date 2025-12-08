@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import snowflake.connector
 from snowflake.connector.errors import DatabaseError
-from core.config import safe_secret
+from core.config import SNOWFLAKE_CONFIG
 
 # =============================================================================
 # Snowflake connection
@@ -13,24 +13,9 @@ SNOWFLAKE_CONN_TEMPLATE = (
 )
 
 
-def build_snowflake_config():
-    """Build a single Snowflake connection dictionary from env/Streamlit secrets."""
-    use_token_cache = str(safe_secret("SNOWFLAKE_USE_TOKEN_CACHE", "false")).lower() == "true"
-    return {
-        "account": safe_secret("SNOWFLAKE_ACCOUNT", "ABB-ABB_MO"),
-        "user": safe_secret("SNOWFLAKE_USER", os.getenv("SNOWFLAKE_USER")),
-        "authenticator": "externalbrowser",
-        "role": safe_secret("SNOWFLAKE_ROLE", "R_IS_MO_MONM"),
-        "warehouse": safe_secret("SNOWFLAKE_WAREHOUSE", "WH_BU_READ"),
-        "database": safe_secret("SNOWFLAKE_DATABASE", "PROD_MO_MONM"),
-        "schema": safe_secret("SNOWFLAKE_SCHEMA", "REPORTING"),
-        "client_store_temporary_credential": use_token_cache,
-    }
-
-
 def snowflake_config_summary(config=None):
     """Return the active Snowflake connection parameters (non-sensitive)."""
-    cfg = config or build_snowflake_config()
+    cfg = config or SNOWFLAKE_CONFIG
     return {
         "account": cfg.get("account", ""),
         "user": cfg.get("user", ""),
@@ -46,11 +31,17 @@ def ensure_snowflake_config(config=None):
     """Validate required Snowflake settings so auth failures surface clearly."""
     summary = snowflake_config_summary(config)
     missing = [k for k, v in summary.items() if k != "use_token_cache" and not str(v).strip()]
+    placeholders = [k for k, v in summary.items() if isinstance(v, str) and v.strip().startswith("<")]
     if missing:
         missing_keys = ", ".join(missing)
         raise RuntimeError(
             "❌ Missing Snowflake configuration. Set the following via environment variables "
             f"or Streamlit secrets: {missing_keys}."
+        )
+    if placeholders:
+        raise RuntimeError(
+            "❌ Snowflake configuration still uses placeholder values. Update core/config.py "
+            f"for: {', '.join(placeholders)}."
         )
     return summary
 
@@ -89,7 +80,7 @@ def get_connection():
     If warehouse activation fails, an error is raised since queries cannot
     execute without an active warehouse.
     """
-    config = build_snowflake_config()
+    config = SNOWFLAKE_CONFIG
     ensure_snowflake_config(config)
 
     try:
