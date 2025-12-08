@@ -20,6 +20,7 @@ from core.cache_manager import (
     get_cached_failures_csv,
     save_cached_results,
     save_cached_failures_csv,
+    save_daily_suite_artifacts,
     clear_cache,
 )
 from validations.base_validation import BaseValidationSuite
@@ -178,6 +179,14 @@ def load_or_run_validation(suite_config):
                 st.session_state[session_date_key] = today
                 print(f"📦 DEBUG: Calling save_cached_results for suite_key={suite_key}", flush=True)
                 save_cached_results(suite_key, results, validated_materials)
+                if suite_key == "abb_shop_abp_data_presence":
+                    save_daily_suite_artifacts(
+                        suite_key,
+                        results,
+                        validated_materials,
+                        full_results_df,
+                        today,
+                    )
                 print(f"✅ Fresh validation completed and cached for {suite_key}", flush=True)
             else:
                 print(f"⚠️ Validation returned None for {suite_key}", flush=True)
