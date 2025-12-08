@@ -12,7 +12,7 @@ import plotly.express as px
 from pathlib import Path
 from datetime import date
 
-from core.gx_runner import run_validation_from_yaml
+from validations import run_validation_from_yaml_snowflake
 from core.cache_manager import get_cached_results, save_cached_results, clear_cache
 from validations.base_validation import BaseValidationSuite
 from app.components.drill_down import render_expectation_drill_down
@@ -123,7 +123,7 @@ def load_or_run_validation(suite_config):
             unsafe_allow_html=True,
         )
         with st.spinner(f"Running {suite_config['suite_name']} validation..."):
-            payload = run_validation_from_yaml(suite_config["yaml_path"])
+            payload = run_validation_from_yaml_snowflake(suite_config["yaml_path"])
             results = payload.get("results", []) if isinstance(payload, dict) else payload
             validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
 
