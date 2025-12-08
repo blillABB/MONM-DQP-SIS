@@ -13,6 +13,7 @@ from pathlib import Path
 from datetime import date
 
 from validations import run_validation_from_yaml_snowflake
+from core.queries import snowflake_config_summary, ensure_snowflake_config
 from core.cache_manager import get_cached_results, save_cached_results, clear_cache
 from validations.base_validation import BaseValidationSuite
 from app.components.drill_down import render_expectation_drill_down
@@ -67,6 +68,15 @@ with st.sidebar:
 st.title(suite_config["suite_name"].replace("_", " "))
 if suite_config["description"]:
     st.caption(suite_config["description"])
+
+# Show active Snowflake connection parameters so missing/incorrect settings are obvious
+try:
+    ensure_snowflake_config()
+    with st.expander("Snowflake connection (externalbrowser)", expanded=False):
+        st.write({k: v for k, v in snowflake_config_summary().items()})
+except RuntimeError as e:
+    st.error(str(e))
+    st.stop()
 
 # ----------------------------------------------------------
 # Load or run validation
