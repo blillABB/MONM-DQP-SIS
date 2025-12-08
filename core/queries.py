@@ -1,6 +1,49 @@
 import pandas as pd
 import snowflake.connector
+from snowflake.connector.errors import DatabaseError
 from core.config import SNOWFLAKE_CONFIG
+
+# =============================================================================
+# Snowflake connection
+# =============================================================================
+SNOWFLAKE_CONN_TEMPLATE = (
+    "account={account};user={user};role={role};warehouse={warehouse};"
+    "database={database};schema={schema};authenticator=externalbrowser;token_cache={use_token_cache}"
+)
+
+
+def snowflake_config_summary(config=None):
+    """Return the active Snowflake connection parameters (non-sensitive)."""
+    cfg = config or SNOWFLAKE_CONFIG
+    return {
+        "account": cfg.get("account", ""),
+        "user": cfg.get("user", ""),
+        "role": cfg.get("role", ""),
+        "warehouse": cfg.get("warehouse", ""),
+        "database": cfg.get("database", ""),
+        "schema": cfg.get("schema", ""),
+        "use_token_cache": cfg.get("client_store_temporary_credential", False),
+    }
+
+
+def ensure_snowflake_config(config=None):
+    """Validate required Snowflake settings so auth failures surface clearly."""
+    summary = snowflake_config_summary(config)
+    missing = [k for k, v in summary.items() if k != "use_token_cache" and not str(v).strip()]
+    placeholders = [k for k, v in summary.items() if isinstance(v, str) and v.strip().startswith("<")]
+    if missing:
+        missing_keys = ", ".join(missing)
+        raise RuntimeError(
+            "❌ Missing Snowflake configuration. Set the following via environment variables "
+            f"or Streamlit secrets: {missing_keys}."
+        )
+    if placeholders:
+        raise RuntimeError(
+            "❌ Snowflake configuration still uses placeholder values. Update core/config.py "
+            f"for: {', '.join(placeholders)}."
+        )
+    return summary
+
 
 # =============================================================================
 # Query Function Registry
@@ -29,17 +72,48 @@ def get_connection():
     """
     Establish Snowflake connection and explicitly activate the warehouse.
 
-    The warehouse parameter in SNOWFLAKE_CONFIG sets the default but may not
+    The warehouse parameter in the single Snowflake config sets the default but may not
     always activate it automatically. We explicitly USE the warehouse to ensure
     queries can execute.
 
     If warehouse activation fails, an error is raised since queries cannot
     execute without an active warehouse.
     """
-    conn = snowflake.connector.connect(**SNOWFLAKE_CONFIG)
+    config = SNOWFLAKE_CONFIG
+    ensure_snowflake_config(config)
+
+    try:
+        summary = snowflake_config_summary(config)
+        print(
+            "▶ Connecting to Snowflake with: "
+            f"account={summary['account']} "
+            f"user={summary['user']} "
+            f"role={summary['role']} "
+            f"warehouse={summary['warehouse']} "
+            f"database={summary['database']} "
+            f"schema={summary['schema']} "
+            f"token_cache={summary['use_token_cache']}"
+        )
+        print(
+            "▶ Snowflake connection string template: "
+            + SNOWFLAKE_CONN_TEMPLATE.format(**summary)
+        )
+        conn = snowflake.connector.connect(**config)
+    except DatabaseError as e:
+        message = str(e)
+        lower_message = message.lower()
+        if "user you were trying to authenticate as differs" in lower_message:
+            raise RuntimeError(
+                "❌ Snowflake SSO mismatch detected. The IdP session is logged in as a different "
+                "user than SNOWFLAKE_USER. Sign out of your SSO session (or use an incognito "
+                "browser window) and retry, or set SNOWFLAKE_USER to match the active IdP user."
+            ) from e
+        raise RuntimeError(f"❌ Snowflake connection failed: {message}") from e
+    except Exception as e:
+        raise RuntimeError(f"❌ Snowflake connection failed: {e}") from e
 
     # Explicitly activate the warehouse
-    warehouse = SNOWFLAKE_CONFIG.get("warehouse")
+    warehouse = config.get("warehouse")
     if warehouse:
         cursor = conn.cursor()
         try:
