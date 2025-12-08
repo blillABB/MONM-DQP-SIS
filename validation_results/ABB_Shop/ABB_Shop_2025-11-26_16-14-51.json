@@ -1,0 +1,3368 @@
+{
+    "results": [
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "ABP_DSTR_OUTPUT",
+            "success": false,
+            "element_count": 1000,
+            "unexpected_count": 1000,
+            "unexpected_percent": 100.0,
+            "failed_materials": [
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                }
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "ABP_DSTR_SSPEED",
+            "success": false,
+            "element_count": 1000,
+            "unexpected_count": 1000,
+            "unexpected_percent": 100.0,
+            "failed_materials": [
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                }
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "ABP_DSTR_VOLTAGE",
+            "success": false,
+            "element_count": 1000,
+            "unexpected_count": 1000,
+            "unexpected_percent": 100.0,
+            "failed_materials": [
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                }
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "ABP_DSTR_FREQUENCY",
+            "success": false,
+            "element_count": 1000,
+            "unexpected_count": 1000,
+            "unexpected_percent": 100.0,
+            "failed_materials": [
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "803432-9A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "233379",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "STF225-20B-C",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "05E943W060G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09L672T034G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35QZ60L14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "36EP1101D49G",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "089447015A",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2772462-4",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "060795",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "P25G1076",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "32-1031-910",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09CB3002A09",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "Q739237",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "35B011X359G2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "067165",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "18CB1002A03P",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "09H434Z335G1",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "A25-0638-0369",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "BF8P80HM21525",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "39P023W857H2",
+                    "Unexpected Value": null
+                }
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "OMS_FLAG",
+            "success": true,
+            "element_count": 1000,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": []
+        }
+    ],
+    "validated_materials": [
+        "803432-9A",
+        "233379",
+        "STF225-20B-C",
+        "05E943W060G2",
+        "09L672T034G1",
+        "35QZ60L14",
+        "36EP1101D49G",
+        "089447015A",
+        "2772462-4",
+        "060795",
+        "P25G1076",
+        "32-1031-910",
+        "09CB3002A09",
+        "Q739237",
+        "35B011X359G2",
+        "067165",
+        "18CB1002A03P",
+        "09H434Z335G1",
+        "A25-0638-0369",
+        "BF8P80HM21525",
+        "39P023W857H2",
+        "168327",
+        "33E191W233G1",
+        "413338-G",
+        "G93CP",
+        "3GBP132323-ADG",
+        "K730964G72",
+        "403934-D",
+        "WM0094A05",
+        "619702012",
+        "36EP1703A16",
+        "SA027646",
+        "33-3110W780",
+        "078594007A",
+        "17840045",
+        "07K658W198G1",
+        "074683",
+        "6AP0830020",
+        "089481076D",
+        "36E216S042G1",
+        "35B022T857G1",
+        "909092",
+        "69351-94RF",
+        "07J766X298G1",
+        "B568450",
+        "70781133",
+        "841511532BC",
+        "09C103Z588G1",
+        "40Q15R21WP",
+        "05G175X259G2X",
+        "M6H39T25C2018CP",
+        "M633544",
+        "710691008R",
+        "3GBP314230-ADG",
+        "A7B82500033321",
+        "3090009SM",
+        "35M218M933H2",
+        "A44-8878-3535",
+        "BGS00083",
+        "P186003200050L0",
+        "34-6102Z715G1",
+        "SD4225/B",
+        "075416",
+        "07H001W702H2",
+        "434681",
+        "6911903",
+        "1942976-3",
+        "804805-12B",
+        "HA1166A02",
+        "2771430-2",
+        "3GAA131130-JDE436",
+        "92A065-0183",
+        "ES-260037",
+        "GF0070A01",
+        "A32-3184-0491",
+        "016918",
+        "77H139W100G1",
+        "Q730342",
+        "6M85036",
+        "14E976X461H2",
+        "8P08634",
+        "078561004VA",
+        "37F774X131G1R",
+        "07L050X790G1",
+        "17E173W637",
+        "07H282X194H3",
+        "25E457W289G1",
+        "78554-67B",
+        "36J841S042G1",
+        "A7B10001808409",
+        "WX5-1/2KW1-1/2",
+        "1943552-2",
+        "77111028",
+        "395332",
+        "10.D3300-G32",
+        "05E832W500H2",
+        "14C053W339",
+        "IC0085A27",
+        "206916",
+        "B515934",
+        "J21-0000-0257",
+        "HTB385014M115",
+        "231916",
+        "291177",
+        "708304-1RB",
+        "35EP3100B10",
+        "24A166Z103",
+        "WD4100A37",
+        "12F966Y398G2",
+        "023766",
+        "07K591W796G1",
+        "GR0064A030",
+        "M601515"
+    ]
+}
