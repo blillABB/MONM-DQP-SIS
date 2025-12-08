@@ -60,11 +60,12 @@ class ValidationSQLGenerator:
         where_clause = self._build_where_clause()
         select_columns = self._build_select_clause(validated_columns, context_columns)
         validation_sql = self._build_validation_logic()
+        select_keyword = "SELECT DISTINCT" if self._use_distinct() else "SELECT"
 
         # Assemble complete query
         query = f"""
 WITH base_data AS (
-  SELECT
+  {select_keyword}
     {select_columns}
   FROM {table_name}
   {where_clause}
@@ -127,6 +128,12 @@ FROM base_data
                 unique_columns.append(col)
 
         return ",\n    ".join(unique_columns)
+
+    def _use_distinct(self) -> bool:
+        """Determine whether to apply SELECT DISTINCT for the base data set."""
+        if isinstance(self.data_source, dict):
+            return bool(self.data_source.get("distinct", False))
+        return False
 
     def _collect_validated_columns(self) -> List[str]:
         """Collect all columns being validated."""
