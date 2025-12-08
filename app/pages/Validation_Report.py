@@ -123,7 +123,21 @@ def load_or_run_validation(suite_config):
             unsafe_allow_html=True,
         )
         with st.spinner(f"Running {suite_config['suite_name']} validation..."):
-            payload = run_validation_from_yaml_snowflake(suite_config["yaml_path"])
+            try:
+                payload = run_validation_from_yaml_snowflake(suite_config["yaml_path"])
+            except RuntimeError as e:
+                placeholder.empty()
+                st.error(str(e))
+                st.info(
+                    "Tip: If you recently switched SSO users, sign out of the IdP or use an "
+                    "incognito window so externalbrowser opens the correct account."
+                )
+                st.stop()
+            except Exception as e:
+                placeholder.empty()
+                st.error(f"❌ Validation failed: {e}")
+                st.stop()
+
             results = payload.get("results", []) if isinstance(payload, dict) else payload
             validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
 
@@ -155,8 +169,20 @@ with st.sidebar:
         print(f"🗑️ Cleared all caches for {suite_config['suite_key']}")
         st.rerun()
 
-# Load validation results
-payload = load_or_run_validation(suite_config)
+# Load validation results with a final safety net so any connection/runtime
+# errors still surface as friendly UI messages instead of stack traces.
+try:
+    payload = load_or_run_validation(suite_config)
+except RuntimeError as e:
+    st.error(str(e))
+    st.info(
+        "Tip: If you recently switched SSO users, sign out of the IdP or use an "
+        "incognito window so externalbrowser opens the correct account."
+    )
+    st.stop()
+except Exception as e:
+    st.error(f"❌ Validation failed: {e}")
+    st.stop()
 
 # Extract results and metadata
 if isinstance(payload, dict):

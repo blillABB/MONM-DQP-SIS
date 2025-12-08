@@ -37,6 +37,12 @@ def get_connection():
     If warehouse activation fails, an error is raised since queries cannot
     execute without an active warehouse.
     """
+    if not SNOWFLAKE_CONFIG.get("user"):
+        raise RuntimeError(
+            "❌ SNOWFLAKE_USER is not set. Provide SNOWFLAKE_USER via environment "
+            "variable or Streamlit secrets so browser SSO uses the correct account."
+        )
+
     try:
         conn = snowflake.connector.connect(**SNOWFLAKE_CONFIG)
     except DatabaseError as e:
