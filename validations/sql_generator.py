@@ -101,14 +101,14 @@ FROM base_data
             if isinstance(condition, str):
                 if condition.startswith(("LIKE", "IN", "=", "<", ">", "!=")):
                     # Already has operator
-                    conditions.append(f'"{column}" {condition}')
+                    conditions.append(f"{column} {condition}")
                 else:
                     # Assume equality
-                    conditions.append(f'"{column}" = \'{condition}\'')
+                    conditions.append(f"{column} = '{condition}'")
             elif isinstance(condition, list):
                 # List implies IN clause
                 values = ', '.join(f"'{v}'" for v in condition)
-                conditions.append(f'"{column}" IN ({values})')
+                conditions.append(f"{column} IN ({values})")
 
         if conditions:
             return "WHERE " + " AND ".join(conditions)
@@ -124,7 +124,7 @@ FROM base_data
         for col in all_columns:
             if col not in seen:
                 seen.add(col)
-                unique_columns.append(f'"{col}"')
+                unique_columns.append(col)
 
         return ",\n    ".join(unique_columns)
 
