@@ -1,5 +1,6 @@
 import pandas as pd
 import snowflake.connector
+from snowflake.connector.errors import DatabaseError
 from core.config import SNOWFLAKE_CONFIG
 
 # =============================================================================
@@ -36,7 +37,26 @@ def get_connection():
     If warehouse activation fails, an error is raised since queries cannot
     execute without an active warehouse.
     """
-    conn = snowflake.connector.connect(**SNOWFLAKE_CONFIG)
+    if not SNOWFLAKE_CONFIG.get("user"):
+        raise RuntimeError(
+            "❌ SNOWFLAKE_USER is not set. Provide SNOWFLAKE_USER via environment "
+            "variable or Streamlit secrets so browser SSO uses the correct account."
+        )
+
+    try:
+        conn = snowflake.connector.connect(**SNOWFLAKE_CONFIG)
+    except DatabaseError as e:
+        message = str(e)
+        lower_message = message.lower()
+        if "user you were trying to authenticate as differs" in lower_message:
+            raise RuntimeError(
+                "❌ Snowflake SSO mismatch detected. The IdP session is logged in as a different "
+                "user than SNOWFLAKE_USER. Sign out of your SSO session (or use an incognito "
+                "browser window) and retry, or set SNOWFLAKE_USER to match the active IdP user."
+            ) from e
+        raise RuntimeError(f"❌ Snowflake connection failed: {message}") from e
+    except Exception as e:
+        raise RuntimeError(f"❌ Snowflake connection failed: {e}") from e
 
     # Explicitly activate the warehouse
     warehouse = SNOWFLAKE_CONFIG.get("warehouse")
