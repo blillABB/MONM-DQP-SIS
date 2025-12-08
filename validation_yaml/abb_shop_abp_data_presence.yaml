@@ -1,0 +1,28 @@
+metadata:
+  suite_name: abb_shop_abp_data_presence
+  index_column: MATERIAL_NUMBER
+  description: Checks for data presence on critical ABP characteristics
+  data_source: abb_shop_data
+validations:
+- type: expect_column_values_to_not_be_null
+  columns:
+  - ABP_ELECTRICALDATA1
+  - ABP_EFFICIENCYLEVEL
+  - ABP_INSULATIONCLASS
+  - ABP_NEMADESIGNCODE
+  - ABP_NUMBEROFPHASES
+  - ABP_NUMBEROFPOLES
+  - ABP_SERVICEFACTOR
+  - ABP_TYPEOFDUTY
+  - ABP_ENCLOSURETYPE
+  - ABP_FRAMESIZE
+  - ABP_MOTORBASETYPE
+  - ABP_MOUNTINGORIENTATION
+  - ABP_BRAKEPRESENT
+  - ABP_EXPLOSIONPROTECTION
+  - ABP_CERTIFICATIONAGENCY
+  - ABP_EXPPROGROCLA
+  - ABP_DSTR_OUTPUT
+  - ABP_DSTR_SSPEED
+  - ABP_DSTR_VOLTAGE
+  - ABP_DSTR_FREQUENCY

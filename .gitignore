@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+
+# Streamlit secrets (contains API tokens)
+.streamlit/secrets.toml
+
+# Docker secrets (Snowflake key-pair auth)
+secrets/
+
+# Great Expectations
+gx/
+great_expectations/uncommitted/
+
+# Logs
+logs/
+*.log
+
+# Archives (compressed files stay local, summaries tracked)
+Logs/archives/
+validation_results/archives/
+
+# Validation cache (daily cache files, not tracked)
+validation_results/cache/
+
+# Column metadata cache
+column_metadata_cache.json
+
+# OS files
+.DS_Store
+Thumbs.db

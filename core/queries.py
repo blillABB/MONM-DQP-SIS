@@ -1,0 +1,303 @@
+import pandas as pd
+import snowflake.connector
+from core.config import SNOWFLAKE_CONFIG
+
+# =============================================================================
+# Query Function Registry
+# Maps YAML data_source strings to actual query functions
+# =============================================================================
+QUERY_REGISTRY = {}
+
+
+def register_query(name: str):
+    """Decorator to register a query function in the registry."""
+    def decorator(func):
+        QUERY_REGISTRY[name] = func
+        return func
+    return decorator
+
+
+def get_query_function(name: str):
+    """Get a query function by name from the registry."""
+    if name not in QUERY_REGISTRY:
+        available = ", ".join(QUERY_REGISTRY.keys())
+        raise ValueError(f"Unknown data source: '{name}'. Available: {available}")
+    return QUERY_REGISTRY[name]
+
+
+def get_connection():
+    """
+    Establish Snowflake connection and explicitly activate the warehouse.
+
+    The warehouse parameter in SNOWFLAKE_CONFIG sets the default but may not
+    always activate it automatically. We explicitly USE the warehouse to ensure
+    queries can execute.
+
+    If warehouse activation fails, an error is raised since queries cannot
+    execute without an active warehouse.
+    """
+    conn = snowflake.connector.connect(**SNOWFLAKE_CONFIG)
+
+    # Explicitly activate the warehouse
+    warehouse = SNOWFLAKE_CONFIG.get("warehouse")
+    if warehouse:
+        cursor = conn.cursor()
+        try:
+            print(f"▶ Activating warehouse: {warehouse}")
+            cursor.execute(f'USE WAREHOUSE "{warehouse}"')
+            print(f"✅ Warehouse '{warehouse}' activated successfully")
+        except Exception as e:
+            conn.close()
+            raise RuntimeError(
+                f"❌ Failed to activate warehouse '{warehouse}': {e}\n"
+                f"The role may not have USAGE privilege on this warehouse.\n"
+                f"Set SNOWFLAKE_WAREHOUSE environment variable to use a different warehouse."
+            ) from e
+        finally:
+            cursor.close()
+    else:
+        conn.close()
+        raise RuntimeError(
+            "❌ No warehouse configured. Set SNOWFLAKE_WAREHOUSE environment variable."
+        )
+
+    return conn
+
+def run_query(sql: str) -> pd.DataFrame:
+    """
+    Execute a SQL query against Snowflake.
+
+    Args:
+        sql: SQL query to execute
+
+    Returns:
+        DataFrame of results
+    """
+    conn = get_connection()
+    try:
+        return pd.read_sql(sql, conn)
+    finally:
+        conn.close()
+
+@register_query("get_aurora_motor_dataframe")
+def get_aurora_motor_dataframe(limit: int = None, offset: int = None) -> pd.DataFrame:
+    """
+    Fetch Aurora Motors product data.
+
+    Supports chunking via limit/offset parameters.
+    """
+    sql = """
+        SELECT * FROM PROD_MO_MONM.REPORTING."vw_ProductDataAll"
+        WHERE PRODUCT_HIERARCHY <> '522475549547036170'
+        AND PRICING_GROUP = 'AM'
+        AND SALES_ORGANIZATION = 'BEC'
+        AND PLANT = '00A'
+        AND STORAGE_LOCATION = '0001'
+        AND STORAGE_TYPE = '001'
+    """
+    if limit is not None:
+        sql += f"\nLIMIT {limit}"
+    if offset is not None:
+        sql += f"\nOFFSET {offset}"
+
+    return run_query(sql)
+
+@register_query("get_level_1_dataframe")
+def get_level_1_dataframe(limit: int = 1000, offset: int = None) -> pd.DataFrame:
+    """
+    Fetch Level 1 validation data (first 1000 rows for testing).
+
+    Fixed size query - limit defaults to 1000 to indicate this is a test dataset
+    that should not be chunked dynamically.
+    """
+    sql = """
+        SELECT * FROM PROD_MO_MONM.REPORTING."vw_ProductDataAll"
+    """
+    if limit is not None:
+        sql += f"\nLIMIT {limit}"
+    if offset is not None:
+        sql += f"\nOFFSET {offset}"
+
+    return run_query(sql)
+
+@register_query("get_mg4_dataframe")
+def get_mg4_dataframe(limit: int = None, offset: int = None) -> pd.DataFrame:
+    """
+    Return vw_MatAll records with MG4_EXPECTED derived from CASE logic.
+    This mirrors the SQL used for MG4 - End Item Definition validation.
+
+    Supports chunking via limit/offset parameters.
+    """
+    sql = """
+    SELECT *
+    FROM (
+        SELECT DISTINCT
+            MATERIAL_NUMBER,
+            SALES_ORGANIZATION,
+            PLANT,
+            DELIVERING_PLANT,
+            OBJECT_CODE,
+            OBJECT_CODE_EXT,
+            LAST_SALES_DATE,
+            SALES_STATUS,
+            PROFIT_CENTER,
+            Z01_MKT_MTART AS MATERIAL_TYPE,
+            MATERIAL_GROUP_2,
+            MATERIAL_GROUP_3,
+            MATERIAL_GROUP_4,
+            CASE
+                WHEN OBJECT_CODE = 'AA' THEN 'RAE'
+                WHEN OBJECT_CODE = 'AR' AND OBJECT_CODE_EXT = 'RA' THEN 'RAE'
+                WHEN OBJECT_CODE = 'RA' THEN 'RAE'
+                WHEN OBJECT_CODE = 'RC' THEN 'RAE'
+                WHEN OBJECT_CODE = 'BD' AND OBJECT_CODE_EXT = 'RO' THEN 'RAE'
+                WHEN OBJECT_CODE = 'DR' AND OBJECT_CODE_EXT = 'AA' THEN 'RAE'
+                WHEN OBJECT_CODE = 'GE' AND OBJECT_CODE_EXT = 'RA' THEN 'RAE'
+                WHEN OBJECT_CODE = 'AR' AND OBJECT_CODE_EXT = 'PT'
+                     AND MATERIAL_NUMBER ILIKE '%RA%' THEN 'RAE'
+
+                WHEN OBJECT_CODE = 'AR' AND OBJECT_CODE_EXT = 'SA' THEN 'SAE'
+                WHEN OBJECT_CODE = 'AR' AND OBJECT_CODE_EXT = 'WS' THEN 'SAE'
+                WHEN OBJECT_CODE = 'SA' THEN 'SAE'
+                WHEN OBJECT_CODE = 'WS' THEN 'SAE'
+                WHEN OBJECT_CODE = 'PR' THEN 'SAE'
+                WHEN OBJECT_CODE = 'BD' AND OBJECT_CODE_EXT = 'SA' THEN 'SAE'
+                WHEN OBJECT_CODE = 'DR' AND OBJECT_CODE_EXT = 'SA' THEN 'SAE'
+                WHEN OBJECT_CODE = 'GE' AND OBJECT_CODE_EXT = 'SA' THEN 'SAE'
+                WHEN OBJECT_CODE = 'AR' AND OBJECT_CODE_EXT = 'PT'
+                     AND MATERIAL_NUMBER ILIKE '%SA%' THEN 'SAE'
+
+                WHEN PROFIT_CENTER IN (
+                    '59901002', '59004222', '59004206', '59004064', '59004054',
+                    '59004044', '59004021', '59004016', '50012193', '40000482',
+                    '40000282', '40000182', '6682133', '5582133'
+                ) THEN 'IEC'
+
+                WHEN MATERIAL_GROUP_3 = 'PAR' THEN 'SVC'
+                WHEN PROFIT_CENTER LIKE '%079' THEN 'SVC'
+
+                WHEN Z01_MKT_MTART IN ('CAT', 'FERT') THEN 'END'
+
+                ELSE 'AUX'
+            END AS MG4_EXPECTED
+        FROM PROD_MO_MONM.REPORTING."vw_MatAll"
+    ) AS sub
+    WHERE MATERIAL_GROUP_2 IN ('MTR', 'LFH', 'ERH')
+      AND DELIVERING_PLANT = PLANT
+      AND SALES_STATUS NOT IN ('13', 'DR')
+    """
+    if limit is not None:
+        sql += f"\nLIMIT {limit}"
+    if offset is not None:
+        sql += f"\nOFFSET {offset}"
+
+    return run_query(sql)
+
+@register_query("abb_shop_data")
+def abb_shop_data(limit: int = None, offset: int = None) -> pd.DataFrame:
+    """
+    Auto-generated by the Streamlit query builder.
+    Update the SQL or docstring as needed before committing.
+
+    Supports chunking via limit/offset parameters.
+    """
+    sql = """SELECT DISTINCT MATERIAL_NUMBER, SALES_ORGANIZATION, DISTRIBUTION_CHANNEL, WAREHOUSE_NUMBER, STORAGE_LOCATION, STORAGE_TYPE, ABP_ELECTRICALDATA1, ABP_EFFICIENCYLEVEL, ABP_INSULATIONCLASS, ABP_NEMADESIGNCODE, ABP_NUMBEROFPHASES, ABP_NUMBEROFPOLES, ABP_SERVICEFACTOR, ABP_TYPEOFDUTY, ABP_ENCLOSURETYPE, ABP_FRAMESIZE, ABP_MOTORBASETYPE, ABP_MOUNTINGORIENTATION, ABP_BRAKEPRESENT, ABP_EXPLOSIONPROTECTION, ABP_CERTIFICATIONAGENCY, ABP_EXPPROGROCLA, ABP_DSTR_OUTPUT, ABP_DSTR_SSPEED, ABP_DSTR_VOLTAGE, ABP_DSTR_FREQUENCY
+FROM PROD_MO_MONM.REPORTING."vw_ProductDataAll"
+WHERE PRODUCT_HIERARCHY LIKE '5%'
+    AND OMS_FLAG = 'Y'"""
+    if limit is not None:
+        sql += f"\nLIMIT {limit}"
+    if offset is not None:
+        sql += f"\nOFFSET {offset}"
+
+    return run_query(sql)
+
+def get_column_metadata() -> dict:
+    """
+    Get column metadata from vw_ProductDataAll including column names,
+    data types, and distinct values (for low-cardinality columns).
+
+    Returns a dict with:
+    - columns: list of column names
+    - column_types: dict mapping column name to data type
+    - distinct_values: dict mapping column name to list of distinct values (only for columns with <100 distinct values)
+    """
+    conn = get_connection()
+    try:
+        # Get column names and types
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT COLUMN_NAME, DATA_TYPE
+            FROM PROD_MO_MONM.INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = 'REPORTING'
+            AND TABLE_NAME = 'vw_ProductDataAll'
+            ORDER BY ORDINAL_POSITION
+        """)
+
+        columns_info = cursor.fetchall()
+        columns = [row[0] for row in columns_info]
+        column_types = {row[0]: row[1] for row in columns_info}
+
+        # Get distinct values for low-cardinality columns
+        # We'll limit this to columns with fewer than 100 distinct values
+        distinct_values = {}
+
+        print(f"▶ Fetching distinct values for {len(columns)} columns...")
+        print(f"⏱️ This may take several minutes. Processing all columns to completion...")
+
+        for idx, col in enumerate(columns):
+            try:
+                # Progress indicator
+                if idx % 10 == 0:
+                    print(f"  📊 Progress: {idx}/{len(columns)} columns processed...")
+
+                # First check the distinct count
+                count_query = f"""
+                    SELECT COUNT(DISTINCT {col}) as distinct_count
+                    FROM PROD_MO_MONM.REPORTING."vw_ProductDataAll"
+                    LIMIT 1
+                """
+
+                cursor.execute(count_query)
+                result = cursor.fetchone()
+
+                if not result:
+                    print(f"  ⚠️ {col}: No result from count query (skipped)")
+                    continue
+
+                distinct_count = result[0]
+
+                # Only fetch distinct values if count is reasonable
+                if distinct_count < 100:
+                    values_query = f"""
+                        SELECT DISTINCT {col}
+                        FROM PROD_MO_MONM.REPORTING."vw_ProductDataAll"
+                        WHERE {col} IS NOT NULL
+                        ORDER BY {col}
+                        LIMIT 100
+                    """
+
+                    cursor.execute(values_query)
+                    values = [row[0] for row in cursor.fetchall()]
+                    distinct_values[col] = values
+                    print(f"  ✅ {col}: {len(values)} distinct values")
+                else:
+                    print(f"  ⚠️ {col}: {distinct_count} distinct values (skipped)")
+
+            except Exception as e:
+                print(f"  ❌ {col}: Error - {str(e)[:100]} (skipped)")
+                continue
+
+        cursor.close()
+
+        print(f"✅ Column metadata fetch complete: {len(columns)} columns, {len(distinct_values)} with distinct values")
+
+        return {
+            "columns": columns,
+            "column_types": column_types,
+            "distinct_values": distinct_values
+        }
+    finally:
+        conn.close()
+

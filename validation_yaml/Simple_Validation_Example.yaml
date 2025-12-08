@@ -1,0 +1,32 @@
+# Simple Validation Example
+#
+# This shows the minimal configuration needed for validation.
+# Chunking is AUTOMATICALLY handled based on dataset size:
+# - Small datasets (< 50k rows): Single batch processing
+# - Large datasets (> 50k rows): Automatic chunking with optimal settings
+#
+# No need to configure chunking unless you want to override defaults!
+
+metadata:
+  suite_name: "Simple_Example"
+  index_column: "MATERIAL_NUMBER"
+  data_source: "get_level_1_dataframe"  # This returns 1000 rows
+  # No chunking section needed - auto-handled!
+
+validations:
+  # Basic null checks
+  - type: "expect_column_values_to_not_be_null"
+    columns:
+      - "MATERIAL_NUMBER"
+      - "MATERIAL_DESCRIPTION"
+
+  # Value constraints
+  - type: "expect_column_values_to_be_in_set"
+    rules:
+      SALES_ORGANIZATION: ["BEC", "BAC"]
+
+# What happens:
+# 1. System detects this is a 1000-row dataset
+# 2. Since 1000 < 50,000 (min_rows_for_chunking), processes as single batch
+# 3. No chunking overhead, optimal performance for small datasets
+# 4. Still tracks performance for future optimizations
