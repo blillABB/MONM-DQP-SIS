@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import snowflake.connector
 from snowflake.connector.errors import DatabaseError
