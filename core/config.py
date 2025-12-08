@@ -1,11 +1,13 @@
 import os
 import streamlit as st
 
+
 def safe_secret(key, default=""):
     try:
         return st.secrets.get(key, default)
     except Exception:
         return os.getenv(key, default)
+
 
 def read_docker_secret(name):
     """Read a secret from Docker's /run/secrets directory."""
@@ -14,6 +16,7 @@ def read_docker_secret(name):
         with open(path) as f:
             return f.read().strip()
     return None
+
 
 # Data Lark API configuration - actual values should be in .streamlit/secrets.toml
 DATALARK_URL = safe_secret("DATALARK_URL", "")
@@ -45,6 +48,11 @@ else:
     _local_user = safe_secret("SNOWFLAKE_USER", os.getenv("SNOWFLAKE_USER", "dat.nguyen@us.abb.com"))
     _local_role = os.getenv("SNOWFLAKE_ROLE", "R_IS_MO_MONM")
 
+    # Disable cached SSO tokens so we always prompt for the active user. This avoids the
+    # "user differs from the IDP" error when a prior cached login was created under a
+    # different account. If you prefer reusing cached tokens, set SNOWFLAKE_USE_TOKEN_CACHE=true.
+    _use_token_cache = os.getenv("SNOWFLAKE_USE_TOKEN_CACHE", "false").lower() == "true"
+
     SNOWFLAKE_CONFIG = {
         "account": "ABB-ABB_MO",
         "user": _local_user,
@@ -53,4 +61,6 @@ else:
         "warehouse": _warehouse,
         "database": "PROD_MO_MONM",
         "schema": "REPORTING",
+        "client_store_temporary_credential": _use_token_cache,
     }
+
