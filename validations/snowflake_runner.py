@@ -75,9 +75,14 @@ def run_validation_from_yaml_snowflake(yaml_path: Union[str, Path], limit: int =
         df = run_query(sql)
         execution_time = time.time() - start_time
         print(f"✅ Query executed in {execution_time:.2f} seconds")
-    except Exception as e:
-        print(f"❌ Query execution failed: {e}")
+    except RuntimeError:
+        # Propagate user-facing runtime errors (e.g., SSO mismatch) unchanged so the
+        # UI can display the friendly guidance and halt gracefully.
         raise
+    except Exception as e:
+        # Wrap any other errors to keep the error type consistent for the UI.
+        print(f"❌ Query execution failed: {e}")
+        raise RuntimeError(f"❌ Query execution failed: {e}") from e
 
     # Parse results
     results = _parse_sql_results(df, suite_config)
