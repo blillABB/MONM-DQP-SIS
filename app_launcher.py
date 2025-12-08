@@ -5,7 +5,7 @@ from pathlib import Path
 # --- Locate directories ---
 root = Path(__file__).parent
 app_dir = root / "app"
-index_path = app_dir / "index.py"
+index_path = app_dir / "Home.py"
 
 # --- Ensure PYTHONPATH includes both project root and app ---
 pythonpath = os.environ.get("PYTHONPATH", "")

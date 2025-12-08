@@ -17,13 +17,13 @@ def safe_secret(key, default=""):
 # Fill in the placeholders below with your account-specific values.
 # -----------------------------------------------------------------------------
 SNOWFLAKE_CONFIG = {
-    "account": "<SNOWFLAKE_ACCOUNT>",
-    "user": "<SNOWFLAKE_USER>",
+    "account": "ABB-ABB_MO",
+    "user": "BLAKE.LILLARD@US.ABB.COM",
     "authenticator": "externalbrowser",
-    "role": "<SNOWFLAKE_ROLE>",
-    "warehouse": "<SNOWFLAKE_WAREHOUSE>",
-    "database": "<SNOWFLAKE_DATABASE>",
-    "schema": "<SNOWFLAKE_SCHEMA>",
+    "role": "R_IS_MO_MONM",
+    "warehouse": "WH_BU_READ",
+    "database": "PROD_MO_MONM",
+    "schema": "REPORTING",
     "client_store_temporary_credential": False,
 }
 
