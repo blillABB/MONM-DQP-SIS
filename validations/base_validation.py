@@ -223,18 +223,81 @@ class BaseValidationSuite:
     # Result helpers
     # ------------------------------------------------------------------
     @staticmethod
-    def results_to_dataframe(results: List[Dict[str, Any]]) -> pd.DataFrame:
+    def results_to_dataframe(
+        results: List[Dict[str, Any]],
+        full_results_df: pd.DataFrame | None = None,
+    ) -> pd.DataFrame:
         """Convert validation results into a tabular DataFrame."""
 
         rows: List[Dict[str, Any]] = []
+        normalized_df = None
+
+        if isinstance(full_results_df, pd.DataFrame):
+            normalized_df = full_results_df.copy()
+            normalized_df.columns = normalized_df.columns.str.lower()
+
         for result in results or []:
-            failures = result.get("failed_materials") or [None]
-            for material in failures:
+            failures = result.get("failed_materials")
+
+            # Backward compatibility: if failure details were materialized, use them
+            if failures is not None:
+                for material in failures or [None]:
+                    rows.append({
+                        "Expectation Type": result.get("expectation_type"),
+                        "Column": result.get("column"),
+                        "Material Number": material,
+                        "Unexpected Value": material,
+                        "Element Count": result.get("element_count", 0),
+                        "Unexpected Count": result.get("unexpected_count", 0),
+                        "Unexpected Percent": result.get("unexpected_percent", 0.0),
+                        "Status": "Pass" if result.get("success") else "Fail",
+                    })
+                continue
+
+            # New contract: derive failure rows from the full results DataFrame
+            if normalized_df is not None:
+                flag_col = (result.get("flag_column") or "").lower()
+                context_columns = [c.lower() for c in (result.get("context_columns") or [])]
+
+                if flag_col and flag_col in normalized_df.columns:
+                    flagged_rows = normalized_df[normalized_df[flag_col] == 1]
+
+                    if flagged_rows.empty:
+                        rows.append({
+                            "Expectation Type": result.get("expectation_type"),
+                            "Column": result.get("column"),
+                            "Material Number": None,
+                            "Unexpected Value": None,
+                            "Element Count": result.get("element_count", 0),
+                            "Unexpected Count": result.get("unexpected_count", 0),
+                            "Unexpected Percent": result.get("unexpected_percent", 0.0),
+                            "Status": "Pass" if result.get("success") else "Fail",
+                        })
+                        continue
+
+                    for _, row in flagged_rows.iterrows():
+                        record = {
+                            "Expectation Type": result.get("expectation_type"),
+                            "Column": result.get("column"),
+                            "Material Number": row.get("material_number"),
+                            "Unexpected Value": row.get(result.get("column", "").lower()),
+                            "Element Count": result.get("element_count", 0),
+                            "Unexpected Count": result.get("unexpected_count", 0),
+                            "Unexpected Percent": result.get("unexpected_percent", 0.0),
+                            "Status": "Pass" if result.get("success") else "Fail",
+                        }
+
+                        for col in context_columns:
+                            record[col] = row.get(col)
+
+                        rows.append(record)
+            else:
+                # No failure materialization available; record aggregate-level summary row
                 rows.append({
                     "Expectation Type": result.get("expectation_type"),
                     "Column": result.get("column"),
-                    "Material Number": material,
-                    "Unexpected Value": material,
+                    "Material Number": None,
+                    "Unexpected Value": None,
                     "Element Count": result.get("element_count", 0),
                     "Unexpected Count": result.get("unexpected_count", 0),
                     "Unexpected Percent": result.get("unexpected_percent", 0.0),
