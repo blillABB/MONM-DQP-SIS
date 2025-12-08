@@ -8,6 +8,7 @@ for the same calendar day.
 """
 
 import os
+import glob
 import json
 from datetime import datetime, date
 from typing import Optional
@@ -25,16 +26,33 @@ def _ensure_cache_dir():
     os.makedirs(CACHE_DIR, exist_ok=True)
 
 
+def _safe_suite_name(suite_name: str) -> str:
+    """Normalize suite name to a filesystem-safe representation."""
+    return suite_name.lower().replace(" ", "_").replace("-", "_")
+
+
 def _get_cache_path(suite_name: str) -> str:
     """Get the cache file path for a validation suite."""
-    # Normalize suite name to lowercase with underscores
-    safe_name = suite_name.lower().replace(" ", "_").replace("-", "_")
-    return os.path.join(CACHE_DIR, f"{safe_name}_cache.json")
+    return os.path.join(CACHE_DIR, f"{_safe_suite_name(suite_name)}_cache.json")
+
+
+def _get_failures_csv_path(suite_name: str, date_str: str) -> str:
+    """Get the cache file path for a suite's raw validation results for a given date."""
+    return os.path.join(CACHE_DIR, f"{_safe_suite_name(suite_name)}_failures_{date_str}.csv")
 
 
 def _get_today_date_str() -> str:
     """Get today's date as a string (YYYY-MM-DD)."""
     return date.today().isoformat()
+
+
+def _remove_stale_failures_csv(suite_name: str, keep_date: str) -> None:
+    """Remove cached raw results CSV files for a suite except the given date."""
+    safe_name = _safe_suite_name(suite_name)
+    pattern = os.path.join(CACHE_DIR, f"{safe_name}_failures_*.csv")
+    for path in glob.glob(pattern):
+        if not path.endswith(f"_{keep_date}.csv"):
+            os.remove(path)
 
 
 def get_cached_results(suite_name: str) -> Optional[dict]:
@@ -81,6 +99,31 @@ def get_cached_results(suite_name: str) -> Optional[dict]:
         return None
 
 
+def get_cached_failures_csv(suite_name: str) -> Optional[str]:
+    """
+    Get cached raw Snowflake results CSV for today, if present.
+
+    Parameters
+    ----------
+    suite_name : str
+        Name of the validation suite (e.g., "aurora", "level1")
+
+    Returns
+    -------
+    str or None
+        CSV contents of the raw results if present for today, None otherwise.
+    """
+    _ensure_cache_dir()
+    today = _get_today_date_str()
+    csv_path = _get_failures_csv_path(suite_name, today)
+
+    if not os.path.exists(csv_path):
+        return None
+
+    with open(csv_path, "r") as f:
+        return f.read()
+
+
 def save_cached_results(suite_name: str, results: list, validated_materials: list = None) -> None:
     """
     Save validation results to cache.
@@ -110,6 +153,19 @@ def save_cached_results(suite_name: str, results: list, validated_materials: lis
     print(f"📦 Cached validation results for {suite_name}")
 
 
+def save_cached_failures_csv(suite_name: str, df) -> None:
+    """Save raw Snowflake validation results CSV to cache for today and prune stale copies."""
+    _ensure_cache_dir()
+    today = _get_today_date_str()
+    csv_path = _get_failures_csv_path(suite_name, today)
+
+    # Remove older CSVs for this suite so only today's remains
+    _remove_stale_failures_csv(suite_name, today)
+
+    df.to_csv(csv_path, index=False)
+    print(f"📦 Cached raw results CSV for {suite_name} at {csv_path}")
+
+
 def clear_cache(suite_name: str = None) -> None:
     """
     Clear cached results.
@@ -127,10 +183,20 @@ def clear_cache(suite_name: str = None) -> None:
         if os.path.exists(cache_path):
             os.remove(cache_path)
             print(f"🗑️ Cleared cache for {suite_name}")
+
+        safe_name = _safe_suite_name(suite_name)
+        # Clear both legacy failure CSVs and the raw results CSVs used today
+        patterns = [
+            os.path.join(CACHE_DIR, f"{safe_name}_failures_*.csv"),
+        ]
+        for pattern in patterns:
+            for path in glob.glob(pattern):
+                os.remove(path)
+                print(f"🗑️ Cleared failures CSV cache for {suite_name}")
     else:
         # Clear all cache files
         for filename in os.listdir(CACHE_DIR):
-            if filename.endswith("_cache.json"):
+            if filename.endswith("_cache.json") or filename.endswith(".csv"):
                 os.remove(os.path.join(CACHE_DIR, filename))
         print("🗑️ Cleared all validation caches")
 
