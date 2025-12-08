@@ -37,7 +37,7 @@ def _get_cache_path(suite_name: str) -> str:
 
 
 def _get_failures_csv_path(suite_name: str, date_str: str) -> str:
-    """Get the cache file path for a suite's failures DataFrame for a given date."""
+    """Get the cache file path for a suite's raw validation results for a given date."""
     return os.path.join(CACHE_DIR, f"{_safe_suite_name(suite_name)}_failures_{date_str}.csv")
 
 
@@ -47,7 +47,7 @@ def _get_today_date_str() -> str:
 
 
 def _remove_stale_failures_csv(suite_name: str, keep_date: str) -> None:
-    """Remove cached failures CSV files for a suite except the given date."""
+    """Remove cached raw results CSV files for a suite except the given date."""
     safe_name = _safe_suite_name(suite_name)
     pattern = os.path.join(CACHE_DIR, f"{safe_name}_failures_*.csv")
     for path in glob.glob(pattern):
@@ -101,7 +101,7 @@ def get_cached_results(suite_name: str) -> Optional[dict]:
 
 def get_cached_failures_csv(suite_name: str) -> Optional[str]:
     """
-    Get cached failures DataFrame CSV for today, if present.
+    Get cached raw Snowflake results CSV for today, if present.
 
     Parameters
     ----------
@@ -111,7 +111,7 @@ def get_cached_failures_csv(suite_name: str) -> Optional[str]:
     Returns
     -------
     str or None
-        CSV contents if present for today, None otherwise.
+        CSV contents of the raw results if present for today, None otherwise.
     """
     _ensure_cache_dir()
     today = _get_today_date_str()
@@ -154,7 +154,7 @@ def save_cached_results(suite_name: str, results: list, validated_materials: lis
 
 
 def save_cached_failures_csv(suite_name: str, df) -> None:
-    """Save failures DataFrame CSV to cache for today and prune stale copies."""
+    """Save raw Snowflake validation results CSV to cache for today and prune stale copies."""
     _ensure_cache_dir()
     today = _get_today_date_str()
     csv_path = _get_failures_csv_path(suite_name, today)
@@ -163,7 +163,7 @@ def save_cached_failures_csv(suite_name: str, df) -> None:
     _remove_stale_failures_csv(suite_name, today)
 
     df.to_csv(csv_path, index=False)
-    print(f"📦 Cached failures CSV for {suite_name} at {csv_path}")
+    print(f"📦 Cached raw results CSV for {suite_name} at {csv_path}")
 
 
 def clear_cache(suite_name: str = None) -> None:
@@ -185,10 +185,14 @@ def clear_cache(suite_name: str = None) -> None:
             print(f"🗑️ Cleared cache for {suite_name}")
 
         safe_name = _safe_suite_name(suite_name)
-        pattern = os.path.join(CACHE_DIR, f"{safe_name}_failures_*.csv")
-        for path in glob.glob(pattern):
-            os.remove(path)
-            print(f"🗑️ Cleared failures CSV cache for {suite_name}")
+        # Clear both legacy failure CSVs and the raw results CSVs used today
+        patterns = [
+            os.path.join(CACHE_DIR, f"{safe_name}_failures_*.csv"),
+        ]
+        for pattern in patterns:
+            for path in glob.glob(pattern):
+                os.remove(path)
+                print(f"🗑️ Cleared failures CSV cache for {suite_name}")
     else:
         # Clear all cache files
         for filename in os.listdir(CACHE_DIR):
