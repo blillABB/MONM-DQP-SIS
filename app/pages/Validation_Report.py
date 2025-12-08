@@ -11,10 +11,17 @@ import plotly.graph_objects as go
 import plotly.express as px
 from pathlib import Path
 from datetime import date
+from io import StringIO
 
 from validations import run_validation_from_yaml_snowflake
 from core.queries import snowflake_config_summary, ensure_snowflake_config
-from core.cache_manager import get_cached_results, save_cached_results, clear_cache
+from core.cache_manager import (
+    get_cached_results,
+    get_cached_failures_csv,
+    save_cached_results,
+    save_cached_failures_csv,
+    clear_cache,
+)
 from validations.base_validation import BaseValidationSuite
 from app.components.drill_down import render_expectation_drill_down
 from app.suite_discovery import discover_suites, get_suite_by_name
@@ -87,6 +94,8 @@ def load_or_run_validation(suite_config):
     session_key = f"{suite_key}_results"
     session_materials_key = f"{suite_key}_validated_materials"
     session_df_key = f"{suite_key}_full_results_df"
+    session_failures_csv_key = f"{suite_key}_failures_df"
+    session_raw_results_key = f"{suite_key}_raw_results_csv"
     session_date_key = f"{suite_key}_data_date"
     today = date.today().isoformat()
 
@@ -108,6 +117,8 @@ def load_or_run_validation(suite_config):
             st.session_state.pop(session_key, None)
             st.session_state.pop(session_materials_key, None)
             st.session_state.pop(session_df_key, None)
+            st.session_state.pop(session_failures_csv_key, None)
+            st.session_state.pop(session_raw_results_key, None)
             st.session_state.pop(session_date_key, None)
     else:
         print(f"📦 DEBUG: No session state found for {session_key}", flush=True)
@@ -181,6 +192,8 @@ with st.sidebar:
         st.session_state.pop(f"{suite_config['suite_key']}_results", None)
         st.session_state.pop(f"{suite_config['suite_key']}_validated_materials", None)
         st.session_state.pop(f"{suite_config['suite_key']}_full_results_df", None)
+        st.session_state.pop(f"{suite_config['suite_key']}_failures_df", None)
+        st.session_state.pop(f"{suite_config['suite_key']}_raw_results_csv", None)
         st.session_state.pop(f"{suite_config['suite_key']}_data_date", None)
         print(f"🗑️ Cleared all caches for {suite_config['suite_key']}")
         st.rerun()
@@ -232,11 +245,62 @@ if results is None:
     st.stop()
 
 # ----------------------------------------------------------
-# Build DataFrame of failures
+# Build or reuse DataFrame of failures (cached raw Snowflake results as CSV)
 # ----------------------------------------------------------
-print(f"📊 DEBUG: Calling results_to_dataframe with {len(results)} results", flush=True)
-df = BaseValidationSuite.results_to_dataframe(results, full_results_df)
-print(f"📊 DEBUG: DataFrame created with {len(df)} rows", flush=True)
+suite_key = suite_config["suite_key"]
+session_failures_csv_key = f"{suite_key}_failures_df"
+session_raw_results_key = f"{suite_key}_raw_results_csv"
+session_date_key = f"{suite_key}_data_date"
+today = date.today().isoformat()
+
+cached_raw_csv = st.session_state.get(session_raw_results_key)
+cached_failures_csv = st.session_state.get(session_failures_csv_key)
+cached_date = st.session_state.get(session_date_key)
+
+raw_results_df = None
+df = None
+
+if cached_raw_csv and cached_date == today:
+    print(
+        f"📊 DEBUG: Using cached raw Snowflake results for {suite_key} from session state",
+        flush=True,
+    )
+    raw_results_df = pd.read_csv(StringIO(cached_raw_csv))
+elif cached_date == today:
+    file_cached_raw = get_cached_failures_csv(suite_key)
+    if file_cached_raw:
+        print(
+            f"📊 DEBUG: Hydrating raw Snowflake results for {suite_key} from file cache",
+            flush=True,
+        )
+        raw_results_df = pd.read_csv(StringIO(file_cached_raw))
+        st.session_state[session_raw_results_key] = file_cached_raw
+
+if raw_results_df is None and isinstance(full_results_df, pd.DataFrame):
+    raw_results_df = full_results_df
+
+if raw_results_df is not None:
+    csv_payload = raw_results_df.to_csv(index=False)
+    st.session_state[session_raw_results_key] = csv_payload
+    st.session_state[session_date_key] = today
+    save_cached_failures_csv(suite_key, raw_results_df)
+else:
+    print("⚠️ No raw Snowflake results available to cache", flush=True)
+
+if cached_failures_csv and cached_date == today:
+    print(
+        f"📊 DEBUG: Using cached failures DataFrame for {suite_key} from session state",
+        flush=True,
+    )
+    df = pd.read_csv(StringIO(cached_failures_csv))
+
+if df is None:
+    print(f"📊 DEBUG: Calling results_to_dataframe with {len(results)} results", flush=True)
+    df = BaseValidationSuite.results_to_dataframe(results, raw_results_df)
+    print(f"📊 DEBUG: DataFrame created with {len(df)} rows", flush=True)
+    failures_csv_payload = df.to_csv(index=False)
+    st.session_state[session_failures_csv_key] = failures_csv_payload
+
 if not df.empty:
     print(f"📊 DEBUG: DataFrame columns: {list(df.columns)}", flush=True)
     print(f"📊 DEBUG: DataFrame head:\n{df.head()}", flush=True)
