@@ -38,6 +38,10 @@ class ValidationSQLGenerator:
         self.data_source = suite_config.get("data_source", {})
         self.validations = suite_config.get("validations", [])
         self.index_column = self.metadata.get("index_column", "MATERIAL_NUMBER")
+        # Deprecated: failure arrays are no longer constructed in-SQL since we now
+        # return full-width validation rows. Kept for backward compatibility with
+        # legacy YAMLs but ignored by the generator.
+        self.include_failure_arrays = self.metadata.get("include_failure_arrays", False)
 
     def generate_sql(self, limit: int = None) -> str:
         """
@@ -58,8 +62,10 @@ class ValidationSQLGenerator:
         # Build parts of the query
         table_name = self._get_table_name()
         where_clause = self._build_where_clause()
-        select_columns = self._build_select_clause(validated_columns, context_columns)
-        validation_sql = self._build_validation_logic()
+        flag_columns = self._build_validation_logic()
+        select_columns = self._build_select_clause(
+            validated_columns, context_columns, extra_columns=flag_columns
+        )
         select_keyword = "SELECT DISTINCT" if self._use_distinct() else "SELECT"
 
         # Assemble complete query
@@ -71,8 +77,7 @@ WITH base_data AS (
   {where_clause}
   {f'LIMIT {limit}' if limit else ''}
 )
-SELECT
-  {validation_sql}
+SELECT *
 FROM base_data
 """
         return query.strip()
@@ -116,7 +121,8 @@ FROM base_data
         return ""
 
     def _build_select_clause(self, validated_columns: List[str],
-                            context_columns: List[str]) -> str:
+                            context_columns: List[str],
+                            extra_columns: List[str] = None) -> str:
         """Build SELECT clause with validated columns + context."""
         all_columns = validated_columns + context_columns
         # Remove duplicates while preserving order
@@ -127,7 +133,9 @@ FROM base_data
                 seen.add(col)
                 unique_columns.append(col)
 
-        return ",\n    ".join(unique_columns)
+        combined_columns = unique_columns + (extra_columns or [])
+
+        return ",\n    ".join(combined_columns)
 
     def _use_distinct(self) -> bool:
         """Determine whether to apply SELECT DISTINCT for the base data set."""
@@ -162,68 +170,60 @@ FROM base_data
         # Remove None values and duplicates
         return list(set(col for col in columns if col))
 
-    def _build_validation_logic(self) -> str:
-        """Build validation SQL for all rules."""
-        validation_parts = []
+    def _build_validation_logic(self) -> list[str]:
+        """Build validation flag expressions for all rules."""
+        flag_columns: list[str] = []
 
         for validation in self.validations:
             val_type = validation.get("type", "")
 
             if val_type == "expect_column_values_to_not_be_null":
-                validation_parts.extend(self._build_not_null_validation(validation))
+                flags = self._build_not_null_validation(validation)
             elif val_type == "expect_column_values_to_be_in_set":
-                validation_parts.extend(self._build_value_in_set_validation(validation))
+                flags = self._build_value_in_set_validation(validation)
             elif val_type == "expect_column_values_to_not_be_in_set":
-                validation_parts.extend(self._build_value_not_in_set_validation(validation))
+                flags = self._build_value_not_in_set_validation(validation)
             elif val_type == "expect_column_values_to_match_regex":
-                validation_parts.extend(self._build_regex_validation(validation))
+                flags = self._build_regex_validation(validation)
             elif val_type == "expect_column_pair_values_to_be_equal":
-                validation_parts.append(self._build_column_pair_equal_validation(validation))
+                flags = self._build_column_pair_equal_validation(validation)
             elif val_type == "expect_column_pair_values_a_to_be_greater_than_b":
-                validation_parts.append(self._build_column_pair_greater_validation(validation))
+                flags = self._build_column_pair_greater_validation(validation)
             elif val_type == "custom:conditional_required":
-                validation_parts.append(self._build_conditional_required_validation(validation))
+                flags = self._build_conditional_required_validation(validation)
             elif val_type == "custom:conditional_value_in_set":
-                validation_parts.append(self._build_conditional_value_in_set_validation(validation))
+                flags = self._build_conditional_value_in_set_validation(validation)
+            else:
+                flags = []
 
-        return ",\n\n  ".join(validation_parts)
+            flag_columns.extend(flags)
+
+        return flag_columns
 
     def _build_not_null_validation(self, validation: Dict) -> List[str]:
-        """Build SQL for not-null validation."""
+        """Build SQL for not-null validation flags."""
         columns = validation.get("columns", [])
-        parts = []
+        flags: List[str] = []
 
         for col in columns:
             safe_col_name = col.lower().replace('"', '')
             quoted_col = f'"{col}"'
+            flag_name = f"{safe_col_name}_null_flag"
 
             # Get grain-specific context for this column
-            col_context = get_context_columns_for_columns([col])
-            context_fields = self._build_context_fields(col_context, quoted_col)
+            flags.append(f"CASE WHEN {quoted_col} IS NULL THEN 1 ELSE 0 END as {flag_name}")
 
-            parts.append(f"""-- Validation for {col} (not null)
-  COUNT(*) as {safe_col_name}_total,
-  SUM(CASE WHEN {quoted_col} IS NULL THEN 1 ELSE 0 END) as {safe_col_name}_null_count,
-  ARRAY_COMPACT(ARRAY_AGG(
-    CASE
-      WHEN {quoted_col} IS NULL
-      THEN OBJECT_CONSTRUCT(
-        {context_fields}
-      )
-      ELSE NULL
-    END
-  )) as {safe_col_name}_failures""")
-
-        return parts
+        return flags
 
     def _build_value_in_set_validation(self, validation: Dict) -> List[str]:
-        """Build SQL for value-in-set validation."""
+        """Build SQL for value-in-set validation flags."""
         rules = validation.get("rules", {})
-        parts = []
+        flags: List[str] = []
 
         for column, allowed_values in rules.items():
             safe_col_name = column.lower().replace('"', '')
             quoted_col = f'"{column}"'
+            flag_name = f"{safe_col_name}_invalid_flag"
 
             # Format value set for SQL
             if isinstance(allowed_values, list):
@@ -233,25 +233,14 @@ FROM base_data
                 value_set = f"'{allowed_values}'"
 
             # Get grain-specific context
-            col_context = get_context_columns_for_columns([column])
-            context_fields = self._build_context_fields(col_context, quoted_col)
+            flags.append(
+                f"CASE WHEN {quoted_col} NOT IN ({value_set}) THEN 1 ELSE 0 END as {flag_name}"
+            )
 
-            parts.append(f"""-- Validation for {column} (value in set)
-  SUM(CASE WHEN {quoted_col} NOT IN ({value_set}) THEN 1 ELSE 0 END) as {safe_col_name}_invalid_count,
-  ARRAY_COMPACT(ARRAY_AGG(
-    CASE
-      WHEN {quoted_col} NOT IN ({value_set})
-      THEN OBJECT_CONSTRUCT(
-        {context_fields}
-      )
-      ELSE NULL
-    END
-  )) as {safe_col_name}_failures""")
-
-        return parts
+        return flags
 
     def _build_value_not_in_set_validation(self, validation: Dict) -> List[str]:
-        """Build SQL for value-not-in-set validation."""
+        """Build SQL for value-not-in-set validation flags."""
         column = validation.get("column")
         forbidden_values = validation.get("value_set", [])
 
@@ -260,93 +249,55 @@ FROM base_data
 
         safe_col_name = column.lower().replace('"', '')
         quoted_col = f'"{column}"'
+        flag_name = f"{safe_col_name}_forbidden_flag"
 
         # Format value set for SQL
         value_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
                              for v in forbidden_values)
 
         # Get grain-specific context
-        col_context = get_context_columns_for_columns([column])
-        context_fields = self._build_context_fields(col_context, quoted_col)
+        flag_column = f"CASE WHEN {quoted_col} IN ({value_set}) THEN 1 ELSE 0 END as {flag_name}"
 
-        return [f"""-- Validation for {column} (value not in set)
-  SUM(CASE WHEN {quoted_col} IN ({value_set}) THEN 1 ELSE 0 END) as {safe_col_name}_forbidden_count,
-  ARRAY_COMPACT(ARRAY_AGG(
-    CASE
-      WHEN {quoted_col} IN ({value_set})
-      THEN OBJECT_CONSTRUCT(
-        {context_fields}
-      )
-      ELSE NULL
-    END
-  )) as {safe_col_name}_failures"""]
+        return [flag_column]
 
     def _build_regex_validation(self, validation: Dict) -> List[str]:
-        """Build SQL for regex validation."""
+        """Build SQL for regex validation flags."""
         columns = validation.get("columns", [])
         regex_pattern = validation.get("regex", "")
-        parts = []
+        flags: List[str] = []
 
         for column in columns:
             safe_col_name = column.lower().replace('"', '')
             quoted_col = f'"{column}"'
+            flag_name = f"{safe_col_name}_regex_fail_flag"
 
             # Get grain-specific context
-            col_context = get_context_columns_for_columns([column])
-            context_fields = self._build_context_fields(col_context, quoted_col)
-
             # Escape single quotes in regex pattern
             escaped_pattern = regex_pattern.replace("'", "''")
 
-            parts.append(f"""-- Validation for {column} (regex match)
-  SUM(CASE WHEN NOT RLIKE({quoted_col}, '{escaped_pattern}') THEN 1 ELSE 0 END) as {safe_col_name}_regex_fail_count,
-  ARRAY_COMPACT(ARRAY_AGG(
-    CASE
-      WHEN NOT RLIKE({quoted_col}, '{escaped_pattern}')
-      THEN OBJECT_CONSTRUCT(
-        {context_fields}
-      )
-      ELSE NULL
-    END
-  )) as {safe_col_name}_failures""")
+            flags.append(
+                f"CASE WHEN NOT RLIKE({quoted_col}, '{escaped_pattern}') THEN 1 ELSE 0 END as {flag_name}"
+            )
 
-        return parts
+        return flags
 
-    def _build_column_pair_equal_validation(self, validation: Dict) -> str:
-        """Build SQL for column pair equality validation."""
+    def _build_column_pair_equal_validation(self, validation: Dict) -> List[str]:
+        """Build SQL for column pair equality validation flags."""
         col_a = validation.get("column_a")
         col_b = validation.get("column_b")
 
         safe_name = f"{col_a}_{col_b}_equal".lower().replace('"', '')
         quoted_a = f'"{col_a}"'
         quoted_b = f'"{col_b}"'
+        flag_name = f"{safe_name}_mismatch_flag"
 
         # Get context for both columns
-        col_context = get_context_columns_for_columns([col_a, col_b])
-        context_fields = self._build_context_fields(col_context, None,
-                                                    extra_fields={col_a: quoted_a, col_b: quoted_b})
+        flag_expr = f"CASE\n    WHEN {quoted_a} != {quoted_b}\n      OR ({quoted_a} IS NULL AND {quoted_b} IS NOT NULL)\n      OR ({quoted_a} IS NOT NULL AND {quoted_b} IS NULL)\n    THEN 1 ELSE 0\n  END as {flag_name}"
 
-        return f"""-- Validation for {col_a} = {col_b}
-  SUM(CASE
-    WHEN {quoted_a} != {quoted_b}
-      OR ({quoted_a} IS NULL AND {quoted_b} IS NOT NULL)
-      OR ({quoted_a} IS NOT NULL AND {quoted_b} IS NULL)
-    THEN 1 ELSE 0
-  END) as {safe_name}_mismatch_count,
-  ARRAY_COMPACT(ARRAY_AGG(
-    CASE
-      WHEN {quoted_a} != {quoted_b}
-        OR ({quoted_a} IS NULL AND {quoted_b} IS NOT NULL)
-        OR ({quoted_a} IS NOT NULL AND {quoted_b} IS NULL)
-      THEN OBJECT_CONSTRUCT(
-        {context_fields}
-      )
-      ELSE NULL
-    END
-  )) as {safe_name}_failures"""
+        return [flag_expr]
 
-    def _build_column_pair_greater_validation(self, validation: Dict) -> str:
-        """Build SQL for column pair greater-than validation."""
+    def _build_column_pair_greater_validation(self, validation: Dict) -> List[str]:
+        """Build SQL for column pair greater-than validation flags."""
         col_a = validation.get("column_a")
         col_b = validation.get("column_b")
         or_equal = validation.get("or_equal", False)
@@ -354,36 +305,18 @@ FROM base_data
         safe_name = f"{col_a}_{col_b}_greater".lower().replace('"', '')
         quoted_a = f'"{col_a}"'
         quoted_b = f'"{col_b}"'
+        flag_name = f"{safe_name}_fail_flag"
 
         # Build comparison operator
         operator = ">=" if or_equal else ">"
 
         # Get context for both columns
-        col_context = get_context_columns_for_columns([col_a, col_b])
-        context_fields = self._build_context_fields(col_context, None,
-                                                    extra_fields={col_a: quoted_a, col_b: quoted_b})
+        flag_expr = f"CASE\n    WHEN {quoted_a} < {quoted_b}\n      OR {quoted_a} IS NULL\n      OR {quoted_b} IS NULL\n    THEN 1 ELSE 0\n  END as {flag_name}"
 
-        return f"""-- Validation for {col_a} {operator} {col_b}
-  SUM(CASE
-    WHEN {quoted_a} < {quoted_b}
-      OR {quoted_a} IS NULL
-      OR {quoted_b} IS NULL
-    THEN 1 ELSE 0
-  END) as {safe_name}_fail_count,
-  ARRAY_COMPACT(ARRAY_AGG(
-    CASE
-      WHEN {quoted_a} < {quoted_b}
-        OR {quoted_a} IS NULL
-        OR {quoted_b} IS NULL
-      THEN OBJECT_CONSTRUCT(
-        {context_fields}
-      )
-      ELSE NULL
-    END
-  )) as {safe_name}_failures"""
+        return [flag_expr]
 
-    def _build_conditional_required_validation(self, validation: Dict) -> str:
-        """Build SQL for conditional required validation."""
+    def _build_conditional_required_validation(self, validation: Dict) -> List[str]:
+        """Build SQL for conditional required validation flags."""
         condition_col = validation.get("condition_column")
         condition_values = validation.get("condition_values", [])
         required_col = validation.get("required_column")
@@ -391,36 +324,19 @@ FROM base_data
         safe_name = f"{condition_col}_{required_col}_conditional".lower().replace('"', '')
         quoted_condition = f'"{condition_col}"'
         quoted_required = f'"{required_col}"'
+        flag_name = f"{safe_name}_violation_flag"
 
         # Format condition values
         value_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
                              for v in condition_values)
 
         # Get context for both columns
-        col_context = get_context_columns_for_columns([condition_col, required_col])
-        context_fields = self._build_context_fields(col_context, None,
-                                                    extra_fields={
-                                                        condition_col: quoted_condition,
-                                                        required_col: quoted_required
-                                                    })
+        flag_expr = f"CASE\n    WHEN {quoted_condition} IN ({value_set}) AND {quoted_required} IS NULL\n    THEN 1 ELSE 0\n  END as {flag_name}"
 
-        return f"""-- Validation for conditional required: if {condition_col} in ({value_set}) then {required_col} required
-  SUM(CASE
-    WHEN {quoted_condition} IN ({value_set}) AND {quoted_required} IS NULL
-    THEN 1 ELSE 0
-  END) as {safe_name}_violation_count,
-  ARRAY_COMPACT(ARRAY_AGG(
-    CASE
-      WHEN {quoted_condition} IN ({value_set}) AND {quoted_required} IS NULL
-      THEN OBJECT_CONSTRUCT(
-        {context_fields}
-      )
-      ELSE NULL
-    END
-  )) as {safe_name}_failures"""
+        return [flag_expr]
 
-    def _build_conditional_value_in_set_validation(self, validation: Dict) -> str:
-        """Build SQL for conditional value in set validation."""
+    def _build_conditional_value_in_set_validation(self, validation: Dict) -> List[str]:
+        """Build SQL for conditional value in set validation flags."""
         condition_col = validation.get("condition_column")
         condition_values = validation.get("condition_values", [])
         target_col = validation.get("target_column")
@@ -429,6 +345,7 @@ FROM base_data
         safe_name = f"{condition_col}_{target_col}_conditional_set".lower().replace('"', '')
         quoted_condition = f'"{condition_col}"'
         quoted_target = f'"{target_col}"'
+        flag_name = f"{safe_name}_violation_flag"
 
         # Format value sets
         condition_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
@@ -437,29 +354,9 @@ FROM base_data
                                for v in allowed_values)
 
         # Get context for both columns
-        col_context = get_context_columns_for_columns([condition_col, target_col])
-        context_fields = self._build_context_fields(col_context, None,
-                                                    extra_fields={
-                                                        condition_col: quoted_condition,
-                                                        target_col: quoted_target
-                                                    })
+        flag_expr = f"CASE\n    WHEN {quoted_condition} IN ({condition_set})\n      AND {quoted_target} NOT IN ({allowed_set})\n    THEN 1 ELSE 0\n  END as {flag_name}"
 
-        return f"""-- Validation for conditional value in set: if {condition_col} in ({condition_set}) then {target_col} in ({allowed_set})
-  SUM(CASE
-    WHEN {quoted_condition} IN ({condition_set})
-      AND {quoted_target} NOT IN ({allowed_set})
-    THEN 1 ELSE 0
-  END) as {safe_name}_violation_count,
-  ARRAY_COMPACT(ARRAY_AGG(
-    CASE
-      WHEN {quoted_condition} IN ({condition_set})
-        AND {quoted_target} NOT IN ({allowed_set})
-      THEN OBJECT_CONSTRUCT(
-        {context_fields}
-      )
-      ELSE NULL
-    END
-  )) as {safe_name}_failures"""
+        return [flag_expr]
 
     def _build_context_fields(self, context_cols: List[str],
                              unexpected_col: str = None,
