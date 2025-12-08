@@ -1,0 +1,45 @@
+# Level 1 Validation Suite
+# Reverse-engineered from validations/level_1_validation.py
+# Aligned with GX Expectations Gallery naming conventions
+
+metadata:
+  suite_name: "Level_1_Validation"
+  index_column: "MATERIAL_NUMBER"
+  description: "Baseline validation expectations for material master data integrity"
+  data_source: "get_level_1_dataframe"  # Query function from core/queries.py
+
+validations:
+  # --- Required columns (null checks) ---
+  # Maps to: gx.expectations.ExpectColumnValuesToNotBeNull
+  - type: "expect_column_values_to_not_be_null"
+    columns:
+      - "MATERIAL_NUMBER"
+      - "Z01_MKT_MTART"
+      - "INDUSTRY_SECTOR"
+      - "BASE_UNIT_OF_MEASURE"
+      - "MATERIAL_GROUP"
+      - "GROSS_WEIGHT"
+      - "NET_WEIGHT"
+      - "WEIGHT_UNIT"
+      - "VOLUME"
+      - "VOLUME_UNIT"
+      - "LAB_OFFICE"
+      - "GLOBAL_PRODUCT_ID"
+      - "SIZE_DIMENSIONS"
+      - "MATERIAL_DESCRIPTION"
+      - "PROFIT_CENTER"
+      - "MRP_TYPE"
+      - "MRP_CONTROLLER"
+      - "PROCUREMENT_TYPE"
+      - "AVAILABILITY_CHECK"
+      - "SPECIAL_PROCUREMENT_TYPE"
+      - "COUNTRY_OF_ORIGIN"
+      - "ABC_INDICATOR"
+      - "MRP_GROUP"
+      - "PRODUCT_HIERARCHY"
+      - "MATERIAL_GROUP_1"
+      - "MATERIAL_GROUP_2"
+      - "MATERIAL_GROUP_3"
+      - "MATERIAL_GROUP_4"
+      - "PRICING_GROUP"
+      - "PRICE_GROUP_CODE"

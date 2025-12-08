@@ -1,0 +1,1071 @@
+"""
+YAML Suite Editor - Form-based editor for creating and editing validation suites.
+
+This page provides a unified form-based interface for:
+- Creating new validation suites from scratch
+- Loading and editing existing YAML suites
+- Adding/removing/editing validation rules through forms
+- Previewing generated YAML
+- Saving YAML validation suites (no Python generation needed)
+"""
+
+import streamlit as st
+import yaml
+from pathlib import Path
+from core.column_cache import get_cached_column_metadata, get_cache_info
+from core.queries import QUERY_REGISTRY
+
+# ----------------------------------------------------
+# Page setup
+# ----------------------------------------------------
+st.set_page_config(page_title="YAML Suite Editor", layout="wide")
+st.title("📝 YAML Suite Editor")
+st.caption("Create new or edit existing validation suites using forms")
+
+# ----------------------------------------------------
+# Constants
+# ----------------------------------------------------
+YAML_DIR = Path("validation_yaml")
+
+# ----------------------------------------------------
+# Sidebar: Column Cache Management
+# ----------------------------------------------------
+with st.sidebar:
+    st.subheader("Column Data Cache")
+    cache_info = get_cache_info()
+
+    if cache_info["exists"]:
+        st.success(f"Cached: {cache_info['column_count']} columns")
+        st.caption(f"Last updated: {cache_info['timestamp_display']}")
+    else:
+        st.warning("No cache available")
+        st.caption("Using fallback column list")
+
+    if st.button("🔄 Refresh Column Data", help="Fetch fresh column data from Snowflake. This may take several minutes."):
+        with st.spinner("Fetching column metadata from Snowflake... This may take 2-3 minutes."):
+            try:
+                # Force refresh from Snowflake
+                get_cached_column_metadata(force_refresh=True)
+                st.success("Column data refreshed!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Failed to refresh: {e}")
+
+    st.divider()
+
+# ----------------------------------------------------
+# Load column metadata (uses file cache, no TTL)
+# ----------------------------------------------------
+# No Streamlit cache - file cache handles persistence
+metadata = get_cached_column_metadata()
+columns = metadata["columns"]
+column_types = metadata["column_types"]
+distinct_values = metadata["distinct_values"]
+
+# ----------------------------------------------------
+# Helper functions
+# ----------------------------------------------------
+def get_yaml_files():
+    """Get all YAML files from the validation_yaml directory."""
+    if not YAML_DIR.exists():
+        return []
+    yaml_files = list(YAML_DIR.glob("*.yaml")) + list(YAML_DIR.glob("*.yml"))
+    return sorted(yaml_files, key=lambda x: x.name)
+
+def load_yaml_file(yaml_path: Path) -> dict:
+    """Load and parse YAML file."""
+    with open(yaml_path, 'r') as f:
+        return yaml.safe_load(f)
+
+def save_yaml_suite(suite_metadata: dict, validations: list) -> bool:
+    """
+    Save YAML validation suite file.
+
+    With the simplified YAML-based validation architecture, we no longer
+    need to generate Python classes. Validators are created dynamically
+    from YAML at runtime using BaseValidationSuite.from_yaml().
+    """
+    suite_name = suite_metadata["suite_name"]
+
+    if not suite_name:
+        st.error("Please enter a suite name")
+        return False
+
+    # Build YAML structure
+    yaml_content = {
+        "metadata": suite_metadata,
+        "validations": validations
+    }
+
+    # Save YAML file
+    yaml_file = YAML_DIR / f"{suite_name}.yaml"
+    yaml_file.parent.mkdir(exist_ok=True)
+
+    try:
+        with open(yaml_file, 'w') as f:
+            yaml.dump(yaml_content, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            f.flush()
+
+        # Verify file was written
+        if yaml_file.exists():
+            file_size = yaml_file.stat().st_size
+            st.success(f"✅ Saved YAML suite: {yaml_file} ({file_size} bytes)")
+            st.info("Validations will run directly from YAML - no Python generation needed.")
+            return True
+        else:
+            st.error(f"❌ File does not exist after write attempt!")
+            return False
+
+    except Exception as e:
+        st.error(f"❌ Error saving YAML file: {e}")
+        return False
+
+
+# Keep old function name as alias for backward compatibility
+save_yaml_and_generate_python = save_yaml_suite
+
+# ----------------------------------------------------
+# Session state initialization
+# ----------------------------------------------------
+if "suite_metadata" not in st.session_state:
+    st.session_state.suite_metadata = {
+        "suite_name": "",
+        "index_column": "MATERIAL_NUMBER",
+        "description": "",
+        "data_source": "get_level_1_dataframe"
+    }
+
+if "validations" not in st.session_state:
+    st.session_state.validations = []
+
+if "current_mode" not in st.session_state:
+    st.session_state.current_mode = "new"  # "new" or "edit"
+
+if "editing_index" not in st.session_state:
+    st.session_state.editing_index = None  # None or index of rule being edited
+
+# ----------------------------------------------------
+# Section 1: Mode Selection
+# ----------------------------------------------------
+st.header("1. Select Mode")
+
+mode = st.radio(
+    "What would you like to do?",
+    options=["Create New Suite", "Edit Existing Suite"],
+    index=0 if st.session_state.current_mode == "new" else 1,
+    horizontal=True
+)
+
+st.session_state.current_mode = "new" if mode == "Create New Suite" else "edit"
+
+# ----------------------------------------------------
+# Section 2: Load Existing Suite (if in edit mode)
+# ----------------------------------------------------
+if st.session_state.current_mode == "edit":
+    st.header("2. Load Existing Suite")
+
+    yaml_files = get_yaml_files()
+
+    if not yaml_files:
+        st.warning("⚠️ No YAML files found in validation_yaml/ directory")
+        st.info("💡 Switch to 'Create New Suite' mode to create your first suite")
+    else:
+        yaml_file_names = [f.name for f in yaml_files]
+
+        selected_file_name = st.selectbox(
+            f"Select a YAML file ({len(yaml_files)} available)",
+            options=yaml_file_names,
+            key="yaml_file_selector"
+        )
+
+        if st.button("📂 Load Suite", type="primary"):
+            selected_yaml_file = YAML_DIR / selected_file_name
+
+            try:
+                data = load_yaml_file(selected_yaml_file)
+
+                # Load into session state
+                st.session_state.suite_metadata = data.get("metadata", {})
+                st.session_state.validations = data.get("validations", [])
+
+                st.success(f"✅ Loaded suite: {selected_file_name}")
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Error loading file: {e}")
+
+# ----------------------------------------------------
+# Section 3: Suite Metadata (only show when creating new suite)
+# ----------------------------------------------------
+if st.session_state.current_mode == "new":
+    st.header("3. Suite Metadata")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        suite_name = st.text_input(
+            "Suite Name",
+            value=st.session_state.suite_metadata.get("suite_name", ""),
+            placeholder="My_Custom_Validation",
+            help="Name of the validation suite (will be used for file naming)",
+            key="suite_name_input"
+        )
+        st.session_state.suite_metadata["suite_name"] = suite_name
+
+        index_column = st.selectbox(
+            "Index Column",
+            options=columns,
+            index=columns.index(st.session_state.suite_metadata.get("index_column", "MATERIAL_NUMBER")) if st.session_state.suite_metadata.get("index_column") in columns else 0,
+            help="Column to use as the index for tracking failures",
+            key="index_column_input"
+        )
+        st.session_state.suite_metadata["index_column"] = index_column
+
+    with col2:
+        description = st.text_area(
+            "Description",
+            value=st.session_state.suite_metadata.get("description", ""),
+            placeholder="Describe what this validation suite validates...",
+            help="Brief description of the validation suite's purpose",
+            height=100,
+            key="description_input"
+        )
+        st.session_state.suite_metadata["description"] = description
+
+        # Available data sources (dynamically loaded from QUERY_REGISTRY)
+        available_data_sources = sorted(list(QUERY_REGISTRY.keys()))
+        current_data_source = st.session_state.suite_metadata.get("data_source", "get_level_1_dataframe")
+
+        # If current data source is not in the list, add it as an option
+        if current_data_source and current_data_source not in available_data_sources:
+            available_data_sources.append(current_data_source)
+
+        # Find the index safely
+        try:
+            current_index = available_data_sources.index(current_data_source)
+        except ValueError:
+            current_index = 0
+
+        data_source = st.selectbox(
+            "Data Source",
+            options=available_data_sources,
+            index=current_index,
+            help="Query function to use for fetching data (from core/queries.py)",
+            key="data_source_input"
+        )
+        st.session_state.suite_metadata["data_source"] = data_source
+else:
+    # In edit mode, allow editing of suite metadata
+    st.header("3. Suite Metadata (Editing)")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Suite name is read-only in edit mode (it's the filename)
+        suite_name = st.session_state.suite_metadata.get("suite_name", "")
+        st.text_input(
+            "Suite Name (read-only)",
+            value=suite_name,
+            disabled=True,
+            help="Suite name cannot be changed in edit mode (rename the file to change it)",
+            key="suite_name_edit_readonly"
+        )
+
+        index_column = st.selectbox(
+            "Index Column",
+            options=columns,
+            index=columns.index(st.session_state.suite_metadata.get("index_column", "MATERIAL_NUMBER")) if st.session_state.suite_metadata.get("index_column") in columns else 0,
+            help="Column to use as the index for tracking failures",
+            key="index_column_edit"
+        )
+        st.session_state.suite_metadata["index_column"] = index_column
+
+    with col2:
+        description = st.text_area(
+            "Description",
+            value=st.session_state.suite_metadata.get("description", ""),
+            placeholder="Describe what this validation suite validates...",
+            help="Brief description of the validation suite's purpose",
+            height=100,
+            key="description_edit"
+        )
+        st.session_state.suite_metadata["description"] = description
+
+        # Available data sources (dynamically loaded from QUERY_REGISTRY)
+        available_data_sources = sorted(list(QUERY_REGISTRY.keys()))
+        current_data_source = st.session_state.suite_metadata.get("data_source", "get_level_1_dataframe")
+
+        # If current data source is not in the list, add it as an option
+        if current_data_source and current_data_source not in available_data_sources:
+            available_data_sources.append(current_data_source)
+
+        # Find the index safely
+        try:
+            current_index = available_data_sources.index(current_data_source)
+        except ValueError:
+            current_index = 0
+
+        data_source = st.selectbox(
+            "Data Source",
+            options=available_data_sources,
+            index=current_index,
+            help="Query function to use for fetching data (from core/queries.py)",
+            key="data_source_edit"
+        )
+        st.session_state.suite_metadata["data_source"] = data_source
+
+    # Delete Suite button
+    st.divider()
+    if st.button("🗑️ Delete This Suite", type="secondary", key="delete_suite_button"):
+        st.session_state.confirm_delete = True
+
+    # Confirmation dialog for delete
+    if st.session_state.get("confirm_delete", False):
+        st.warning("⚠️ Are you sure you want to delete this suite? This cannot be undone!")
+        col_confirm, col_cancel = st.columns(2)
+        with col_confirm:
+            if st.button("✅ Yes, Delete It", type="primary", key="confirm_delete_yes"):
+                yaml_file = YAML_DIR / f"{suite_name}.yaml"
+                if yaml_file.exists():
+                    yaml_file.unlink()
+                    st.success(f"✅ Deleted suite: {suite_name}")
+                    # Reset session state
+                    st.session_state.suite_metadata = {
+                        "suite_name": "",
+                        "index_column": "MATERIAL_NUMBER",
+                        "description": "",
+                        "data_source": "get_level_1_dataframe"
+                    }
+                    st.session_state.validations = []
+                    st.session_state.current_mode = "new"
+                    st.session_state.confirm_delete = False
+                    st.rerun()
+                else:
+                    st.error(f"❌ File not found: {yaml_file}")
+        with col_cancel:
+            if st.button("❌ Cancel", key="confirm_delete_no"):
+                st.session_state.confirm_delete = False
+                st.rerun()
+
+# ----------------------------------------------------
+# Section 4: Add/Edit Validation Rules
+# ----------------------------------------------------
+is_editing = st.session_state.editing_index is not None
+
+if is_editing:
+    st.header("4. Edit Validation Rule")
+    st.info(f"✏️ Editing Rule #{st.session_state.editing_index + 1}")
+
+    # Load the rule being edited
+    editing_rule = st.session_state.validations[st.session_state.editing_index]
+    default_type = editing_rule.get("type", "expect_column_values_to_not_be_null")
+
+    # Cancel edit button
+    if st.button("❌ Cancel Edit", key="cancel_edit"):
+        st.session_state.editing_index = None
+        st.rerun()
+else:
+    st.header("4. Add Validation Rules")
+    editing_rule = None
+    default_type = "expect_column_values_to_not_be_null"
+
+EXPECTATION_OPTIONS = [
+    "expect_column_values_to_not_be_null",
+    "expect_column_values_to_be_in_set",
+    "expect_column_values_to_not_be_in_set",
+    "expect_column_values_to_match_regex",
+    "expect_column_values_to_not_match_regex",
+    "expect_column_value_lengths_to_equal",
+    "expect_column_value_lengths_to_be_between",
+    "expect_column_values_to_be_between",
+    "expect_column_values_to_be_unique",
+    "expect_compound_columns_to_be_unique",
+    "expect_column_pair_values_a_to_be_greater_than_b",
+    "expect_column_pair_values_to_be_equal"
+]
+
+validation_type = st.selectbox(
+    "Validation Type",
+    options=EXPECTATION_OPTIONS,
+    index=EXPECTATION_OPTIONS.index(default_type) if default_type in EXPECTATION_OPTIONS else 0,
+    help="Select the type of validation expectation",
+    key="validation_type_selector"
+)
+
+st.subheader(f"Configure: {validation_type}")
+
+# --- NOT NULL ---
+if validation_type == "expect_column_values_to_not_be_null":
+    # Pre-populate if editing
+    default_columns = editing_rule.get("columns", []) if is_editing and editing_rule else []
+
+    # Use unique key for edit mode to force re-initialization
+    widget_key = f"not_null_columns_edit_{st.session_state.editing_index}" if is_editing else "not_null_columns"
+
+    selected_columns = st.multiselect(
+        "Select columns that must not be null",
+        options=columns,
+        default=default_columns,
+        help="Choose one or more columns to check for null values",
+        key=widget_key
+    )
+
+    button_label = "Update Rule" if is_editing else "Add Not Null Rule"
+    if st.button(button_label, key="add_not_null"):
+        if selected_columns:
+            rule = {
+                "type": validation_type,
+                "columns": selected_columns
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated not null check for {len(selected_columns)} column(s)")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added not null check for {len(selected_columns)} column(s)")
+            st.rerun()
+        else:
+            st.error("Please select at least one column")
+
+# --- VALUE IN SET ---
+elif validation_type == "expect_column_values_to_be_in_set":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        rules_dict = editing_rule.get("rules", {})
+        default_column = list(rules_dict.keys())[0] if rules_dict else columns[0]
+        default_values = rules_dict.get(default_column, [])
+    else:
+        default_column = columns[0]
+        default_values = []
+
+    col_key = f"value_in_set_column_edit_{st.session_state.editing_index}" if is_editing else "value_in_set_column"
+    selected_column = st.selectbox(
+        "Select Column",
+        options=columns,
+        index=columns.index(default_column) if default_column in columns else 0,
+        key=col_key
+    )
+
+    if selected_column in distinct_values:
+        st.info(f"📊 Available values for {selected_column}")
+        values_key = f"value_in_set_values_edit_{st.session_state.editing_index}" if is_editing else "value_in_set_values"
+        allowed_values = st.multiselect(
+            "Select allowed values",
+            options=distinct_values[selected_column],
+            default=[v for v in default_values if v in distinct_values[selected_column]],
+            help="Choose which values are valid for this column",
+            key=values_key
+        )
+    else:
+        default_text = "\n".join(str(v) for v in default_values) if default_values else ""
+        text_key = f"value_in_set_text_edit_{st.session_state.editing_index}" if is_editing else "value_in_set_text"
+        allowed_values_text = st.text_area(
+            "Enter allowed values (one per line)",
+            value=default_text,
+            placeholder="Value1\nValue2\nValue3",
+            help="Enter allowed values, one per line",
+            key=text_key
+        )
+        allowed_values = [line.strip() for line in allowed_values_text.split('\n') if line.strip()]
+
+        # Try to convert to numbers
+        converted_values = []
+        for val in allowed_values:
+            try:
+                converted_values.append(int(val))
+            except ValueError:
+                try:
+                    converted_values.append(float(val))
+                except ValueError:
+                    converted_values.append(val)
+        allowed_values = converted_values
+
+    button_label = "Update Rule" if is_editing else "Add Value In Set Rule"
+    if st.button(button_label, key="add_value_in_set"):
+        if allowed_values:
+            rule = {
+                "type": validation_type,
+                "rules": {selected_column: allowed_values}
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated value_in_set rule for {selected_column}")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added value_in_set rule for {selected_column}")
+            st.rerun()
+        else:
+            st.error("Please specify at least one allowed value")
+
+# --- VALUE NOT IN SET ---
+elif validation_type == "expect_column_values_to_not_be_in_set":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        default_column = editing_rule.get("column", columns[0])
+        default_excluded = editing_rule.get("value_set", [])
+        default_text = ", ".join(str(v) for v in default_excluded)
+    else:
+        default_column = columns[0]
+        default_text = ""
+
+    col_key = f"value_not_in_set_column_edit_{st.session_state.editing_index}" if is_editing else "value_not_in_set_column"
+    selected_column = st.selectbox(
+        "Select Column",
+        options=columns,
+        index=columns.index(default_column) if default_column in columns else 0,
+        key=col_key
+    )
+
+    text_key = f"value_not_in_set_text_edit_{st.session_state.editing_index}" if is_editing else "value_not_in_set_text"
+    excluded_values_text = st.text_input(
+        "Enter excluded values (comma-separated)",
+        value=default_text,
+        placeholder="UNDEFINED, INVALID, N/A",
+        help="Values that should NOT appear in this column",
+        key=text_key
+    )
+    excluded_values = [val.strip() for val in excluded_values_text.split(',') if val.strip()]
+
+    button_label = "Update Rule" if is_editing else "Add Value Not In Set Rule"
+    if st.button(button_label, key="add_value_not_in_set"):
+        if excluded_values:
+            rule = {
+                "type": validation_type,
+                "column": selected_column,
+                "value_set": excluded_values
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated value_not_in_set rule for {selected_column}")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added value_not_in_set rule for {selected_column}")
+            st.rerun()
+        else:
+            st.error("Please specify at least one excluded value")
+
+# --- REGEX MATCH ---
+elif validation_type == "expect_column_values_to_match_regex":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        default_columns = editing_rule.get("columns", [])
+        default_regex = editing_rule.get("regex", "")
+    else:
+        default_columns = []
+        default_regex = ""
+
+    cols_key = f"regex_columns_edit_{st.session_state.editing_index}" if is_editing else "regex_columns"
+    selected_columns = st.multiselect(
+        "Select columns to validate with regex",
+        options=columns,
+        default=default_columns,
+        help="Choose columns that must match the pattern",
+        key=cols_key
+    )
+
+    pattern_key = f"regex_pattern_edit_{st.session_state.editing_index}" if is_editing else "regex_pattern"
+    regex_pattern = st.text_input(
+        "Regular Expression Pattern",
+        value=default_regex,
+        placeholder="^\\d{8}$",
+        help="Enter a regex pattern",
+        key=pattern_key
+    )
+
+    st.caption("Common patterns: `^\\s*$` (blank), `^\\d{8}$` (8 digits), `^[A-Z]{2,3}$` (2-3 letters)")
+
+    button_label = "Update Rule" if is_editing else "Add Regex Match Rule"
+    if st.button(button_label, key="add_regex"):
+        if selected_columns and regex_pattern:
+            rule = {
+                "type": validation_type,
+                "columns": selected_columns,
+                "regex": regex_pattern
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated regex match rule for {len(selected_columns)} column(s)")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added regex match rule for {len(selected_columns)} column(s)")
+            st.rerun()
+        else:
+            st.error("Please select columns and enter a regex pattern")
+
+# --- COLUMN COMPARISON ---
+elif validation_type == "expect_column_pair_values_a_to_be_greater_than_b":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        default_col_a = editing_rule.get("column_a", columns[0])
+        default_col_b = editing_rule.get("column_b", columns[1] if len(columns) > 1 else columns[0])
+        default_or_equal = editing_rule.get("or_equal", True)
+    else:
+        default_col_a = columns[0]
+        default_col_b = columns[1] if len(columns) > 1 else columns[0]
+        default_or_equal = True
+
+    col1, col2 = st.columns(2)
+
+    col_a_key = f"comp_col_a_edit_{st.session_state.editing_index}" if is_editing else "comp_col_a"
+    col_b_key = f"comp_col_b_edit_{st.session_state.editing_index}" if is_editing else "comp_col_b"
+    or_equal_key = f"comp_or_equal_edit_{st.session_state.editing_index}" if is_editing else "comp_or_equal"
+
+    with col1:
+        column_a = st.selectbox(
+            "Column A (left side)",
+            options=columns,
+            index=columns.index(default_col_a) if default_col_a in columns else 0,
+            key=col_a_key
+        )
+
+    with col2:
+        column_b = st.selectbox(
+            "Column B (right side)",
+            options=columns,
+            index=columns.index(default_col_b) if default_col_b in columns else 0,
+            key=col_b_key
+        )
+
+    or_equal = st.checkbox("Allow equal values (>=)", value=default_or_equal, key=or_equal_key)
+
+    button_label = "Update Rule" if is_editing else "Add Column Comparison Rule"
+    if st.button(button_label, key="add_comparison"):
+        if column_a != column_b:
+            rule = {
+                "type": validation_type,
+                "column_a": column_a,
+                "column_b": column_b,
+                "or_equal": or_equal
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                operator = ">=" if or_equal else ">"
+                st.success(f"✅ Updated rule: {column_a} {operator} {column_b}")
+            else:
+                st.session_state.validations.append(rule)
+                operator = ">=" if or_equal else ">"
+                st.success(f"✅ Added rule: {column_a} {operator} {column_b}")
+            st.rerun()
+        else:
+            st.error("Please select different columns")
+
+# --- COLUMN EQUALITY ---
+elif validation_type == "expect_column_pair_values_to_be_equal":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        default_col_a = editing_rule.get("column_a", columns[0])
+        default_col_b = editing_rule.get("column_b", columns[1] if len(columns) > 1 else columns[0])
+    else:
+        default_col_a = columns[0]
+        default_col_b = columns[1] if len(columns) > 1 else columns[0]
+
+    col1, col2 = st.columns(2)
+
+    col_a_key = f"eq_col_a_edit_{st.session_state.editing_index}" if is_editing else "eq_col_a"
+    col_b_key = f"eq_col_b_edit_{st.session_state.editing_index}" if is_editing else "eq_col_b"
+
+    with col1:
+        column_a = st.selectbox(
+            "Column A",
+            options=columns,
+            index=columns.index(default_col_a) if default_col_a in columns else 0,
+            key=col_a_key
+        )
+
+    with col2:
+        column_b = st.selectbox(
+            "Column B",
+            options=columns,
+            index=columns.index(default_col_b) if default_col_b in columns else 0,
+            key=col_b_key
+        )
+
+    button_label = "Update Rule" if is_editing else "Add Column Equality Rule"
+    if st.button(button_label, key="add_equality"):
+        if column_a != column_b:
+            rule = {
+                "type": validation_type,
+                "column_a": column_a,
+                "column_b": column_b
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated rule: {column_a} must equal {column_b}")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added rule: {column_a} must equal {column_b}")
+            st.rerun()
+        else:
+            st.error("Please select different columns")
+
+# --- REGEX NOT MATCH ---
+elif validation_type == "expect_column_values_to_not_match_regex":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        default_columns = editing_rule.get("columns", [])
+        default_regex = editing_rule.get("regex", "")
+    else:
+        default_columns = []
+        default_regex = ""
+
+    cols_key = f"not_regex_columns_edit_{st.session_state.editing_index}" if is_editing else "not_regex_columns"
+    selected_columns = st.multiselect(
+        "Select columns to validate (values must NOT match pattern)",
+        options=columns,
+        default=default_columns,
+        help="Choose columns that must NOT match the exclusion pattern",
+        key=cols_key
+    )
+
+    pattern_key = f"not_regex_pattern_edit_{st.session_state.editing_index}" if is_editing else "not_regex_pattern"
+    regex_pattern = st.text_input(
+        "Regular Expression Pattern (exclusion)",
+        value=default_regex,
+        placeholder="^TEMP.*|^TEST.*",
+        help="Enter a regex pattern to exclude",
+        key=pattern_key
+    )
+
+    st.caption("Common patterns: `^TEMP.*` (starts with TEMP), `^TEST.*` (starts with TEST)")
+
+    button_label = "Update Rule" if is_editing else "Add Regex Exclusion Rule"
+    if st.button(button_label, key="add_not_regex"):
+        if selected_columns and regex_pattern:
+            rule = {
+                "type": validation_type,
+                "columns": selected_columns,
+                "regex": regex_pattern
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated regex exclusion rule for {len(selected_columns)} column(s)")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added regex exclusion rule for {len(selected_columns)} column(s)")
+            st.rerun()
+        else:
+            st.error("Please select columns and enter a regex pattern")
+
+# --- VALUE LENGTH EQUALS ---
+elif validation_type == "expect_column_value_lengths_to_equal":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        default_columns = editing_rule.get("columns", [])
+        default_length = editing_rule.get("value", 0)
+    else:
+        default_columns = []
+        default_length = 8
+
+    cols_key = f"length_equal_columns_edit_{st.session_state.editing_index}" if is_editing else "length_equal_columns"
+    selected_columns = st.multiselect(
+        "Select columns with fixed-length values",
+        options=columns,
+        default=default_columns,
+        help="Choose columns where all values must have the same length",
+        key=cols_key
+    )
+
+    value_key = f"length_equal_value_edit_{st.session_state.editing_index}" if is_editing else "length_equal_value"
+    value_length = st.number_input(
+        "Required Length",
+        min_value=1,
+        max_value=1000,
+        value=default_length,
+        help="The exact length all values must have",
+        key=value_key
+    )
+
+    button_label = "Update Rule" if is_editing else "Add Fixed Length Rule"
+    if st.button(button_label, key="add_length_equal"):
+        if selected_columns:
+            rule = {
+                "type": validation_type,
+                "columns": selected_columns,
+                "value": value_length
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated length={value_length} rule for {len(selected_columns)} column(s)")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added length={value_length} rule for {len(selected_columns)} column(s)")
+            st.rerun()
+        else:
+            st.error("Please select at least one column")
+
+# --- VALUE LENGTH BETWEEN ---
+elif validation_type == "expect_column_value_lengths_to_be_between":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        default_columns = editing_rule.get("columns", [])
+        default_min = editing_rule.get("min_value", 1)
+        default_max = editing_rule.get("max_value", 100)
+    else:
+        default_columns = []
+        default_min = 1
+        default_max = 100
+
+    cols_key = f"length_between_columns_edit_{st.session_state.editing_index}" if is_editing else "length_between_columns"
+    selected_columns = st.multiselect(
+        "Select columns with variable-length values",
+        options=columns,
+        default=default_columns,
+        help="Choose columns where values must have length within a range",
+        key=cols_key
+    )
+
+    col1, col2 = st.columns(2)
+    min_key = f"length_between_min_edit_{st.session_state.editing_index}" if is_editing else "length_between_min"
+    max_key = f"length_between_max_edit_{st.session_state.editing_index}" if is_editing else "length_between_max"
+    with col1:
+        min_length = st.number_input(
+            "Minimum Length",
+            min_value=0,
+            max_value=10000,
+            value=default_min,
+            key=min_key
+        )
+    with col2:
+        max_length = st.number_input(
+            "Maximum Length",
+            min_value=0,
+            max_value=10000,
+            value=default_max,
+            key=max_key
+        )
+
+    button_label = "Update Rule" if is_editing else "Add Length Range Rule"
+    if st.button(button_label, key="add_length_between"):
+        if selected_columns and min_length <= max_length:
+            rule = {
+                "type": validation_type,
+                "columns": selected_columns,
+                "min_value": min_length,
+                "max_value": max_length
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated length between [{min_length}, {max_length}] for {len(selected_columns)} column(s)")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added length between [{min_length}, {max_length}] for {len(selected_columns)} column(s)")
+            st.rerun()
+        else:
+            if not selected_columns:
+                st.error("Please select at least one column")
+            else:
+                st.error("Minimum length must be <= maximum length")
+
+# --- VALUE BETWEEN (numeric) ---
+elif validation_type == "expect_column_values_to_be_between":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        default_columns = editing_rule.get("columns", [])
+        default_min = editing_rule.get("min_value", 0)
+        default_max = editing_rule.get("max_value", 100)
+    else:
+        default_columns = []
+        default_min = 0.0
+        default_max = 100.0
+
+    cols_key = f"value_between_columns_edit_{st.session_state.editing_index}" if is_editing else "value_between_columns"
+    selected_columns = st.multiselect(
+        "Select numeric columns",
+        options=columns,
+        default=default_columns,
+        help="Choose numeric columns where values must be within a range",
+        key=cols_key
+    )
+
+    col1, col2 = st.columns(2)
+    min_key = f"value_between_min_edit_{st.session_state.editing_index}" if is_editing else "value_between_min"
+    max_key = f"value_between_max_edit_{st.session_state.editing_index}" if is_editing else "value_between_max"
+    with col1:
+        min_value = st.number_input(
+            "Minimum Value",
+            value=float(default_min),
+            format="%.2f",
+            key=min_key
+        )
+    with col2:
+        max_value = st.number_input(
+            "Maximum Value",
+            value=float(default_max),
+            format="%.2f",
+            key=max_key
+        )
+
+    button_label = "Update Rule" if is_editing else "Add Numeric Range Rule"
+    if st.button(button_label, key="add_value_between"):
+        if selected_columns and min_value <= max_value:
+            rule = {
+                "type": validation_type,
+                "columns": selected_columns,
+                "min_value": min_value,
+                "max_value": max_value
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated value between [{min_value}, {max_value}] for {len(selected_columns)} column(s)")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added value between [{min_value}, {max_value}] for {len(selected_columns)} column(s)")
+            st.rerun()
+        else:
+            if not selected_columns:
+                st.error("Please select at least one column")
+            else:
+                st.error("Minimum value must be <= maximum value")
+
+# --- UNIQUE VALUES ---
+elif validation_type == "expect_column_values_to_be_unique":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        default_columns = editing_rule.get("columns", [])
+    else:
+        default_columns = []
+
+    cols_key = f"unique_columns_edit_{st.session_state.editing_index}" if is_editing else "unique_columns"
+    selected_columns = st.multiselect(
+        "Select columns that must have unique values (no duplicates)",
+        options=columns,
+        default=default_columns,
+        help="Each value in these columns must appear only once",
+        key=cols_key
+    )
+
+    button_label = "Update Rule" if is_editing else "Add Uniqueness Rule"
+    if st.button(button_label, key="add_unique"):
+        if selected_columns:
+            rule = {
+                "type": validation_type,
+                "columns": selected_columns
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated uniqueness rule for {len(selected_columns)} column(s)")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added uniqueness rule for {len(selected_columns)} column(s)")
+            st.rerun()
+        else:
+            st.error("Please select at least one column")
+
+# --- COMPOUND UNIQUE ---
+elif validation_type == "expect_compound_columns_to_be_unique":
+    # Pre-populate if editing
+    if is_editing and editing_rule:
+        default_columns = editing_rule.get("column_list", [])
+    else:
+        default_columns = []
+
+    cols_key = f"compound_unique_columns_edit_{st.session_state.editing_index}" if is_editing else "compound_unique_columns"
+    selected_columns = st.multiselect(
+        "Select columns that form a composite key",
+        options=columns,
+        default=default_columns,
+        help="The combination of these columns must be unique (composite key)",
+        key=cols_key
+    )
+
+    st.info("💡 This checks that the combination of selected columns is unique (like a composite primary key)")
+
+    button_label = "Update Rule" if is_editing else "Add Composite Uniqueness Rule"
+    if st.button(button_label, key="add_compound_unique"):
+        if len(selected_columns) >= 2:
+            rule = {
+                "type": validation_type,
+                "column_list": selected_columns
+            }
+            if is_editing:
+                st.session_state.validations[st.session_state.editing_index] = rule
+                st.session_state.editing_index = None
+                st.success(f"✅ Updated composite key uniqueness for {len(selected_columns)} columns")
+            else:
+                st.session_state.validations.append(rule)
+                st.success(f"✅ Added composite key uniqueness for {len(selected_columns)} columns")
+            st.rerun()
+        else:
+            st.error("Please select at least 2 columns for a composite key")
+
+# ----------------------------------------------------
+# Section 5: Current Validation Rules
+# ----------------------------------------------------
+st.header("5. Current Validation Rules")
+
+if st.session_state.validations:
+    st.success(f"📋 {len(st.session_state.validations)} validation rule(s) configured")
+
+    for idx, validation in enumerate(st.session_state.validations):
+        with st.expander(f"Rule {idx + 1}: {validation['type']}", expanded=False):
+            st.json(validation)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"✏️ Edit Rule {idx + 1}", key=f"edit_{idx}"):
+                    st.session_state.editing_index = idx
+                    st.rerun()
+            with col2:
+                if st.button(f"🗑️ Remove Rule {idx + 1}", key=f"remove_{idx}"):
+                    st.session_state.validations.pop(idx)
+                    # Reset editing if we were editing this rule
+                    if st.session_state.editing_index == idx:
+                        st.session_state.editing_index = None
+                    # Adjust editing index if we removed a rule before the one being edited
+                    elif st.session_state.editing_index and st.session_state.editing_index > idx:
+                        st.session_state.editing_index -= 1
+                    st.rerun()
+
+    if st.button("🗑️ Clear All Rules", key="clear_all"):
+        st.session_state.validations = []
+        st.session_state.editing_index = None
+        st.rerun()
+else:
+    st.info("No validation rules added yet. Use the form above to add rules.")
+
+# ----------------------------------------------------
+# Section 6: YAML Preview & Save
+# ----------------------------------------------------
+st.header("6. YAML Preview & Save")
+
+if st.session_state.suite_metadata["suite_name"]:
+    # Generate YAML preview
+    yaml_content = yaml.dump({
+        "metadata": st.session_state.suite_metadata,
+        "validations": st.session_state.validations
+    }, default_flow_style=False, sort_keys=False, allow_unicode=True)
+
+    st.code(yaml_content, language="yaml")
+
+    # Save button
+    col1, col2 = st.columns([3, 1])
+
+    with col1:
+        if st.button("💾 Save Suite (YAML + Generate Python)", type="primary", key="save_suite"):
+            if save_yaml_and_generate_python(st.session_state.suite_metadata, st.session_state.validations):
+                st.balloons()
+                st.info("🎉 Suite saved successfully! You can now use it in validations.")
+
+    with col2:
+        if st.button("🔄 Clear Form", key="clear_form"):
+            st.session_state.suite_metadata = {
+                "suite_name": "",
+                "index_column": "MATERIAL_NUMBER",
+                "description": "",
+                "data_source": "get_level_1_dataframe"
+            }
+            st.session_state.validations = []
+            st.rerun()
+
+else:
+    st.warning("⚠️ Please enter a suite name in Section 3 to preview and save")

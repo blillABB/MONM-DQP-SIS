@@ -1,0 +1,92 @@
+# Aurora Motors Validation Suite
+# Reverse-engineered from validations/aurora_validation.py
+# Aligned with GX Expectations Gallery naming conventions
+
+metadata:
+  suite_name: "Aurora_Motors_Validation"
+  index_column: "MATERIAL_NUMBER"
+  description: "Validation expectations specific to Aurora Motors product data"
+  data_source: "get_aurora_motor_dataframe"  # Query function from core/queries.py
+
+validations:
+  # --- Null checks ---
+  # Maps to: gx.expectations.ExpectColumnValuesToNotBeNull
+  - type: "expect_column_values_to_not_be_null"
+    columns:
+      - "GROSS_WEIGHT"
+      - "NET_WEIGHT"
+      - "GLOBAL_PRODUCT_ID"
+      - "SIZE_DIMENSIONS"
+      - "PROFIT_CENTER"
+      - "HTS_CODE"
+      - "EAN_NUMBER"
+      - "STANDARD_PRICE"
+
+  # --- Column pair comparison: GROSS_WEIGHT >= NET_WEIGHT ---
+  # Maps to: gx.expectations.ExpectColumnPairValuesAToBeGreaterThanB
+  - type: "expect_column_pair_values_a_to_be_greater_than_b"
+    column_a: "GROSS_WEIGHT"
+    column_b: "NET_WEIGHT"
+    or_equal: true
+
+  # --- Value not in set ---
+  # Maps to: gx.expectations.ExpectColumnValuesToNotBeInSet
+  - type: "expect_column_values_to_not_be_in_set"
+    column: "PROFIT_CENTER"
+    value_set:
+      - "UNDEFINED"
+
+  # --- Regex match (blank values) ---
+  # Maps to: gx.expectations.ExpectColumnValuesToMatchRegex
+  - type: "expect_column_values_to_match_regex"
+    columns:
+      - "PACK_INDICATOR"
+      - "PURCHASING_VALUE_GROUP"
+      - "AUTOMATIC_PO"
+      - "PHYSICAL_INVENTORY_INDICATOR"
+    regex: "^\\s*$"  # Match blank/whitespace-only values
+
+  # --- Fixed value expectations (value in set) ---
+  # Maps to: gx.expectations.ExpectColumnValuesToBeInSet
+  - type: "expect_column_values_to_be_in_set"
+    rules:
+      "Z01_MKT_MTART": ["CAT"]
+      "INDUSTRY_SECTOR": ["M"]
+      "ITEM_CATEGORY_GROUP": ["NORM"]
+      "BASE_UNIT_OF_MEASURE": ["EA"]
+      "MATERIAL_GROUP": ["3HT"]
+      "WEIGHT_UNIT": ["LB"]
+      "TOTAL_SHELF_LIFE_DAYS": [0]
+      "LAB_OFFICE": ["049"]
+      "MRP_TYPE": ["P3"]
+      "SERIAL_NUMBER_PROFILE": ["ZVM1"]
+      "MRP_CONTROLLER": ["AUR"]
+      "PROCUREMENT_TYPE": ["F"]
+      "PURCHASING_GROUP": ["AUR"]
+      "AVAILABILITY_CHECK": ["Z1"]
+      "LOADING_GROUP": ["0001"]
+      "SPECIAL_PROCUREMENT_TYPE": ["RP"]
+      "PLANNED_DELIVERY_TIME": [90]
+      "IN_HOUSE_PRODUCTION_TIME": [0]
+      "PLANNING_TIME_FENCE": ["020"]
+      "MINIMUM_LOT_SIZE": [1]
+      "COUNTRY_OF_ORIGIN": ["CN"]
+      "BATCH_MANAGEMENT": ["X"]
+      "ABC_INDICATOR": ["S"]
+      "GOODS_RECEIPT_TIME": [5]
+      "MRP_GROUP": ["0000"]
+      "MATERIAL_GROUP_1": ["CUS"]
+      "MATERIAL_GROUP_2": ["MTR"]
+      "MATERIAL_GROUP_3": ["3PH"]
+      "MATERIAL_GROUP_4": ["END"]
+      "DELIVERING_PLANT": ["00A"]
+      "PRICING_GROUP": ["AM"]
+      "CASH_DISCOUNT": ["X"]
+      "OMS_FLAG": ["Y"]
+      "VALUATION_CLASS": ["7920"]
+
+  # --- Column pair equality check ---
+  # Maps to: gx.expectations.ExpectColumnPairValuesToBeEqual
+  - type: "expect_column_pair_values_to_be_equal"
+    column_a: "ITEM_CATEGORY_GROUP"
+    column_b: "SALES_ITEM_CATEGORY_GROUP"

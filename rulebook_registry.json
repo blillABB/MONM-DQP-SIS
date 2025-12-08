@@ -1,0 +1,493 @@
+{
+    "ABB_Shop": {
+        "expect_column_values_to_not_be_null": [
+            {
+                "added_on": "2025-11-25",
+                "column": "ABP_DSTR_OUTPUT"
+            },
+            {
+                "added_on": "2025-11-25",
+                "column": "ABP_DSTR_SSPEED"
+            },
+            {
+                "added_on": "2025-11-25",
+                "column": "ABP_DSTR_VOLTAGE"
+            },
+            {
+                "added_on": "2025-11-25",
+                "column": "ABP_DSTR_FREQUENCY"
+            }
+        ],
+        "expect_column_values_to_be_in_set": [
+            {
+                "added_on": "2025-11-25",
+                "column": "OMS_FLAG",
+                "value_set": [
+                    "Y"
+                ]
+            }
+        ]
+    },
+    "Aurora_Motors_Validation": {
+        "expect_column_values_to_not_be_null": [
+            {
+                "added_on": "2025-11-26",
+                "column": "GROSS_WEIGHT"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "NET_WEIGHT"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "GLOBAL_PRODUCT_ID"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "SIZE_DIMENSIONS"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PROFIT_CENTER"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "HTS_CODE"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "EAN_NUMBER"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "STANDARD_PRICE"
+            }
+        ],
+        "expect_column_pair_values_a_to_be_greater_than_b": [
+            {
+                "added_on": "2025-11-26",
+                "columns": [
+                    "GROSS_WEIGHT",
+                    "NET_WEIGHT"
+                ],
+                "or_equal": true
+            }
+        ],
+        "expect_column_values_to_not_be_in_set": [
+            {
+                "added_on": "2025-11-26",
+                "column": "PROFIT_CENTER",
+                "value_set": [
+                    "UNDEFINED"
+                ]
+            }
+        ],
+        "expect_column_values_to_match_regex": [
+            {
+                "added_on": "2025-11-26",
+                "column": "PACK_INDICATOR",
+                "regex": "^\\s*$"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PURCHASING_VALUE_GROUP",
+                "regex": "^\\s*$"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "AUTOMATIC_PO",
+                "regex": "^\\s*$"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PHYSICAL_INVENTORY_INDICATOR",
+                "regex": "^\\s*$"
+            }
+        ],
+        "expect_column_values_to_be_in_set": [
+            {
+                "added_on": "2025-11-26",
+                "column": "Z01_MKT_MTART",
+                "value_set": [
+                    "CAT"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "INDUSTRY_SECTOR",
+                "value_set": [
+                    "M"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "ITEM_CATEGORY_GROUP",
+                "value_set": [
+                    "NORM"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "BASE_UNIT_OF_MEASURE",
+                "value_set": [
+                    "EA"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_GROUP",
+                "value_set": [
+                    "3HT"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "WEIGHT_UNIT",
+                "value_set": [
+                    "LB"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "TOTAL_SHELF_LIFE_DAYS",
+                "value_set": [
+                    0
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "LAB_OFFICE",
+                "value_set": [
+                    "049"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MRP_TYPE",
+                "value_set": [
+                    "P3"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "SERIAL_NUMBER_PROFILE",
+                "value_set": [
+                    "ZVM1"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MRP_CONTROLLER",
+                "value_set": [
+                    "AUR"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PROCUREMENT_TYPE",
+                "value_set": [
+                    "F"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PURCHASING_GROUP",
+                "value_set": [
+                    "AUR"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "AVAILABILITY_CHECK",
+                "value_set": [
+                    "Z1"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "LOADING_GROUP",
+                "value_set": [
+                    "0001"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "SPECIAL_PROCUREMENT_TYPE",
+                "value_set": [
+                    "RP"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PLANNED_DELIVERY_TIME",
+                "value_set": [
+                    90
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "IN_HOUSE_PRODUCTION_TIME",
+                "value_set": [
+                    0
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PLANNING_TIME_FENCE",
+                "value_set": [
+                    "020"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MINIMUM_LOT_SIZE",
+                "value_set": [
+                    1
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "COUNTRY_OF_ORIGIN",
+                "value_set": [
+                    "CN"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "BATCH_MANAGEMENT",
+                "value_set": [
+                    "X"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "ABC_INDICATOR",
+                "value_set": [
+                    "S"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "GOODS_RECEIPT_TIME",
+                "value_set": [
+                    5
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MRP_GROUP",
+                "value_set": [
+                    "0000"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_GROUP_1",
+                "value_set": [
+                    "CUS"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_GROUP_2",
+                "value_set": [
+                    "MTR"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_GROUP_3",
+                "value_set": [
+                    "3PH"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_GROUP_4",
+                "value_set": [
+                    "END"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "DELIVERING_PLANT",
+                "value_set": [
+                    "00A"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PRICING_GROUP",
+                "value_set": [
+                    "AM"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "CASH_DISCOUNT",
+                "value_set": [
+                    "X"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "OMS_FLAG",
+                "value_set": [
+                    "Y"
+                ]
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "VALUATION_CLASS",
+                "value_set": [
+                    "7920"
+                ]
+            }
+        ],
+        "expect_column_pair_values_to_be_equal": [
+            {
+                "added_on": "2025-11-26",
+                "columns": [
+                    "ITEM_CATEGORY_GROUP",
+                    "SALES_ITEM_CATEGORY_GROUP"
+                ]
+            }
+        ]
+    },
+    "Level_1_Validation": {
+        "expect_column_values_to_not_be_null": [
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_NUMBER"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "Z01_MKT_MTART"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "INDUSTRY_SECTOR"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "BASE_UNIT_OF_MEASURE"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_GROUP"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "GROSS_WEIGHT"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "NET_WEIGHT"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "WEIGHT_UNIT"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "VOLUME"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "VOLUME_UNIT"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "LAB_OFFICE"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "GLOBAL_PRODUCT_ID"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "SIZE_DIMENSIONS"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_DESCRIPTION"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PROFIT_CENTER"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MRP_TYPE"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MRP_CONTROLLER"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PROCUREMENT_TYPE"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "AVAILABILITY_CHECK"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "SPECIAL_PROCUREMENT_TYPE"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "COUNTRY_OF_ORIGIN"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "ABC_INDICATOR"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MRP_GROUP"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PRODUCT_HIERARCHY"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_GROUP_1"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_GROUP_2"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_GROUP_3"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "MATERIAL_GROUP_4"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PRICING_GROUP"
+            },
+            {
+                "added_on": "2025-11-26",
+                "column": "PRICE_GROUP_CODE"
+            }
+        ]
+    },
+    "testing": {
+        "expect_column_values_to_not_be_null": [
+            {
+                "added_on": "2025-12-02",
+                "column": "SALES_ORGANIZATION"
+            },
+            {
+                "added_on": "2025-12-02",
+                "column": "PLANT"
+            }
+        ]
+    }
+}
