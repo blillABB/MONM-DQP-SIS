@@ -86,6 +86,7 @@ def load_or_run_validation(suite_config):
     suite_key = suite_config["suite_key"]
     session_key = f"{suite_key}_results"
     session_materials_key = f"{suite_key}_validated_materials"
+    session_df_key = f"{suite_key}_full_results_df"
     session_date_key = f"{suite_key}_data_date"
     today = date.today().isoformat()
 
@@ -99,12 +100,14 @@ def load_or_run_validation(suite_config):
             print(f"✅ Using session state results for {suite_key} (from today)", flush=True)
             return {
                 "results": st.session_state[session_key],
-                "validated_materials": st.session_state.get(session_materials_key, [])
+                "validated_materials": st.session_state.get(session_materials_key, []),
+                "full_results_df": st.session_state.get(session_df_key),
             }
         else:
             print(f"⚠️ Session state for {suite_key} is stale (from {cached_date}), clearing...", flush=True)
             st.session_state.pop(session_key, None)
             st.session_state.pop(session_materials_key, None)
+            st.session_state.pop(session_df_key, None)
             st.session_state.pop(session_date_key, None)
     else:
         print(f"📦 DEBUG: No session state found for {session_key}", flush=True)
@@ -150,6 +153,7 @@ def load_or_run_validation(suite_config):
 
             results = payload.get("results", []) if isinstance(payload, dict) else payload
             validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
+            full_results_df = payload.get("full_results_df") if isinstance(payload, dict) else None
 
             print(f"📦 DEBUG: Validation returned {len(results) if results else 0} results", flush=True)
             print(f"📦 DEBUG: Validation processed {len(validated_materials)} materials", flush=True)
@@ -159,6 +163,7 @@ def load_or_run_validation(suite_config):
                 print(f"📦 DEBUG: Saving to session state key={session_key}", flush=True)
                 st.session_state[session_key] = results
                 st.session_state[session_materials_key] = validated_materials
+                st.session_state[session_df_key] = full_results_df
                 st.session_state[session_date_key] = today
                 print(f"📦 DEBUG: Calling save_cached_results for suite_key={suite_key}", flush=True)
                 save_cached_results(suite_key, results, validated_materials)
@@ -166,7 +171,7 @@ def load_or_run_validation(suite_config):
             else:
                 print(f"⚠️ Validation returned None for {suite_key}", flush=True)
     placeholder.empty()
-    return {"results": results, "validated_materials": validated_materials}
+    return {"results": results, "validated_materials": validated_materials, "full_results_df": full_results_df}
 
 
 # Handle cache clear request
@@ -175,6 +180,7 @@ with st.sidebar:
         clear_cache(suite_config["suite_key"])
         st.session_state.pop(f"{suite_config['suite_key']}_results", None)
         st.session_state.pop(f"{suite_config['suite_key']}_validated_materials", None)
+        st.session_state.pop(f"{suite_config['suite_key']}_full_results_df", None)
         st.session_state.pop(f"{suite_config['suite_key']}_data_date", None)
         print(f"🗑️ Cleared all caches for {suite_config['suite_key']}")
         st.rerun()
@@ -198,9 +204,11 @@ except Exception as e:
 if isinstance(payload, dict):
     results = payload.get("results", [])
     validated_materials = payload.get("validated_materials", [])
+    full_results_df = payload.get("full_results_df")
 else:
     results = payload
     validated_materials = []
+    full_results_df = None
 
 # DEBUG: Log what we extracted
 print(f"📊 DEBUG: Extracted results type={type(results)}, len={len(results) if results else 0}", flush=True)
@@ -227,7 +235,7 @@ if results is None:
 # Build DataFrame of failures
 # ----------------------------------------------------------
 print(f"📊 DEBUG: Calling results_to_dataframe with {len(results)} results", flush=True)
-df = BaseValidationSuite.results_to_dataframe(results)
+df = BaseValidationSuite.results_to_dataframe(results, full_results_df)
 print(f"📊 DEBUG: DataFrame created with {len(df)} rows", flush=True)
 if not df.empty:
     print(f"📊 DEBUG: DataFrame columns: {list(df.columns)}", flush=True)
