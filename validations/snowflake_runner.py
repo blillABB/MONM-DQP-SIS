@@ -10,15 +10,26 @@ This is the new unified approach that replaces the separate query builder + suit
 import time
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, List
 import pandas as pd
 
-from validations.sql_generator import ValidationSQLGenerator
+from validations.sql_generator import (
+    ValidationSQLGenerator,
+    _annotate_expectation_ids,
+    build_scoped_expectation_id,
+)
 from core.queries import run_query
-from core.grain_mapping import get_grain_for_column
+from core.grain_mapping import (
+    get_context_columns_for_columns,
+    get_grain_for_column,
+)
 
 
-def run_validation_from_yaml_snowflake(yaml_path: Union[str, Path], limit: int = None) -> Dict[str, Any]:
+def run_validation_from_yaml_snowflake(
+    yaml_path: Union[str, Path],
+    limit: int = None,
+    include_failure_details: bool = False,
+) -> Dict[str, Any]:
     """
     Run validation using Snowflake-native SQL generated from YAML configuration.
 
@@ -41,12 +52,14 @@ def run_validation_from_yaml_snowflake(yaml_path: Union[str, Path], limit: int =
                     "element_count": int,
                     "unexpected_count": int,
                     "unexpected_percent": float,
-                    "failed_materials": [...],
                     "table_grain": "...",
-                    "unique_by": [...]
+                    "unique_by": [...],
+                    "flag_column": "...",
+                    "context_columns": [...]
                 }
             ],
-            "validated_materials": []
+            "validated_materials": [],
+            "full_results_df": pd.DataFrame
         }
 
     Example:
@@ -62,6 +75,11 @@ def run_validation_from_yaml_snowflake(yaml_path: Union[str, Path], limit: int =
     suite_name = suite_config.get("metadata", {}).get("suite_name", "Unknown")
     print(f"▶ Suite: {suite_name}")
 
+    # Attach stable expectation IDs used by both SQL and parser
+    suite_config["validations"] = _annotate_expectation_ids(
+        suite_config.get("validations", []), suite_name
+    )
+
     # Generate SQL
     start_time = time.time()
     generator = ValidationSQLGenerator(suite_config)
@@ -72,27 +90,44 @@ def run_validation_from_yaml_snowflake(yaml_path: Union[str, Path], limit: int =
 
     # Execute query
     try:
-        df = run_query(sql)
+        df = _normalize_dataframe_columns(run_query(sql))
         execution_time = time.time() - start_time
         print(f"✅ Query executed in {execution_time:.2f} seconds")
-    except Exception as e:
-        print(f"❌ Query execution failed: {e}")
+    except RuntimeError:
+        # Propagate user-facing runtime errors (e.g., SSO mismatch) unchanged so the
+        # UI can display the friendly guidance and halt gracefully.
         raise
+    except Exception as e:
+        # Wrap any other errors to keep the error type consistent for the UI.
+        print(f"❌ Query execution failed: {e}")
+        raise RuntimeError(f"❌ Query execution failed: {e}") from e
 
     # Parse results
-    results = _parse_sql_results(df, suite_config)
+    results = _parse_sql_results(df, suite_config, include_failure_details)
 
     print(f"✅ Validation complete: {len(results['results'])} rules checked")
 
     return results
 
 
-def _parse_sql_results(df: pd.DataFrame, suite_config: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_dataframe_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Return a copy with all column names normalized to lowercase strings."""
+
+    normalized = df.copy()
+    normalized.columns = [str(col).lower() for col in normalized.columns]
+    return normalized
+
+
+def _parse_sql_results(
+    df: pd.DataFrame,
+    suite_config: Dict[str, Any],
+    include_failure_details: bool = False,
+) -> Dict[str, Any]:
     """
     Parse Snowflake query results into GX-compatible format.
 
     Args:
-        df: DataFrame with one row containing validation metrics
+        df: DataFrame containing full-width validation rows (source columns + flags)
         suite_config: Original suite configuration
 
     Returns:
@@ -102,286 +137,791 @@ def _parse_sql_results(df: pd.DataFrame, suite_config: Dict[str, Any]) -> Dict[s
         return {"results": [], "validated_materials": []}
 
     # Normalize column names to lowercase for easier access
+    df = df.copy()
     df.columns = df.columns.str.lower()
-    row = df.iloc[0]
+
+    validations = suite_config.get("validations", [])
+    expectation_catalog = _build_expectation_catalog(validations)
+    expectation_context_map = _build_expectation_context_map(validations)
+    element_count = len(df)
+    counts_map, failure_rows_map = _collect_validation_failures(
+        df, expectation_catalog, include_failure_details
+    )
 
     results = []
-    validations = suite_config.get("validations", [])
+    for validation in validations:
+        val_type = validation.get("type", "")
+
+        if val_type == "expect_column_values_to_not_be_null":
+            results.extend(
+                _parse_not_null_results(
+                    df,
+                    validation,
+                    include_failure_details,
+                    counts_map,
+                    failure_rows_map,
+                    element_count,
+                )
+            )
+        elif val_type == "expect_column_values_to_be_in_set":
+            results.extend(
+                _parse_value_in_set_results(
+                    df,
+                    validation,
+                    include_failure_details,
+                    counts_map,
+                    failure_rows_map,
+                    element_count,
+                )
+            )
+        elif val_type == "expect_column_values_to_not_be_in_set":
+            results.extend(
+                _parse_value_not_in_set_results(
+                    df,
+                    validation,
+                    include_failure_details,
+                    counts_map,
+                    failure_rows_map,
+                    element_count,
+                )
+            )
+        elif val_type == "expect_column_values_to_match_regex":
+            results.extend(
+                _parse_regex_results(
+                    df,
+                    validation,
+                    include_failure_details,
+                    counts_map,
+                    failure_rows_map,
+                    element_count,
+                )
+            )
+        elif val_type == "expect_column_pair_values_to_be_equal":
+            results.append(
+                _parse_column_pair_equal_result(
+                    df,
+                    validation,
+                    include_failure_details,
+                    counts_map,
+                    failure_rows_map,
+                    element_count,
+                )
+            )
+        elif val_type == "expect_column_pair_values_a_to_be_greater_than_b":
+            results.append(
+                _parse_column_pair_greater_result(
+                    df,
+                    validation,
+                    include_failure_details,
+                    counts_map,
+                    failure_rows_map,
+                    element_count,
+                )
+            )
+        elif val_type == "custom:conditional_required":
+            results.append(
+                _parse_conditional_required_result(
+                    df,
+                    validation,
+                    include_failure_details,
+                    counts_map,
+                    failure_rows_map,
+                    element_count,
+                )
+            )
+        elif val_type == "custom:conditional_value_in_set":
+            results.append(
+                _parse_conditional_value_in_set_result(
+                    df,
+                    validation,
+                    include_failure_details,
+                    counts_map,
+                    failure_rows_map,
+                    element_count,
+                )
+            )
+
+    index_column = (
+        suite_config.get("metadata", {}).get("index_column", "material_number")
+    )
+    validated_materials = []
+    if index_column.lower() in df.columns:
+        validated_materials = (
+            df[index_column.lower()].dropna().unique().tolist()
+        )
+
+    derived_statuses = suite_config.get("derived_statuses", [])
+    if derived_statuses:
+        results.extend(
+            _build_derived_status_results(
+                derived_statuses,
+                counts_map,
+                failure_rows_map,
+                expectation_context_map,
+                include_failure_details,
+                element_count,
+            )
+        )
+
+    return {
+        "results": results,
+        "validated_materials": validated_materials,
+        "full_results_df": df,
+    }
+
+
+def _parse_not_null_results(
+    df: pd.DataFrame,
+    validation: Dict,
+    include_failure_details: bool,
+    counts_map: Dict[str, int],
+    failure_rows_map: Dict[str, List[pd.Series]],
+    element_count: int,
+) -> list:
+    """Parse not-null validation results from full-width rows."""
+    results = []
+    columns = validation.get("columns", [])
+
+    for col in columns:
+        expectation_id = build_scoped_expectation_id(validation, col)
+        unexpected_count = counts_map.get(expectation_id, 0)
+        unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+
+        table_grain, unique_by = get_grain_for_column(col)
+        result = {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": col,
+            "expectation_id": expectation_id,
+            "success": unexpected_count == 0,
+            "element_count": element_count,
+            "unexpected_count": unexpected_count,
+            "unexpected_percent": round(unexpected_percent, 2),
+            "table_grain": table_grain,
+            "unique_by": unique_by,
+            "flag_column": "validation_results",
+            "context_columns": get_context_columns_for_columns([col]),
+        }
+
+        if include_failure_details:
+            result["failed_materials"] = _build_failure_records_from_rows(
+                failure_rows_map.get(expectation_id, []),
+                result["context_columns"],
+                extra_fields={"Unexpected Value": col},
+            )
+
+        results.append(result)
+
+    return results
+
+
+def _parse_value_in_set_results(
+    df: pd.DataFrame,
+    validation: Dict,
+    include_failure_details: bool,
+    counts_map: Dict[str, int],
+    failure_rows_map: Dict[str, List[pd.Series]],
+    element_count: int,
+) -> list:
+    """Parse value-in-set validation results from full-width rows."""
+    results = []
+    rules = validation.get("rules", {})
+
+    for column, allowed_values in rules.items():
+        expectation_id = build_scoped_expectation_id(validation, column)
+        unexpected_count = counts_map.get(expectation_id, 0)
+        unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+
+        table_grain, unique_by = get_grain_for_column(column)
+        result = {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": column,
+            "expectation_id": expectation_id,
+            "success": unexpected_count == 0,
+            "element_count": element_count,
+            "unexpected_count": unexpected_count,
+            "unexpected_percent": round(unexpected_percent, 2),
+            "table_grain": table_grain,
+            "unique_by": unique_by,
+            "flag_column": "validation_results",
+            "context_columns": get_context_columns_for_columns([column]),
+        }
+
+        if include_failure_details:
+            result["failed_materials"] = _build_failure_records_from_rows(
+                failure_rows_map.get(expectation_id, []),
+                result["context_columns"],
+                extra_fields={"Unexpected Value": column},
+            )
+
+        results.append(result)
+
+    return results
+
+
+def _parse_value_not_in_set_results(
+    df: pd.DataFrame,
+    validation: Dict,
+    include_failure_details: bool,
+    counts_map: Dict[str, int],
+    failure_rows_map: Dict[str, List[pd.Series]],
+    element_count: int,
+) -> list:
+    """Parse value-not-in-set validation results from full-width rows."""
+    column = validation.get("column")
+    if not column:
+        return []
+
+    expectation_id = build_scoped_expectation_id(validation, column)
+    unexpected_count = counts_map.get(expectation_id, 0)
+    unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+
+    table_grain, unique_by = get_grain_for_column(column)
+    result = {
+        "expectation_type": "expect_column_values_to_not_be_in_set",
+        "column": column,
+        "expectation_id": expectation_id,
+        "success": unexpected_count == 0,
+        "element_count": element_count,
+        "unexpected_count": unexpected_count,
+        "unexpected_percent": round(unexpected_percent, 2),
+        "table_grain": table_grain,
+        "unique_by": unique_by,
+        "flag_column": "validation_results",
+        "context_columns": get_context_columns_for_columns([column]),
+    }
+
+    if include_failure_details:
+        result["failed_materials"] = _build_failure_records_from_rows(
+            failure_rows_map.get(expectation_id, []),
+            result["context_columns"],
+            extra_fields={"Unexpected Value": column},
+        )
+
+    return [result]
+
+
+def _parse_regex_results(
+    df: pd.DataFrame,
+    validation: Dict,
+    include_failure_details: bool,
+    counts_map: Dict[str, int],
+    failure_rows_map: Dict[str, List[pd.Series]],
+    element_count: int,
+) -> list:
+    """Parse regex validation results from full-width rows."""
+    results = []
+    columns = validation.get("columns", [])
+
+    for column in columns:
+        expectation_id = build_scoped_expectation_id(validation, column)
+        unexpected_count = counts_map.get(expectation_id, 0)
+        unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+
+        table_grain, unique_by = get_grain_for_column(column)
+        result = {
+            "expectation_type": "expect_column_values_to_match_regex",
+            "column": column,
+            "expectation_id": expectation_id,
+            "success": unexpected_count == 0,
+            "element_count": element_count,
+            "unexpected_count": unexpected_count,
+            "unexpected_percent": round(unexpected_percent, 2),
+            "table_grain": table_grain,
+            "unique_by": unique_by,
+            "flag_column": "validation_results",
+            "context_columns": get_context_columns_for_columns([column]),
+        }
+
+        if include_failure_details:
+            result["failed_materials"] = _build_failure_records_from_rows(
+                failure_rows_map.get(expectation_id, []),
+                result["context_columns"],
+                extra_fields={"Unexpected Value": column},
+            )
+
+        results.append(result)
+
+    return results
+
+
+def _parse_column_pair_equal_result(
+    df: pd.DataFrame,
+    validation: Dict,
+    include_failure_details: bool,
+    counts_map: Dict[str, int],
+    failure_rows_map: Dict[str, List[pd.Series]],
+    element_count: int,
+) -> Dict:
+    """Parse column pair equality validation result from full-width rows."""
+    col_a = validation.get("column_a")
+    col_b = validation.get("column_b")
+
+    expectation_id = build_scoped_expectation_id(validation, f"{col_a}|{col_b}")
+    unexpected_count = counts_map.get(expectation_id, 0)
+    unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+
+    table_grain, unique_by = get_grain_for_column(col_a)
+    result = {
+        "expectation_type": "expect_column_pair_values_to_be_equal",
+        "column": f"{col_a}|{col_b}",  # Combined column name
+        "expectation_id": expectation_id,
+        "success": unexpected_count == 0,
+        "element_count": element_count,
+        "unexpected_count": unexpected_count,
+        "unexpected_percent": round(unexpected_percent, 2),
+        "table_grain": table_grain,
+        "unique_by": unique_by,
+        "flag_column": "validation_results",
+        "context_columns": get_context_columns_for_columns([col_a, col_b]),
+    }
+
+    if include_failure_details:
+        result["failed_materials"] = _build_failure_records_from_rows(
+            failure_rows_map.get(expectation_id, []),
+            result["context_columns"],
+            extra_fields={col_a: col_a, col_b: col_b},
+        )
+
+    return result
+
+
+def _parse_column_pair_greater_result(
+    df: pd.DataFrame,
+    validation: Dict,
+    include_failure_details: bool,
+    counts_map: Dict[str, int],
+    failure_rows_map: Dict[str, List[pd.Series]],
+    element_count: int,
+) -> Dict:
+    """Parse column pair greater-than validation result from full-width rows."""
+    col_a = validation.get("column_a")
+    col_b = validation.get("column_b")
+
+    expectation_id = build_scoped_expectation_id(validation, f"{col_a}|{col_b}")
+    unexpected_count = counts_map.get(expectation_id, 0)
+    unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+
+    table_grain, unique_by = get_grain_for_column(col_a)
+    result = {
+        "expectation_type": "expect_column_pair_values_a_to_be_greater_than_b",
+        "column": f"{col_a}|{col_b}",
+        "expectation_id": expectation_id,
+        "success": unexpected_count == 0,
+        "element_count": element_count,
+        "unexpected_count": unexpected_count,
+        "unexpected_percent": round(unexpected_percent, 2),
+        "table_grain": table_grain,
+        "unique_by": unique_by,
+        "flag_column": "validation_results",
+        "context_columns": get_context_columns_for_columns([col_a, col_b]),
+    }
+
+    if include_failure_details:
+        result["failed_materials"] = _build_failure_records_from_rows(
+            failure_rows_map.get(expectation_id, []),
+            result["context_columns"],
+            extra_fields={col_a: col_a, col_b: col_b},
+        )
+
+    return result
+
+
+def _parse_conditional_required_result(
+    df: pd.DataFrame,
+    validation: Dict,
+    include_failure_details: bool,
+    counts_map: Dict[str, int],
+    failure_rows_map: Dict[str, List[pd.Series]],
+    element_count: int,
+) -> Dict:
+    """Parse conditional required validation result from full-width rows."""
+    condition_col = validation.get("condition_column")
+    required_col = validation.get("required_column")
+
+    expectation_id = build_scoped_expectation_id(
+        validation, f"{condition_col}|{required_col}"
+    )
+    unexpected_count = counts_map.get(expectation_id, 0)
+    unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+
+    table_grain, unique_by = get_grain_for_column(required_col)
+    result = {
+        "expectation_type": "custom:conditional_required",
+        "column": required_col,
+        "expectation_id": expectation_id,
+        "success": unexpected_count == 0,
+        "element_count": element_count,
+        "unexpected_count": unexpected_count,
+        "unexpected_percent": round(unexpected_percent, 2),
+        "table_grain": table_grain,
+        "unique_by": unique_by,
+        "flag_column": "validation_results",
+        "context_columns": get_context_columns_for_columns([condition_col, required_col]),
+    }
+
+    if include_failure_details:
+        result["failed_materials"] = _build_failure_records_from_rows(
+            failure_rows_map.get(expectation_id, []),
+            result["context_columns"],
+            extra_fields={condition_col: condition_col, required_col: required_col},
+        )
+
+    return result
+
+
+def _parse_conditional_value_in_set_result(
+    df: pd.DataFrame,
+    validation: Dict,
+    include_failure_details: bool,
+    counts_map: Dict[str, int],
+    failure_rows_map: Dict[str, List[pd.Series]],
+    element_count: int,
+) -> Dict:
+    """Parse conditional value in set validation result from full-width rows."""
+    condition_col = validation.get("condition_column")
+    target_col = validation.get("target_column")
+
+    expectation_id = build_scoped_expectation_id(
+        validation, f"{condition_col}|{target_col}"
+    )
+    unexpected_count = counts_map.get(expectation_id, 0)
+    unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+
+    table_grain, unique_by = get_grain_for_column(target_col)
+    result = {
+        "expectation_type": "custom:conditional_value_in_set",
+        "column": target_col,
+        "expectation_id": expectation_id,
+        "success": unexpected_count == 0,
+        "element_count": element_count,
+        "unexpected_count": unexpected_count,
+        "unexpected_percent": round(unexpected_percent, 2),
+        "table_grain": table_grain,
+        "unique_by": unique_by,
+        "flag_column": "validation_results",
+        "context_columns": get_context_columns_for_columns([condition_col, target_col]),
+    }
+
+    if include_failure_details:
+        result["failed_materials"] = _build_failure_records_from_rows(
+            failure_rows_map.get(expectation_id, []),
+            result["context_columns"],
+            extra_fields={condition_col: condition_col, target_col: target_col},
+        )
+
+    return result
+
+
+def _build_failure_records_from_rows(
+    failure_rows: List[pd.Series],
+    context_columns: list[str],
+    extra_fields: Dict[str, str] | None = None,
+) -> list[dict]:
+    """Construct failure detail dictionaries from validation_results payloads."""
+    extra_fields = extra_fields or {}
+
+    failures: list[dict] = []
+    for row in failure_rows:
+        record: dict = {}
+
+        for col in context_columns:
+            record[col] = _get_row_value(row, col)
+
+        for label, source_col in extra_fields.items():
+            record[label] = _get_row_value(row, source_col)
+
+        failures.append(record)
+
+    return failures
+
+
+def _get_row_value(row: pd.Series, column_name: str):
+    column_key = column_name.lower().replace('"', '')
+    return row.get(column_key)
+
+
+def _build_expectation_catalog(validations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Expand validations into a flat catalog keyed by scoped expectation ids."""
+
+    catalog: List[Dict[str, Any]] = []
 
     for validation in validations:
         val_type = validation.get("type", "")
 
         if val_type == "expect_column_values_to_not_be_null":
-            results.extend(_parse_not_null_results(row, validation))
+            for col in validation.get("columns", []):
+                catalog.append({
+                    "expectation_id": build_scoped_expectation_id(validation, col),
+                    "type": val_type,
+                })
         elif val_type == "expect_column_values_to_be_in_set":
-            results.extend(_parse_value_in_set_results(row, validation))
+            for column in validation.get("rules", {}).keys():
+                catalog.append({
+                    "expectation_id": build_scoped_expectation_id(validation, column),
+                    "type": val_type,
+                })
         elif val_type == "expect_column_values_to_not_be_in_set":
-            results.extend(_parse_value_not_in_set_results(row, validation))
+            column = validation.get("column")
+            if column:
+                catalog.append({
+                    "expectation_id": build_scoped_expectation_id(validation, column),
+                    "type": val_type,
+                })
         elif val_type == "expect_column_values_to_match_regex":
-            results.extend(_parse_regex_results(row, validation))
-        elif val_type == "expect_column_pair_values_to_be_equal":
-            results.append(_parse_column_pair_equal_result(row, validation))
-        elif val_type == "expect_column_pair_values_a_to_be_greater_than_b":
-            results.append(_parse_column_pair_greater_result(row, validation))
-        elif val_type == "custom:conditional_required":
-            results.append(_parse_conditional_required_result(row, validation))
-        elif val_type == "custom:conditional_value_in_set":
-            results.append(_parse_conditional_value_in_set_result(row, validation))
+            for column in validation.get("columns", []):
+                catalog.append({
+                    "expectation_id": build_scoped_expectation_id(validation, column),
+                    "type": val_type,
+                })
+        elif val_type in {
+            "expect_column_pair_values_to_be_equal",
+            "expect_column_pair_values_a_to_be_greater_than_b",
+            "custom:conditional_required",
+            "custom:conditional_value_in_set",
+        }:
+            discriminator = "|".join(
+                [
+                    validation.get("column_a") or validation.get("condition_column"),
+                    validation.get("column_b")
+                    or validation.get("required_column")
+                    or validation.get("target_column"),
+                ]
+            )
+            catalog.append({
+                "expectation_id": build_scoped_expectation_id(validation, discriminator),
+                "type": val_type,
+            })
 
-    return {
-        "results": results,
-        "validated_materials": []  # Could be populated if needed
+    return catalog
+
+
+def _build_expectation_context_map(validations: List[Dict[str, Any]]) -> Dict[str, list[str]]:
+    """Map expectation ids to their associated context columns."""
+
+    context_map: Dict[str, list[str]] = {}
+
+    for validation in validations:
+        val_type = validation.get("type", "")
+
+        if val_type == "expect_column_values_to_not_be_null":
+            for col in validation.get("columns", []):
+                context_map[build_scoped_expectation_id(validation, col)] = (
+                    get_context_columns_for_columns([col])
+                )
+        elif val_type == "expect_column_values_to_be_in_set":
+            for column in validation.get("rules", {}).keys():
+                context_map[build_scoped_expectation_id(validation, column)] = (
+                    get_context_columns_for_columns([column])
+                )
+        elif val_type == "expect_column_values_to_not_be_in_set":
+            column = validation.get("column")
+            if column:
+                context_map[build_scoped_expectation_id(validation, column)] = (
+                    get_context_columns_for_columns([column])
+                )
+        elif val_type == "expect_column_values_to_match_regex":
+            for column in validation.get("columns", []):
+                context_map[build_scoped_expectation_id(validation, column)] = (
+                    get_context_columns_for_columns([column])
+                )
+        elif val_type in {
+            "expect_column_pair_values_to_be_equal",
+            "expect_column_pair_values_a_to_be_greater_than_b",
+            "custom:conditional_required",
+            "custom:conditional_value_in_set",
+        }:
+            discriminator = "|".join(
+                [
+                    validation.get("column_a") or validation.get("condition_column"),
+                    validation.get("column_b")
+                    or validation.get("required_column")
+                    or validation.get("target_column"),
+                ]
+            )
+            context_map[build_scoped_expectation_id(validation, discriminator)] = (
+                get_context_columns_for_columns(
+                    [
+                        validation.get("column_a") or validation.get("condition_column"),
+                        validation.get("column_b")
+                        or validation.get("required_column")
+                        or validation.get("target_column"),
+                    ]
+                )
+            )
+
+    return context_map
+
+
+def _collect_validation_failures(
+    df: pd.DataFrame,
+    expectation_catalog: List[Dict[str, Any]],
+    include_failure_details: bool,
+) -> tuple[Dict[str, int], Dict[str, List[pd.Series]]]:
+    """Aggregate unexpected counts and optional failing rows keyed by expectation id."""
+
+    counts_map: Dict[str, int] = {
+        entry["expectation_id"]: 0 for entry in expectation_catalog
+    }
+    failure_rows_map: Dict[str, List[pd.Series]] = {
+        entry["expectation_id"]: [] for entry in expectation_catalog
     }
 
+    if "validation_results" not in df.columns:
+        return counts_map, failure_rows_map
 
-def _parse_not_null_results(row: pd.Series, validation: Dict) -> list:
-    """Parse not-null validation results."""
-    results = []
-    columns = validation.get("columns", [])
+    for _, row in df.iterrows():
+        entries = _parse_json_array(row.get("validation_results"))
+        for entry in entries:
+            exp_id = entry.get("expectation_id") if isinstance(entry, dict) else None
+            if exp_id and exp_id in counts_map:
+                counts_map[exp_id] += 1
+                if include_failure_details:
+                    failure_rows_map[exp_id].append(row)
 
-    for col in columns:
-        safe_col_name = col.lower().replace('"', '')
+    return counts_map, failure_rows_map
 
-        # Extract metrics
-        element_count = int(row[f"{safe_col_name}_total"])
-        unexpected_count = int(row[f"{safe_col_name}_null_count"])
-        unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
 
-        # Parse failures JSON
-        failures_json = row[f"{safe_col_name}_failures"]
-        failed_materials = _parse_json_array(failures_json)
+def _preview_list(values: list[str], max_items: int = 10) -> str:
+    """Return a comma-delimited preview of list contents without dumping everything."""
 
-        # Get grain info
-        table_grain, unique_by = get_grain_for_column(col)
+    if not values:
+        return "none"
 
-        results.append({
-            "expectation_type": "expect_column_values_to_not_be_null",
-            "column": col,
-            "success": unexpected_count == 0,
+    if len(values) <= max_items:
+        return ", ".join(values)
+
+    remaining = len(values) - max_items
+    return ", ".join(values[:max_items]) + f", ... (+{remaining} more)"
+
+
+def _preview_counts(expectation_ids: list[str], counts_map: Dict[str, int], max_items: int = 10) -> str:
+    """Preview only non-zero unexpected counts for scoped expectation IDs."""
+
+    non_zero_counts = [
+        f"{exp_id}:{counts_map.get(exp_id, 0)}"
+        for exp_id in expectation_ids
+        if counts_map.get(exp_id, 0)
+    ]
+
+    return _preview_list(non_zero_counts, max_items=max_items)
+
+
+def _build_derived_status_results(
+    derived_statuses: list[Dict[str, Any]],
+    counts_map: Dict[str, int],
+    failure_rows_map: Dict[str, List[pd.Series]],
+    expectation_context_map: Dict[str, list[str]],
+    include_failure_details: bool,
+    element_count: int,
+) -> list[dict]:
+    """Create synthesized results for derived status labels."""
+
+    derived_results: list[dict] = []
+
+    for status in derived_statuses:
+        expectation_ids = status.get("expectation_ids", [])
+        if not expectation_ids:
+            print("[derived-status] Skipping entry with no expectation_ids:", status)
+            continue
+
+        resolved_ids, missing_ids = _resolve_derived_expectation_ids(
+            expectation_ids, counts_map
+        )
+
+        status_label = status.get("status") or status.get("status_label") or "Derived Status"
+        print(
+            "[derived-status] Evaluating",
+            {
+                "status": status_label,
+                "expectation_ids": _preview_list(expectation_ids),
+                "resolved_ids": _preview_list(resolved_ids),
+                "missing_in_counts_map": _preview_list(missing_ids),
+                "unexpected_counts": _preview_counts(resolved_ids, counts_map),
+            },
+        )
+
+        unexpected_count = sum(counts_map.get(exp_id, 0) for exp_id in resolved_ids)
+        if unexpected_count == 0:
+            print(
+                f"[derived-status] No failures counted for '{status_label}', skipping result.",
+            )
+            continue
+
+        expectation_type = status.get(
+            "expectation_type", "custom:derived_null_group"
+        )
+        expectation_id = status.get("expectation_id") or f"derived::{status_label}"
+
+        context_columns: set[str] = set()
+        for exp_id in resolved_ids:
+            context_columns.update(expectation_context_map.get(exp_id, []))
+
+        sorted_context_columns = sorted(context_columns)
+        table_grain = None
+        unique_by: list[str] = []
+        if sorted_context_columns:
+            table_grain, unique_by = get_grain_for_column(sorted_context_columns[0])
+
+        unexpected_percent = (
+            (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+        )
+
+        result = {
+            "expectation_type": expectation_type,
+            "column": status_label,
+            "status_label": status_label,
+            "expectation_id": expectation_id,
+            "success": False,
             "element_count": element_count,
             "unexpected_count": unexpected_count,
             "unexpected_percent": round(unexpected_percent, 2),
-            "failed_materials": failed_materials,
             "table_grain": table_grain,
-            "unique_by": unique_by
-        })
+            "unique_by": unique_by,
+            "flag_column": "validation_results",
+            "context_columns": sorted_context_columns,
+        }
 
-    return results
+        if include_failure_details:
+            failure_rows: list[pd.Series] = []
+            for exp_id in resolved_ids:
+                failure_rows.extend(failure_rows_map.get(exp_id, []))
 
+            result["failed_materials"] = _build_failure_records_from_rows(
+                failure_rows,
+                sorted_context_columns,
+            )
 
-def _parse_value_in_set_results(row: pd.Series, validation: Dict) -> list:
-    """Parse value-in-set validation results."""
-    results = []
-    rules = validation.get("rules", {})
+        derived_results.append(result)
 
-    for column, allowed_values in rules.items():
-        safe_col_name = column.lower().replace('"', '')
-
-        # Note: SQL generator uses _invalid_count for this validation type
-        # Extract metrics
-        element_count = int(row.get(f"{safe_col_name}_total", 0))
-        unexpected_count = int(row[f"{safe_col_name}_invalid_count"])
-        unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
-
-        # Parse failures
-        failures_json = row[f"{safe_col_name}_failures"]
-        failed_materials = _parse_json_array(failures_json)
-
-        # Get grain info
-        table_grain, unique_by = get_grain_for_column(column)
-
-        results.append({
-            "expectation_type": "expect_column_values_to_be_in_set",
-            "column": column,
-            "success": unexpected_count == 0,
-            "element_count": element_count,
-            "unexpected_count": unexpected_count,
-            "unexpected_percent": round(unexpected_percent, 2),
-            "failed_materials": failed_materials,
-            "table_grain": table_grain,
-            "unique_by": unique_by
-        })
-
-    return results
+    return derived_results
 
 
-def _parse_value_not_in_set_results(row: pd.Series, validation: Dict) -> list:
-    """Parse value-not-in-set validation results."""
-    column = validation.get("column")
-    if not column:
-        return []
+def _resolve_derived_expectation_ids(
+    expectation_ids: list[str], counts_map: Dict[str, int]
+) -> tuple[list[str], list[str]]:
+    """
+    Map derived-status expectation IDs to scoped IDs in the counts map.
 
-    safe_col_name = column.lower().replace('"', '')
+    Derived status entries may still reference unscoped base expectation_ids. When
+    that happens, we match any scoped ids that share the same base prefix so the
+    derived counts reflect all relevant targets.
+    """
 
-    element_count = int(row.get(f"{safe_col_name}_total", 0))
-    unexpected_count = int(row[f"{safe_col_name}_forbidden_count"])
-    unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+    resolved: list[str] = []
+    missing: list[str] = []
 
-    failures_json = row[f"{safe_col_name}_failures"]
-    failed_materials = _parse_json_array(failures_json)
+    for exp_id in expectation_ids:
+        if exp_id in counts_map:
+            resolved.append(exp_id)
+            continue
 
-    table_grain, unique_by = get_grain_for_column(column)
+        scoped_matches = [key for key in counts_map if key.startswith(f"{exp_id}_")]
+        if scoped_matches:
+            resolved.extend(scoped_matches)
+        else:
+            missing.append(exp_id)
 
-    return [{
-        "expectation_type": "expect_column_values_to_not_be_in_set",
-        "column": column,
-        "success": unexpected_count == 0,
-        "element_count": element_count,
-        "unexpected_count": unexpected_count,
-        "unexpected_percent": round(unexpected_percent, 2),
-        "failed_materials": failed_materials,
-        "table_grain": table_grain,
-        "unique_by": unique_by
-    }]
-
-
-def _parse_regex_results(row: pd.Series, validation: Dict) -> list:
-    """Parse regex validation results."""
-    results = []
-    columns = validation.get("columns", [])
-
-    for column in columns:
-        safe_col_name = column.lower().replace('"', '')
-
-        element_count = int(row.get(f"{safe_col_name}_total", 0))
-        unexpected_count = int(row[f"{safe_col_name}_regex_fail_count"])
-        unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
-
-        failures_json = row[f"{safe_col_name}_failures"]
-        failed_materials = _parse_json_array(failures_json)
-
-        table_grain, unique_by = get_grain_for_column(column)
-
-        results.append({
-            "expectation_type": "expect_column_values_to_match_regex",
-            "column": column,
-            "success": unexpected_count == 0,
-            "element_count": element_count,
-            "unexpected_count": unexpected_count,
-            "unexpected_percent": round(unexpected_percent, 2),
-            "failed_materials": failed_materials,
-            "table_grain": table_grain,
-            "unique_by": unique_by
-        })
-
-    return results
-
-
-def _parse_column_pair_equal_result(row: pd.Series, validation: Dict) -> Dict:
-    """Parse column pair equality validation result."""
-    col_a = validation.get("column_a")
-    col_b = validation.get("column_b")
-
-    safe_name = f"{col_a}_{col_b}_equal".lower().replace('"', '')
-
-    element_count = int(row.get(f"{safe_name}_total", 0))
-    unexpected_count = int(row[f"{safe_name}_mismatch_count"])
-    unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
-
-    failures_json = row[f"{safe_name}_failures"]
-    failed_materials = _parse_json_array(failures_json)
-
-    # Use grain from first column
-    table_grain, unique_by = get_grain_for_column(col_a)
-
-    return {
-        "expectation_type": "expect_column_pair_values_to_be_equal",
-        "column": f"{col_a}|{col_b}",  # Combined column name
-        "success": unexpected_count == 0,
-        "element_count": element_count,
-        "unexpected_count": unexpected_count,
-        "unexpected_percent": round(unexpected_percent, 2),
-        "failed_materials": failed_materials,
-        "table_grain": table_grain,
-        "unique_by": unique_by
-    }
-
-
-def _parse_column_pair_greater_result(row: pd.Series, validation: Dict) -> Dict:
-    """Parse column pair greater-than validation result."""
-    col_a = validation.get("column_a")
-    col_b = validation.get("column_b")
-
-    safe_name = f"{col_a}_{col_b}_greater".lower().replace('"', '')
-
-    element_count = int(row.get(f"{safe_name}_total", 0))
-    unexpected_count = int(row[f"{safe_name}_fail_count"])
-    unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
-
-    failures_json = row[f"{safe_name}_failures"]
-    failed_materials = _parse_json_array(failures_json)
-
-    table_grain, unique_by = get_grain_for_column(col_a)
-
-    return {
-        "expectation_type": "expect_column_pair_values_a_to_be_greater_than_b",
-        "column": f"{col_a}|{col_b}",
-        "success": unexpected_count == 0,
-        "element_count": element_count,
-        "unexpected_count": unexpected_count,
-        "unexpected_percent": round(unexpected_percent, 2),
-        "failed_materials": failed_materials,
-        "table_grain": table_grain,
-        "unique_by": unique_by
-    }
-
-
-def _parse_conditional_required_result(row: pd.Series, validation: Dict) -> Dict:
-    """Parse conditional required validation result."""
-    condition_col = validation.get("condition_column")
-    required_col = validation.get("required_column")
-
-    safe_name = f"{condition_col}_{required_col}_conditional".lower().replace('"', '')
-
-    element_count = int(row.get(f"{safe_name}_total", 0))
-    unexpected_count = int(row[f"{safe_name}_violation_count"])
-    unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
-
-    failures_json = row[f"{safe_name}_failures"]
-    failed_materials = _parse_json_array(failures_json)
-
-    table_grain, unique_by = get_grain_for_column(required_col)
-
-    return {
-        "expectation_type": "custom:conditional_required",
-        "column": required_col,
-        "success": unexpected_count == 0,
-        "element_count": element_count,
-        "unexpected_count": unexpected_count,
-        "unexpected_percent": round(unexpected_percent, 2),
-        "failed_materials": failed_materials,
-        "table_grain": table_grain,
-        "unique_by": unique_by
-    }
-
-
-def _parse_conditional_value_in_set_result(row: pd.Series, validation: Dict) -> Dict:
-    """Parse conditional value in set validation result."""
-    condition_col = validation.get("condition_column")
-    target_col = validation.get("target_column")
-
-    safe_name = f"{condition_col}_{target_col}_conditional_set".lower().replace('"', '')
-
-    element_count = int(row.get(f"{safe_name}_total", 0))
-    unexpected_count = int(row[f"{safe_name}_violation_count"])
-    unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
-
-    failures_json = row[f"{safe_name}_failures"]
-    failed_materials = _parse_json_array(failures_json)
-
-    table_grain, unique_by = get_grain_for_column(target_col)
-
-    return {
-        "expectation_type": "custom:conditional_value_in_set",
-        "column": target_col,
-        "success": unexpected_count == 0,
-        "element_count": element_count,
-        "unexpected_count": unexpected_count,
-        "unexpected_percent": round(unexpected_percent, 2),
-        "failed_materials": failed_materials,
-        "table_grain": table_grain,
-        "unique_by": unique_by
-    }
+    return resolved, missing
 
 
 def _parse_json_array(json_data) -> list:

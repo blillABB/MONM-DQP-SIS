@@ -135,6 +135,7 @@ def compute_monthly_overview_data():
     # Get product hierarchy breakdown from Snowflake
     product_hierarchy_breakdown = []
     if current_materials:
+        conn = None
         try:
             conn = get_connection()
             query = f"""
@@ -153,6 +154,9 @@ def compute_monthly_overview_data():
             product_hierarchy_breakdown = breakdown.to_dict("records")
         except Exception as e:
             print(f"⚠️ Error fetching product hierarchy: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     # Load unified logs stats
     logs_df = load_unified_logs()
