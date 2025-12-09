@@ -18,6 +18,7 @@ from validations.sql_generator import (
     _annotate_expectation_ids,
     build_scoped_expectation_id,
 )
+from validations.derived_status_resolver import DerivedStatusResolver
 from core.queries import run_query
 from core.grain_mapping import (
     get_context_columns_for_columns,
@@ -141,8 +142,25 @@ def _parse_sql_results(
     df.columns = df.columns.str.lower()
 
     validations = suite_config.get("validations", [])
-    expectation_catalog = _build_expectation_catalog(validations)
-    expectation_context_map = _build_expectation_context_map(validations)
+    derived_statuses = suite_config.get("derived_statuses", [])
+
+    # Initialize the resolver - single source of truth for catalog and derived status resolution
+    resolver = DerivedStatusResolver(validations, derived_statuses)
+
+    # Extract catalog from resolver
+    expectation_catalog = [
+        {"expectation_id": entry["scoped_id"], "type": entry["type"]}
+        for entry in resolver.catalog
+    ]
+
+    # Build context map from resolver's catalog
+    expectation_context_map = {}
+    for entry in resolver.catalog:
+        scoped_id = entry["scoped_id"]
+        targets = entry["targets"]
+        if targets:
+            expectation_context_map[scoped_id] = get_context_columns_for_columns(targets)
+
     element_count = len(df)
     counts_map, failure_rows_map = _collect_validation_failures(
         df, expectation_catalog, include_failure_details
@@ -250,11 +268,11 @@ def _parse_sql_results(
             df[index_column.lower()].dropna().unique().tolist()
         )
 
-    derived_statuses = suite_config.get("derived_statuses", [])
+    # Build derived status results using the resolver
     if derived_statuses:
         results.extend(
             _build_derived_status_results(
-                derived_statuses,
+                resolver,
                 counts_map,
                 failure_rows_map,
                 expectation_context_map,
@@ -640,116 +658,8 @@ def _get_row_value(row: pd.Series, column_name: str):
     return row.get(column_key)
 
 
-def _build_expectation_catalog(validations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Expand validations into a flat catalog keyed by scoped expectation ids."""
-
-    catalog: List[Dict[str, Any]] = []
-
-    for validation in validations:
-        val_type = validation.get("type", "")
-
-        if val_type == "expect_column_values_to_not_be_null":
-            for col in validation.get("columns", []):
-                catalog.append({
-                    "expectation_id": build_scoped_expectation_id(validation, col),
-                    "type": val_type,
-                })
-        elif val_type == "expect_column_values_to_be_in_set":
-            for column in validation.get("rules", {}).keys():
-                catalog.append({
-                    "expectation_id": build_scoped_expectation_id(validation, column),
-                    "type": val_type,
-                })
-        elif val_type == "expect_column_values_to_not_be_in_set":
-            column = validation.get("column")
-            if column:
-                catalog.append({
-                    "expectation_id": build_scoped_expectation_id(validation, column),
-                    "type": val_type,
-                })
-        elif val_type == "expect_column_values_to_match_regex":
-            for column in validation.get("columns", []):
-                catalog.append({
-                    "expectation_id": build_scoped_expectation_id(validation, column),
-                    "type": val_type,
-                })
-        elif val_type in {
-            "expect_column_pair_values_to_be_equal",
-            "expect_column_pair_values_a_to_be_greater_than_b",
-            "custom:conditional_required",
-            "custom:conditional_value_in_set",
-        }:
-            discriminator = "|".join(
-                [
-                    validation.get("column_a") or validation.get("condition_column"),
-                    validation.get("column_b")
-                    or validation.get("required_column")
-                    or validation.get("target_column"),
-                ]
-            )
-            catalog.append({
-                "expectation_id": build_scoped_expectation_id(validation, discriminator),
-                "type": val_type,
-            })
-
-    return catalog
-
-
-def _build_expectation_context_map(validations: List[Dict[str, Any]]) -> Dict[str, list[str]]:
-    """Map expectation ids to their associated context columns."""
-
-    context_map: Dict[str, list[str]] = {}
-
-    for validation in validations:
-        val_type = validation.get("type", "")
-
-        if val_type == "expect_column_values_to_not_be_null":
-            for col in validation.get("columns", []):
-                context_map[build_scoped_expectation_id(validation, col)] = (
-                    get_context_columns_for_columns([col])
-                )
-        elif val_type == "expect_column_values_to_be_in_set":
-            for column in validation.get("rules", {}).keys():
-                context_map[build_scoped_expectation_id(validation, column)] = (
-                    get_context_columns_for_columns([column])
-                )
-        elif val_type == "expect_column_values_to_not_be_in_set":
-            column = validation.get("column")
-            if column:
-                context_map[build_scoped_expectation_id(validation, column)] = (
-                    get_context_columns_for_columns([column])
-                )
-        elif val_type == "expect_column_values_to_match_regex":
-            for column in validation.get("columns", []):
-                context_map[build_scoped_expectation_id(validation, column)] = (
-                    get_context_columns_for_columns([column])
-                )
-        elif val_type in {
-            "expect_column_pair_values_to_be_equal",
-            "expect_column_pair_values_a_to_be_greater_than_b",
-            "custom:conditional_required",
-            "custom:conditional_value_in_set",
-        }:
-            discriminator = "|".join(
-                [
-                    validation.get("column_a") or validation.get("condition_column"),
-                    validation.get("column_b")
-                    or validation.get("required_column")
-                    or validation.get("target_column"),
-                ]
-            )
-            context_map[build_scoped_expectation_id(validation, discriminator)] = (
-                get_context_columns_for_columns(
-                    [
-                        validation.get("column_a") or validation.get("condition_column"),
-                        validation.get("column_b")
-                        or validation.get("required_column")
-                        or validation.get("target_column"),
-                    ]
-                )
-            )
-
-    return context_map
+# NOTE: Catalog building and context mapping have been moved to DerivedStatusResolver
+# to eliminate code duplication and ensure UI and runtime stay in sync.
 
 
 def _collect_validation_failures(
@@ -807,39 +717,45 @@ def _preview_counts(expectation_ids: list[str], counts_map: Dict[str, int], max_
 
 
 def _build_derived_status_results(
-    derived_statuses: list[Dict[str, Any]],
+    resolver: DerivedStatusResolver,
     counts_map: Dict[str, int],
     failure_rows_map: Dict[str, List[pd.Series]],
     expectation_context_map: Dict[str, list[str]],
     include_failure_details: bool,
     element_count: int,
 ) -> list[dict]:
-    """Create synthesized results for derived status labels."""
+    """
+    Create synthesized results for derived status labels.
+
+    Uses the DerivedStatusResolver to get pre-resolved scoped IDs,
+    eliminating the need for runtime string matching.
+    """
 
     derived_results: list[dict] = []
 
-    for status in derived_statuses:
-        expectation_ids = status.get("expectation_ids", [])
-        if not expectation_ids:
-            print("[derived-status] Skipping entry with no expectation_ids:", status)
+    # Get all resolved derived statuses from the resolver
+    for resolved_status in resolver.get_all_resolved_derived_statuses():
+        # Extract pre-resolved scoped IDs (no string matching needed!)
+        resolved_ids = resolved_status.get("resolved_scoped_ids", [])
+        missing_ids = resolved_status.get("missing_ids", [])
+
+        status_label = resolved_status.get("status") or resolved_status.get("status_label") or "Derived Status"
+
+        if not resolved_ids:
+            print(f"[derived-status] No resolved expectation IDs for '{status_label}', skipping.")
             continue
 
-        resolved_ids, missing_ids = _resolve_derived_expectation_ids(
-            expectation_ids, counts_map
-        )
-
-        status_label = status.get("status") or status.get("status_label") or "Derived Status"
         print(
             "[derived-status] Evaluating",
             {
                 "status": status_label,
-                "expectation_ids": _preview_list(expectation_ids),
                 "resolved_ids": _preview_list(resolved_ids),
-                "missing_in_counts_map": _preview_list(missing_ids),
+                "missing_ids": _preview_list(missing_ids),
                 "unexpected_counts": _preview_counts(resolved_ids, counts_map),
             },
         )
 
+        # Sum failures across all resolved scoped IDs
         unexpected_count = sum(counts_map.get(exp_id, 0) for exp_id in resolved_ids)
         if unexpected_count == 0:
             print(
@@ -847,11 +763,12 @@ def _build_derived_status_results(
             )
             continue
 
-        expectation_type = status.get(
+        expectation_type = resolved_status.get(
             "expectation_type", "custom:derived_null_group"
         )
-        expectation_id = status.get("expectation_id") or f"derived::{status_label}"
+        expectation_id = resolved_status.get("expectation_id") or f"derived::{status_label}"
 
+        # Aggregate context columns from all resolved expectations
         context_columns: set[str] = set()
         for exp_id in resolved_ids:
             context_columns.update(expectation_context_map.get(exp_id, []))
@@ -881,6 +798,7 @@ def _build_derived_status_results(
             "context_columns": sorted_context_columns,
         }
 
+        # Aggregate failure details from all resolved expectations
         if include_failure_details:
             failure_rows: list[pd.Series] = []
             for exp_id in resolved_ids:
@@ -896,32 +814,8 @@ def _build_derived_status_results(
     return derived_results
 
 
-def _resolve_derived_expectation_ids(
-    expectation_ids: list[str], counts_map: Dict[str, int]
-) -> tuple[list[str], list[str]]:
-    """
-    Map derived-status expectation IDs to scoped IDs in the counts map.
-
-    Derived status entries may still reference unscoped base expectation_ids. When
-    that happens, we match any scoped ids that share the same base prefix so the
-    derived counts reflect all relevant targets.
-    """
-
-    resolved: list[str] = []
-    missing: list[str] = []
-
-    for exp_id in expectation_ids:
-        if exp_id in counts_map:
-            resolved.append(exp_id)
-            continue
-
-        scoped_matches = [key for key in counts_map if key.startswith(f"{exp_id}_")]
-        if scoped_matches:
-            resolved.extend(scoped_matches)
-        else:
-            missing.append(exp_id)
-
-    return resolved, missing
+# NOTE: ID resolution has been moved to DerivedStatusResolver.resolve_expectation_ids()
+# This eliminates fragile string prefix matching in favor of explicit mappings.
 
 
 def _parse_json_array(json_data) -> list:
