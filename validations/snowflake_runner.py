@@ -142,6 +142,7 @@ def _parse_sql_results(
 
     validations = suite_config.get("validations", [])
     expectation_catalog = _build_expectation_catalog(validations)
+    expectation_context_map = _build_expectation_context_map(validations)
     element_count = len(df)
     counts_map, failure_rows_map = _collect_validation_failures(
         df, expectation_catalog, include_failure_details
@@ -247,6 +248,19 @@ def _parse_sql_results(
     if index_column.lower() in df.columns:
         validated_materials = (
             df[index_column.lower()].dropna().unique().tolist()
+        )
+
+    derived_statuses = suite_config.get("derived_statuses", [])
+    if derived_statuses:
+        results.extend(
+            _build_derived_status_results(
+                derived_statuses,
+                counts_map,
+                failure_rows_map,
+                expectation_context_map,
+                include_failure_details,
+                element_count,
+            )
         )
 
     return {
@@ -681,6 +695,63 @@ def _build_expectation_catalog(validations: List[Dict[str, Any]]) -> List[Dict[s
     return catalog
 
 
+def _build_expectation_context_map(validations: List[Dict[str, Any]]) -> Dict[str, list[str]]:
+    """Map expectation ids to their associated context columns."""
+
+    context_map: Dict[str, list[str]] = {}
+
+    for validation in validations:
+        val_type = validation.get("type", "")
+
+        if val_type == "expect_column_values_to_not_be_null":
+            for col in validation.get("columns", []):
+                context_map[build_scoped_expectation_id(validation, col)] = (
+                    get_context_columns_for_columns([col])
+                )
+        elif val_type == "expect_column_values_to_be_in_set":
+            for column in validation.get("rules", {}).keys():
+                context_map[build_scoped_expectation_id(validation, column)] = (
+                    get_context_columns_for_columns([column])
+                )
+        elif val_type == "expect_column_values_to_not_be_in_set":
+            column = validation.get("column")
+            if column:
+                context_map[build_scoped_expectation_id(validation, column)] = (
+                    get_context_columns_for_columns([column])
+                )
+        elif val_type == "expect_column_values_to_match_regex":
+            for column in validation.get("columns", []):
+                context_map[build_scoped_expectation_id(validation, column)] = (
+                    get_context_columns_for_columns([column])
+                )
+        elif val_type in {
+            "expect_column_pair_values_to_be_equal",
+            "expect_column_pair_values_a_to_be_greater_than_b",
+            "custom:conditional_required",
+            "custom:conditional_value_in_set",
+        }:
+            discriminator = "|".join(
+                [
+                    validation.get("column_a") or validation.get("condition_column"),
+                    validation.get("column_b")
+                    or validation.get("required_column")
+                    or validation.get("target_column"),
+                ]
+            )
+            context_map[build_scoped_expectation_id(validation, discriminator)] = (
+                get_context_columns_for_columns(
+                    [
+                        validation.get("column_a") or validation.get("condition_column"),
+                        validation.get("column_b")
+                        or validation.get("required_column")
+                        or validation.get("target_column"),
+                    ]
+                )
+            )
+
+    return context_map
+
+
 def _collect_validation_failures(
     df: pd.DataFrame,
     expectation_catalog: List[Dict[str, Any]],
@@ -708,6 +779,77 @@ def _collect_validation_failures(
                     failure_rows_map[exp_id].append(row)
 
     return counts_map, failure_rows_map
+
+
+def _build_derived_status_results(
+    derived_statuses: list[Dict[str, Any]],
+    counts_map: Dict[str, int],
+    failure_rows_map: Dict[str, List[pd.Series]],
+    expectation_context_map: Dict[str, list[str]],
+    include_failure_details: bool,
+    element_count: int,
+) -> list[dict]:
+    """Create synthesized results for derived status labels."""
+
+    derived_results: list[dict] = []
+
+    for status in derived_statuses:
+        expectation_ids = status.get("expectation_ids", [])
+        if not expectation_ids:
+            continue
+
+        unexpected_count = sum(counts_map.get(exp_id, 0) for exp_id in expectation_ids)
+        if unexpected_count == 0:
+            continue
+
+        status_label = status.get("status_label", "Derived Status")
+        expectation_type = status.get(
+            "expectation_type", "custom:derived_null_group"
+        )
+        expectation_id = status.get("expectation_id") or f"derived::{status_label}"
+
+        context_columns: set[str] = set()
+        for exp_id in expectation_ids:
+            context_columns.update(expectation_context_map.get(exp_id, []))
+
+        sorted_context_columns = sorted(context_columns)
+        table_grain = None
+        unique_by: list[str] = []
+        if sorted_context_columns:
+            table_grain, unique_by = get_grain_for_column(sorted_context_columns[0])
+
+        unexpected_percent = (
+            (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+        )
+
+        result = {
+            "expectation_type": expectation_type,
+            "column": status_label,
+            "status_label": status_label,
+            "expectation_id": expectation_id,
+            "success": False,
+            "element_count": element_count,
+            "unexpected_count": unexpected_count,
+            "unexpected_percent": round(unexpected_percent, 2),
+            "table_grain": table_grain,
+            "unique_by": unique_by,
+            "flag_column": "validation_results",
+            "context_columns": sorted_context_columns,
+        }
+
+        if include_failure_details:
+            failure_rows: list[pd.Series] = []
+            for exp_id in expectation_ids:
+                failure_rows.extend(failure_rows_map.get(exp_id, []))
+
+            result["failed_materials"] = _build_failure_records_from_rows(
+                failure_rows,
+                sorted_context_columns,
+            )
+
+        derived_results.append(result)
+
+    return derived_results
 
 
 def _parse_json_array(json_data) -> list:
