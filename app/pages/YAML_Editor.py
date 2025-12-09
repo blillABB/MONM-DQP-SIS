@@ -78,7 +78,12 @@ def load_yaml_file(yaml_path: Path) -> dict:
     with open(yaml_path, 'r') as f:
         return yaml.safe_load(f)
 
-def save_yaml_suite(suite_metadata: dict, validations: list, data_source: dict | None = None) -> bool:
+def save_yaml_suite(
+    suite_metadata: dict,
+    validations: list,
+    data_source: dict | None = None,
+    derived_statuses: list | None = None,
+) -> bool:
     """
     Save YAML validation suite file.
 
@@ -96,7 +101,8 @@ def save_yaml_suite(suite_metadata: dict, validations: list, data_source: dict |
     yaml_content = {
         "metadata": suite_metadata,
         "data_source": data_source or {},
-        "validations": validations
+        "validations": validations,
+        "derived_statuses": derived_statuses or [],
     }
 
     # Save YAML file
@@ -141,6 +147,9 @@ if "suite_metadata" not in st.session_state:
 if "validations" not in st.session_state:
     st.session_state.validations = []
 
+if "derived_statuses" not in st.session_state:
+    st.session_state.derived_statuses = []
+
 if "data_source" not in st.session_state:
     st.session_state.data_source = {
         "table": DEFAULT_TABLE,
@@ -153,6 +162,9 @@ if "current_mode" not in st.session_state:
 
 if "editing_index" not in st.session_state:
     st.session_state.editing_index = None  # None or index of rule being edited
+
+if "editing_derived_index" not in st.session_state:
+    st.session_state.editing_derived_index = None  # None or index of derived group being edited
 
 # ----------------------------------------------------
 # Section 1: Mode Selection
@@ -196,13 +208,15 @@ if st.session_state.current_mode == "edit":
 
                 # Load into session state
                 st.session_state.suite_metadata = data.get("metadata", {})
-                st.session_state.validations = data.get("validations", [])
+                st.session_state.validations = data.get("validations", []) or []
+                st.session_state.derived_statuses = data.get("derived_statuses", []) or []
                 loaded_data_source = data.get("data_source")
                 if not isinstance(loaded_data_source, dict):
                     loaded_data_source = {"table": DEFAULT_TABLE, "filters": {}, "distinct": False}
                 else:
                     loaded_data_source.setdefault("distinct", False)
                 st.session_state.data_source = loaded_data_source
+                st.session_state.editing_derived_index = None
 
                 st.success(f"✅ Loaded suite: {selected_file_name}")
                 st.rerun()
@@ -352,6 +366,7 @@ else:
                         "data_source": "get_level_1_dataframe"
                     }
                     st.session_state.validations = []
+                    st.session_state.derived_statuses = []
                     st.session_state.data_source = {
                         "table": DEFAULT_TABLE,
                         "filters": {},
@@ -359,6 +374,7 @@ else:
                     }
                     st.session_state.current_mode = "new"
                     st.session_state.confirm_delete = False
+                    st.session_state.editing_derived_index = None
                     st.rerun()
                 else:
                     st.error(f"❌ File not found: {yaml_file}")
@@ -1170,16 +1186,141 @@ else:
     st.info("No validation rules added yet. Use the form above to add rules.")
 
 # ----------------------------------------------------
-# Section 7: YAML Preview & Save
+# Section 7: Derived Status Groups
 # ----------------------------------------------------
-st.header("7. YAML Preview & Save")
+st.header("7. Derived Status Groups")
+
+is_editing_derived = st.session_state.editing_derived_index is not None
+
+if is_editing_derived:
+    st.info(f"✏️ Editing Derived Group #{st.session_state.editing_derived_index + 1}")
+    derived_group = st.session_state.derived_statuses[st.session_state.editing_derived_index]
+    default_status_label = derived_group.get("status", "")
+    default_expectation_ids = derived_group.get("expectation_ids", []) or []
+    default_expectation_type = derived_group.get("expectation_type", "")
+    default_expectation_id = derived_group.get("expectation_id", "")
+
+    if st.button("❌ Cancel Derived Edit", key="cancel_derived_edit"):
+        st.session_state.editing_derived_index = None
+        st.rerun()
+else:
+    derived_group = None
+    default_status_label = ""
+    default_expectation_ids = []
+    default_expectation_type = ""
+    default_expectation_id = ""
+
+with st.form("derived_status_form", enter_to_submit=False):
+    status_label = st.text_input(
+        "Status Label",
+        value=default_status_label,
+        placeholder="Warning / Critical / Info",
+        help="Label for this derived status grouping",
+        key="derived_status_label",
+    )
+
+    expectation_ids_text = st.text_area(
+        "Expectation IDs (one per line)",
+        value="\n".join(str(v) for v in default_expectation_ids),
+        placeholder="exp_not_null_material\nexp_unique_product",
+        help="List expectation ids that map to this derived status",
+        key="derived_expectation_ids",
+    )
+
+    expectation_type = st.text_input(
+        "Expectation Type (optional)",
+        value=default_expectation_type,
+        help="Optional expectation type filter for this group",
+        key="derived_expectation_type",
+    )
+
+    expectation_id = st.text_input(
+        "Expectation ID (optional)",
+        value=default_expectation_id,
+        help="Optional expectation id to filter this group",
+        key="derived_expectation_id",
+    )
+
+    submit_label = "Update Derived Group" if is_editing_derived else "Add Derived Group"
+    submitted = st.form_submit_button(submit_label, type="primary")
+
+    if submitted:
+        parsed_ids = [
+            val.strip()
+            for val in expectation_ids_text.replace(",", "\n").split("\n")
+            if val.strip()
+        ]
+
+        if not status_label:
+            st.error("Please provide a status label")
+        else:
+            derived_entry = {
+                "status": status_label,
+                "expectation_ids": parsed_ids,
+            }
+
+            if expectation_type:
+                derived_entry["expectation_type"] = expectation_type
+
+            if expectation_id:
+                derived_entry["expectation_id"] = expectation_id
+
+            if is_editing_derived:
+                st.session_state.derived_statuses[st.session_state.editing_derived_index] = derived_entry
+                st.session_state.editing_derived_index = None
+                st.success("✅ Updated derived status group")
+            else:
+                st.session_state.derived_statuses.append(derived_entry)
+                st.success("✅ Added derived status group")
+
+            st.rerun()
+
+st.divider()
+
+if st.session_state.derived_statuses:
+    st.success(f"📋 {len(st.session_state.derived_statuses)} derived group(s) configured")
+
+    for idx, derived in enumerate(st.session_state.derived_statuses):
+        status_title = derived.get("status", f"Group {idx + 1}") or f"Group {idx + 1}"
+        with st.expander(f"Derived Group {idx + 1}: {status_title}", expanded=False):
+            st.json(derived)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"✏️ Edit Derived {idx + 1}", key=f"edit_derived_{idx}"):
+                    st.session_state.editing_derived_index = idx
+                    st.rerun()
+            with col2:
+                if st.button(f"🗑️ Remove Derived {idx + 1}", key=f"remove_derived_{idx}"):
+                    st.session_state.derived_statuses.pop(idx)
+                    if st.session_state.editing_derived_index == idx:
+                        st.session_state.editing_derived_index = None
+                    elif (
+                        st.session_state.editing_derived_index is not None
+                        and st.session_state.editing_derived_index > idx
+                    ):
+                        st.session_state.editing_derived_index -= 1
+                    st.rerun()
+
+    if st.button("🗑️ Clear All Derived Groups", key="clear_all_derived"):
+        st.session_state.derived_statuses = []
+        st.session_state.editing_derived_index = None
+        st.rerun()
+else:
+    st.info("No derived status groups defined. Use the form above to add groups.")
+
+# ----------------------------------------------------
+# Section 8: YAML Preview & Save
+# ----------------------------------------------------
+st.header("8. YAML Preview & Save")
 
 if st.session_state.suite_metadata["suite_name"]:
     # Generate YAML preview
     yaml_content = yaml.dump({
         "metadata": st.session_state.suite_metadata,
         "data_source": st.session_state.data_source,
-        "validations": st.session_state.validations
+        "validations": st.session_state.validations,
+        "derived_statuses": st.session_state.derived_statuses,
     }, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
     st.code(yaml_content, language="yaml")
@@ -1193,6 +1334,7 @@ if st.session_state.suite_metadata["suite_name"]:
                 st.session_state.suite_metadata,
                 st.session_state.validations,
                 st.session_state.data_source,
+                st.session_state.derived_statuses,
             ):
                 st.balloons()
                 st.info("🎉 Suite saved successfully! You can now use it in validations.")
@@ -1206,11 +1348,13 @@ if st.session_state.suite_metadata["suite_name"]:
                 "data_source": "get_level_1_dataframe"
             }
             st.session_state.validations = []
+            st.session_state.derived_statuses = []
             st.session_state.data_source = {
                 "table": DEFAULT_TABLE,
                 "filters": {},
                 "distinct": False
             }
+            st.session_state.editing_derived_index = None
             st.rerun()
 
 else:
