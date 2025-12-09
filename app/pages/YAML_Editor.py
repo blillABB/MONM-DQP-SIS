@@ -26,6 +26,7 @@ st.caption("Create new or edit existing validation suites using forms")
 # Constants
 # ----------------------------------------------------
 YAML_DIR = Path("validation_yaml")
+DEFAULT_TABLE = 'PROD_MO_MONM.REPORTING."vw_ProductDataAll"'
 
 # ----------------------------------------------------
 # Sidebar: Column Cache Management
@@ -77,7 +78,7 @@ def load_yaml_file(yaml_path: Path) -> dict:
     with open(yaml_path, 'r') as f:
         return yaml.safe_load(f)
 
-def save_yaml_suite(suite_metadata: dict, validations: list) -> bool:
+def save_yaml_suite(suite_metadata: dict, validations: list, data_source: dict | None = None) -> bool:
     """
     Save YAML validation suite file.
 
@@ -94,6 +95,7 @@ def save_yaml_suite(suite_metadata: dict, validations: list) -> bool:
     # Build YAML structure
     yaml_content = {
         "metadata": suite_metadata,
+        "data_source": data_source or {},
         "validations": validations
     }
 
@@ -124,6 +126,7 @@ def save_yaml_suite(suite_metadata: dict, validations: list) -> bool:
 # Keep old function name as alias for backward compatibility
 save_yaml_and_generate_python = save_yaml_suite
 
+
 # ----------------------------------------------------
 # Session state initialization
 # ----------------------------------------------------
@@ -137,6 +140,13 @@ if "suite_metadata" not in st.session_state:
 
 if "validations" not in st.session_state:
     st.session_state.validations = []
+
+if "data_source" not in st.session_state:
+    st.session_state.data_source = {
+        "table": DEFAULT_TABLE,
+        "filters": {},
+        "distinct": False
+    }
 
 if "current_mode" not in st.session_state:
     st.session_state.current_mode = "new"  # "new" or "edit"
@@ -187,6 +197,12 @@ if st.session_state.current_mode == "edit":
                 # Load into session state
                 st.session_state.suite_metadata = data.get("metadata", {})
                 st.session_state.validations = data.get("validations", [])
+                loaded_data_source = data.get("data_source")
+                if not isinstance(loaded_data_source, dict):
+                    loaded_data_source = {"table": DEFAULT_TABLE, "filters": {}, "distinct": False}
+                else:
+                    loaded_data_source.setdefault("distinct", False)
+                st.session_state.data_source = loaded_data_source
 
                 st.success(f"✅ Loaded suite: {selected_file_name}")
                 st.rerun()
@@ -336,6 +352,11 @@ else:
                         "data_source": "get_level_1_dataframe"
                     }
                     st.session_state.validations = []
+                    st.session_state.data_source = {
+                        "table": DEFAULT_TABLE,
+                        "filters": {},
+                        "distinct": False
+                    }
                     st.session_state.current_mode = "new"
                     st.session_state.confirm_delete = False
                     st.rerun()
@@ -347,12 +368,127 @@ else:
                 st.rerun()
 
 # ----------------------------------------------------
-# Section 4: Add/Edit Validation Rules
+# Section 4: Data Source & Query Filters
+# ----------------------------------------------------
+st.header("4. Data Source & Query Filters")
+
+table_value = st.text_input(
+    "Source Table",
+    value=st.session_state.data_source.get("table", DEFAULT_TABLE),
+    help="Fully qualified table or view name used in the generated query",
+)
+st.session_state.data_source["table"] = table_value.strip() or DEFAULT_TABLE
+
+distinct_rows = st.checkbox(
+    "Select distinct rows in base CTE",
+    value=st.session_state.data_source.get("distinct", False),
+    help="Apply SELECT DISTINCT when building the base data set to remove duplicates.",
+)
+st.session_state.data_source["distinct"] = distinct_rows
+
+st.caption(
+    "Filters can target any column from the source table. Distinct values are shown when "
+    "available from cached metadata."
+)
+
+current_filters = st.session_state.data_source.get("filters", {})
+
+with st.expander("Current Filters", expanded=bool(current_filters)):
+    if current_filters:
+        for col, condition in list(current_filters.items()):
+            col_display, col_remove = st.columns([4, 1])
+            with col_display:
+                st.write(f"**{col}**: {condition}")
+            with col_remove:
+                if st.button("Remove", key=f"remove_filter_{col}"):
+                    del st.session_state.data_source["filters"][col]
+                    st.rerun()
+    else:
+        st.info("No filters defined. Add one using the form below.")
+
+with st.form("add_filter_form", enter_to_submit=False):
+    col1, col2 = st.columns([2, 1])
+    selected_field = col1.selectbox(
+        "Field",
+        options=columns,
+        help="Choose any column from the source table to filter by",
+    )
+    filter_type = col2.selectbox(
+        "Filter Type",
+        options=["Equals", "One of (IN)", "LIKE pattern"],
+        help="How should the filter be applied?",
+    )
+
+    filter_value = None
+    if filter_type == "Equals":
+        if selected_field in distinct_values:
+            filter_value = st.selectbox(
+                "Value",
+                options=distinct_values[selected_field],
+            )
+        else:
+            filter_value = st.text_input(
+                "Value",
+                placeholder="Exact match value",
+            )
+    elif filter_type == "One of (IN)":
+        if selected_field in distinct_values:
+            filter_value = st.multiselect(
+                "Allowed Values",
+                options=distinct_values[selected_field],
+            )
+        else:
+            values_text = st.text_area(
+                "Allowed Values (one per line)",
+                placeholder="Value A\nValue B\nValue C",
+            )
+            filter_value = [
+                v.strip()
+                for v in values_text.split("\n")
+                if v.strip()
+            ]
+    elif filter_type == "LIKE pattern":
+        filter_value = st.text_input(
+            "Pattern",
+            placeholder="LIKE ABC%",
+            help="Use SQL LIKE syntax (e.g., ABC%, %XYZ)",
+        )
+
+    submitted = st.form_submit_button("Add / Update Filter", type="primary")
+    if submitted:
+        if filter_type == "Equals" and filter_value:
+            st.session_state.data_source.setdefault("filters", {})[
+                selected_field
+            ] = filter_value
+            st.success(f"Added filter: {selected_field} = {filter_value}")
+            st.rerun()
+        elif filter_type == "One of (IN)" and filter_value:
+            st.session_state.data_source.setdefault("filters", {})[
+                selected_field
+            ] = filter_value
+            st.success(
+                f"Added filter: {selected_field} IN ({', '.join(map(str, filter_value))})"
+            )
+            st.rerun()
+        elif filter_type == "LIKE pattern" and filter_value:
+            like_value = filter_value.strip()
+            if not like_value.upper().startswith("LIKE"):
+                like_value = f"LIKE '{like_value}'"
+            st.session_state.data_source.setdefault("filters", {})[
+                selected_field
+            ] = like_value
+            st.success(f"Added filter: {selected_field} {like_value}")
+            st.rerun()
+        else:
+            st.error("Please provide a filter value.")
+
+# ----------------------------------------------------
+# Section 5: Add/Edit Validation Rules
 # ----------------------------------------------------
 is_editing = st.session_state.editing_index is not None
 
 if is_editing:
-    st.header("4. Edit Validation Rule")
+    st.header("5. Edit Validation Rule")
     st.info(f"✏️ Editing Rule #{st.session_state.editing_index + 1}")
 
     # Load the rule being edited
@@ -364,7 +500,7 @@ if is_editing:
         st.session_state.editing_index = None
         st.rerun()
 else:
-    st.header("4. Add Validation Rules")
+    st.header("5. Add Validation Rules")
     editing_rule = None
     default_type = "expect_column_values_to_not_be_null"
 
@@ -999,9 +1135,9 @@ elif validation_type == "expect_compound_columns_to_be_unique":
             st.error("Please select at least 2 columns for a composite key")
 
 # ----------------------------------------------------
-# Section 5: Current Validation Rules
+# Section 6: Current Validation Rules
 # ----------------------------------------------------
-st.header("5. Current Validation Rules")
+st.header("6. Current Validation Rules")
 
 if st.session_state.validations:
     st.success(f"📋 {len(st.session_state.validations)} validation rule(s) configured")
@@ -1034,14 +1170,15 @@ else:
     st.info("No validation rules added yet. Use the form above to add rules.")
 
 # ----------------------------------------------------
-# Section 6: YAML Preview & Save
+# Section 7: YAML Preview & Save
 # ----------------------------------------------------
-st.header("6. YAML Preview & Save")
+st.header("7. YAML Preview & Save")
 
 if st.session_state.suite_metadata["suite_name"]:
     # Generate YAML preview
     yaml_content = yaml.dump({
         "metadata": st.session_state.suite_metadata,
+        "data_source": st.session_state.data_source,
         "validations": st.session_state.validations
     }, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
@@ -1052,7 +1189,11 @@ if st.session_state.suite_metadata["suite_name"]:
 
     with col1:
         if st.button("💾 Save Suite (YAML + Generate Python)", type="primary", key="save_suite"):
-            if save_yaml_and_generate_python(st.session_state.suite_metadata, st.session_state.validations):
+            if save_yaml_and_generate_python(
+                st.session_state.suite_metadata,
+                st.session_state.validations,
+                st.session_state.data_source,
+            ):
                 st.balloons()
                 st.info("🎉 Suite saved successfully! You can now use it in validations.")
 
@@ -1065,6 +1206,11 @@ if st.session_state.suite_metadata["suite_name"]:
                 "data_source": "get_level_1_dataframe"
             }
             st.session_state.validations = []
+            st.session_state.data_source = {
+                "table": DEFAULT_TABLE,
+                "filters": {},
+                "distinct": False
+            }
             st.rerun()
 
 else:
