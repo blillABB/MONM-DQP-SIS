@@ -13,15 +13,20 @@ from pathlib import Path
 from datetime import date
 
 from validations.snowflake_runner import run_validation_from_yaml_snowflake
-from core.cache_manager import get_cached_results, save_cached_results, clear_cache
+from core.cache_manager import get_cached_results, save_cached_results, clear_cache, get_cached_failures_csv, save_cached_failures_csv
+from core.config import ensure_snowflake_config, snowflake_config_summary
 from validations.base_validation import BaseValidationSuite
 from app.components.drill_down import render_expectation_drill_down
 from app.suite_discovery import discover_suites, get_suite_by_name
+from io import StringIO
 
 # ----------------------------------------------------------
 # Page setup
 # ----------------------------------------------------------
 st.set_page_config(page_title="Validation Report", layout="wide")
+
+# Ensure Snowflake configuration is valid
+ensure_snowflake_config()
 
 # ----------------------------------------------------------
 # Suite discovery and selection
