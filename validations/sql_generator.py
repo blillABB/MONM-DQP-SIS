@@ -213,17 +213,17 @@ FROM base_data
         objects: List[str] = []
 
         for col in columns:
-            quoted_col = f'"{col}"'
+            col_upper = col.upper()
             expectation_id = build_scoped_expectation_id(validation, col)
 
             objects.append(
                 "CASE WHEN {col} IS NULL THEN OBJECT_CONSTRUCT("
                 "'expectation_id', '{expectation_id}', "
                 "'expectation_type', 'expect_column_values_to_not_be_null', "
-                "'column', '{col}', "
+                "'column', '{col_name}', "
                 "'failure_reason', 'NULL_VALUE', "
-                "'unexpected_value', {quoted_col}"
-                ") END".format(col=quoted_col, expectation_id=expectation_id, col_name=col)
+                "'unexpected_value', {col}"
+                ") END".format(col=col_upper, expectation_id=expectation_id, col_name=col)
             )
 
         return objects
@@ -234,7 +234,7 @@ FROM base_data
         objects: List[str] = []
 
         for column, allowed_values in rules.items():
-            quoted_col = f'"{column}"'
+            col_upper = column.upper()
             expectation_id = build_scoped_expectation_id(validation, column)
 
             # Format value set for SQL
@@ -253,7 +253,7 @@ FROM base_data
                 "'unexpected_value', {col}, "
                 "'allowed_values', ARRAY_CONSTRUCT({allowed_values})"
                 ") END".format(
-                    col=quoted_col,
+                    col=col_upper,
                     value_set=value_set,
                     expectation_id=expectation_id,
                     column=column,
@@ -271,7 +271,7 @@ FROM base_data
         if not column:
             return []
 
-        quoted_col = f'"{column}"'
+        col_upper = column.upper()
         expectation_id = build_scoped_expectation_id(validation, column)
 
         # Format value set for SQL
@@ -287,7 +287,7 @@ FROM base_data
             "'unexpected_value', {col}, "
             "'forbidden_values', ARRAY_CONSTRUCT({forbidden_values})"
             ") END".format(
-                col=quoted_col,
+                col=col_upper,
                 value_set=value_set,
                 expectation_id=expectation_id,
                 column=column,
@@ -304,7 +304,7 @@ FROM base_data
         objects: List[str] = []
 
         for column in columns:
-            quoted_col = f'"{column}"'
+            col_upper = column.upper()
             expectation_id = build_scoped_expectation_id(validation, column)
 
             # Get grain-specific context
@@ -320,7 +320,7 @@ FROM base_data
                 "'unexpected_value', {col}, "
                 "'regex', '{pattern}'"
                 ") END".format(
-                    col=quoted_col,
+                    col=col_upper,
                     pattern=escaped_pattern,
                     expectation_id=expectation_id,
                     column=column,
@@ -334,8 +334,8 @@ FROM base_data
         col_a = validation.get("column_a")
         col_b = validation.get("column_b")
 
-        quoted_a = f'"{col_a}"'
-        quoted_b = f'"{col_b}"'
+        col_a_upper = col_a.upper()
+        col_b_upper = col_b.upper()
         expectation_id = build_scoped_expectation_id(validation, f"{col_a}|{col_b}")
 
         object_expr = (
@@ -347,7 +347,7 @@ FROM base_data
             "'unexpected_value_a', {a}, "
             "'unexpected_value_b', {b}"
             ") END\n  "
-        ).format(a=quoted_a, b=quoted_b, expectation_id=expectation_id, col_a=col_a, col_b=col_b)
+        ).format(a=col_a_upper, b=col_b_upper, expectation_id=expectation_id, col_a=col_a, col_b=col_b)
 
         return [object_expr]
 
@@ -357,8 +357,8 @@ FROM base_data
         col_b = validation.get("column_b")
         or_equal = validation.get("or_equal", False)
 
-        quoted_a = f'"{col_a}"'
-        quoted_b = f'"{col_b}"'
+        col_a_upper = col_a.upper()
+        col_b_upper = col_b.upper()
         expectation_id = build_scoped_expectation_id(validation, f"{col_a}|{col_b}")
 
         # Build comparison operator
@@ -372,10 +372,11 @@ FROM base_data
             "'failure_reason', 'VALUE_NOT_GREATER', "
             "'unexpected_value_a', {a}, "
             "'unexpected_value_b', {b}, "
-            "'or_equal', {or_equal}""\n    ) END\n  "
+            "'or_equal', {or_equal}"
+            "\n    ) END\n  "
         ).format(
-            a=quoted_a,
-            b=quoted_b,
+            a=col_a_upper,
+            b=col_b_upper,
             expectation_id=expectation_id,
             col_a=col_a,
             col_b=col_b,
@@ -390,8 +391,8 @@ FROM base_data
         condition_values = validation.get("condition_values", [])
         required_col = validation.get("required_column")
 
-        quoted_condition = f'"{condition_col}"'
-        quoted_required = f'"{required_col}"'
+        condition_upper = condition_col.upper()
+        required_upper = required_col.upper()
         expectation_id = build_scoped_expectation_id(validation, f"{condition_col}|{required_col}")
 
         # Format condition values
@@ -409,8 +410,8 @@ FROM base_data
             "'unexpected_required_value', {required}"
             ") END\n  "
         ).format(
-            condition=quoted_condition,
-            required=quoted_required,
+            condition=condition_upper,
+            required=required_upper,
             value_set=value_set,
             expectation_id=expectation_id,
             condition_col=condition_col,
@@ -427,8 +428,8 @@ FROM base_data
         target_col = validation.get("target_column")
         allowed_values = validation.get("allowed_values", [])
 
-        quoted_condition = f'"{condition_col}"'
-        quoted_target = f'"{target_col}"'
+        condition_upper = condition_col.upper()
+        target_upper = target_col.upper()
         expectation_id = build_scoped_expectation_id(validation, f"{condition_col}|{target_col}")
 
         # Format value sets
@@ -449,8 +450,8 @@ FROM base_data
             "'unexpected_target_value', {target}"
             ") END\n  "
         ).format(
-            condition=quoted_condition,
-            target=quoted_target,
+            condition=condition_upper,
+            target=target_upper,
             condition_set=condition_set,
             allowed_set=allowed_set,
             expectation_id=expectation_id,
