@@ -406,6 +406,50 @@ if view == "Overview":
     st.divider()
 
     # =====================================================
+    # DERIVED STATUS SUMMARY
+    # =====================================================
+    derived_status_rows = []
+    for result in results or []:
+        status_label = result.get("status_label")
+        if not status_label:
+            continue
+
+        derived_status_rows.append({
+            "Status": status_label,
+            "Expectation ID": result.get("expectation_id") or status_label,
+            "Expectation Type": result.get("expectation_type") or "Derived Status",
+            "Failed Materials": result.get("unexpected_count", 0),
+            "Failure %": result.get("unexpected_percent", 0.0),
+            "Context": ", ".join(result.get("context_columns") or []),
+        })
+
+    st.divider()
+    with st.expander("Derived Statuses", expanded=False):
+        st.caption(
+            "Derived statuses synthesize multiple expectations into a single flag. "
+            "This view shows any derived groups that triggered during the run."
+        )
+
+        if derived_status_rows:
+            derived_df = pd.DataFrame(derived_status_rows)
+            derived_df = derived_df[[
+                "Status",
+                "Expectation ID",
+                "Expectation Type",
+                "Failed Materials",
+                "Failure %",
+                "Context",
+            ]]
+
+            st.dataframe(
+                derived_df,
+                hide_index=True,
+                use_container_width=True,
+            )
+        else:
+            st.info("No derived statuses were triggered for this validation run.")
+
+    # =====================================================
     # CHARTS ROW - Plotly visualizations
     # =====================================================
     col_left, col_right = st.columns([1, 2])
