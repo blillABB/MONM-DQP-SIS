@@ -11,6 +11,7 @@ Key features:
 - No persisted queries - generated on-demand from rules
 """
 
+import hashlib
 from typing import Dict, List, Any
 from core.grain_mapping import get_context_columns_for_columns
 
@@ -36,7 +37,9 @@ class ValidationSQLGenerator:
         self.suite_config = suite_config
         self.metadata = suite_config.get("metadata", {})
         self.data_source = suite_config.get("data_source", {})
-        self.validations = suite_config.get("validations", [])
+        self.validations = _annotate_expectation_ids(
+            suite_config.get("validations", []), self.metadata.get("suite_name", "")
+        )
         self.index_column = self.metadata.get("index_column", "MATERIAL_NUMBER")
         # Deprecated: failure arrays are no longer constructed in-SQL since we now
         # return full-width validation rows. Kept for backward compatibility with
@@ -62,9 +65,9 @@ class ValidationSQLGenerator:
         # Build parts of the query
         table_name = self._get_table_name()
         where_clause = self._build_where_clause()
-        flag_columns = self._build_validation_logic()
+        validation_results_clause = self._build_validation_results_clause()
         select_columns = self._build_select_clause(
-            validated_columns, context_columns, extra_columns=flag_columns
+            validated_columns, context_columns, extra_columns=[validation_results_clause]
         )
         select_keyword = "SELECT DISTINCT" if self._use_distinct() else "SELECT"
 
@@ -170,60 +173,69 @@ FROM base_data
         # Remove None values and duplicates
         return list(set(col for col in columns if col))
 
-    def _build_validation_logic(self) -> list[str]:
-        """Build validation flag expressions for all rules."""
-        flag_columns: list[str] = []
+    def _build_validation_results_clause(self) -> str:
+        """Build ARRAY_CONSTRUCT of validation failure objects."""
+        validation_objects: list[str] = []
 
         for validation in self.validations:
             val_type = validation.get("type", "")
 
             if val_type == "expect_column_values_to_not_be_null":
-                flags = self._build_not_null_validation(validation)
+                validation_objects.extend(self._build_not_null_validation(validation))
             elif val_type == "expect_column_values_to_be_in_set":
-                flags = self._build_value_in_set_validation(validation)
+                validation_objects.extend(self._build_value_in_set_validation(validation))
             elif val_type == "expect_column_values_to_not_be_in_set":
-                flags = self._build_value_not_in_set_validation(validation)
+                validation_objects.extend(self._build_value_not_in_set_validation(validation))
             elif val_type == "expect_column_values_to_match_regex":
-                flags = self._build_regex_validation(validation)
+                validation_objects.extend(self._build_regex_validation(validation))
             elif val_type == "expect_column_pair_values_to_be_equal":
-                flags = self._build_column_pair_equal_validation(validation)
+                validation_objects.extend(self._build_column_pair_equal_validation(validation))
             elif val_type == "expect_column_pair_values_a_to_be_greater_than_b":
-                flags = self._build_column_pair_greater_validation(validation)
+                validation_objects.extend(self._build_column_pair_greater_validation(validation))
             elif val_type == "custom:conditional_required":
-                flags = self._build_conditional_required_validation(validation)
+                validation_objects.extend(
+                    self._build_conditional_required_validation(validation)
+                )
             elif val_type == "custom:conditional_value_in_set":
-                flags = self._build_conditional_value_in_set_validation(validation)
-            else:
-                flags = []
+                validation_objects.extend(
+                    self._build_conditional_value_in_set_validation(validation)
+                )
 
-            flag_columns.extend(flags)
+        if not validation_objects:
+            return "ARRAY_CONSTRUCT() AS validation_results"
 
-        return flag_columns
+        objects_clause = ",\n    ".join(validation_objects)
+        return f"ARRAY_COMPACT(ARRAY_CONSTRUCT(\n    {objects_clause}\n  )) AS validation_results"
 
     def _build_not_null_validation(self, validation: Dict) -> List[str]:
         """Build SQL for not-null validation flags."""
         columns = validation.get("columns", [])
-        flags: List[str] = []
+        objects: List[str] = []
 
         for col in columns:
-            safe_col_name = col.lower().replace('"', '')
             quoted_col = f'"{col}"'
-            flag_name = f"{safe_col_name}_null_flag"
+            expectation_id = build_scoped_expectation_id(validation, col)
 
-            # Get grain-specific context for this column
-            flags.append(f"CASE WHEN {quoted_col} IS NULL THEN 1 ELSE 0 END as {flag_name}")
+            objects.append(
+                "CASE WHEN {col} IS NULL THEN OBJECT_CONSTRUCT("
+                "'expectation_id', '{expectation_id}', "
+                "'expectation_type', 'expect_column_values_to_not_be_null', "
+                "'column', '{col}', "
+                "'failure_reason', 'NULL_VALUE', "
+                "'unexpected_value', {quoted_col}"
+                ") END".format(col=quoted_col, expectation_id=expectation_id, col_name=col)
+            )
 
-        return flags
+        return objects
 
     def _build_value_in_set_validation(self, validation: Dict) -> List[str]:
         """Build SQL for value-in-set validation flags."""
         rules = validation.get("rules", {})
-        flags: List[str] = []
+        objects: List[str] = []
 
         for column, allowed_values in rules.items():
-            safe_col_name = column.lower().replace('"', '')
             quoted_col = f'"{column}"'
-            flag_name = f"{safe_col_name}_invalid_flag"
+            expectation_id = build_scoped_expectation_id(validation, column)
 
             # Format value set for SQL
             if isinstance(allowed_values, list):
@@ -232,12 +244,24 @@ FROM base_data
             else:
                 value_set = f"'{allowed_values}'"
 
-            # Get grain-specific context
-            flags.append(
-                f"CASE WHEN {quoted_col} NOT IN ({value_set}) THEN 1 ELSE 0 END as {flag_name}"
+            objects.append(
+                "CASE WHEN {col} NOT IN ({value_set}) THEN OBJECT_CONSTRUCT("
+                "'expectation_id', '{expectation_id}', "
+                "'expectation_type', 'expect_column_values_to_be_in_set', "
+                "'column', '{column}', "
+                "'failure_reason', 'VALUE_NOT_IN_SET', "
+                "'unexpected_value', {col}, "
+                "'allowed_values', ARRAY_CONSTRUCT({allowed_values})"
+                ") END".format(
+                    col=quoted_col,
+                    value_set=value_set,
+                    expectation_id=expectation_id,
+                    column=column,
+                    allowed_values=value_set,
+                )
             )
 
-        return flags
+        return objects
 
     def _build_value_not_in_set_validation(self, validation: Dict) -> List[str]:
         """Build SQL for value-not-in-set validation flags."""
@@ -247,54 +271,85 @@ FROM base_data
         if not column:
             return []
 
-        safe_col_name = column.lower().replace('"', '')
         quoted_col = f'"{column}"'
-        flag_name = f"{safe_col_name}_forbidden_flag"
+        expectation_id = build_scoped_expectation_id(validation, column)
 
         # Format value set for SQL
         value_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
                              for v in forbidden_values)
 
-        # Get grain-specific context
-        flag_column = f"CASE WHEN {quoted_col} IN ({value_set}) THEN 1 ELSE 0 END as {flag_name}"
+        object_expr = (
+            "CASE WHEN {col} IN ({value_set}) THEN OBJECT_CONSTRUCT("
+            "'expectation_id', '{expectation_id}', "
+            "'expectation_type', 'expect_column_values_to_not_be_in_set', "
+            "'column', '{column}', "
+            "'failure_reason', 'VALUE_IN_FORBIDDEN_SET', "
+            "'unexpected_value', {col}, "
+            "'forbidden_values', ARRAY_CONSTRUCT({forbidden_values})"
+            ") END".format(
+                col=quoted_col,
+                value_set=value_set,
+                expectation_id=expectation_id,
+                column=column,
+                forbidden_values=value_set,
+            )
+        )
 
-        return [flag_column]
+        return [object_expr]
 
     def _build_regex_validation(self, validation: Dict) -> List[str]:
         """Build SQL for regex validation flags."""
         columns = validation.get("columns", [])
         regex_pattern = validation.get("regex", "")
-        flags: List[str] = []
+        objects: List[str] = []
 
         for column in columns:
-            safe_col_name = column.lower().replace('"', '')
             quoted_col = f'"{column}"'
-            flag_name = f"{safe_col_name}_regex_fail_flag"
+            expectation_id = build_scoped_expectation_id(validation, column)
 
             # Get grain-specific context
             # Escape single quotes in regex pattern
             escaped_pattern = regex_pattern.replace("'", "''")
 
-            flags.append(
-                f"CASE WHEN NOT RLIKE({quoted_col}, '{escaped_pattern}') THEN 1 ELSE 0 END as {flag_name}"
+            objects.append(
+                "CASE WHEN NOT RLIKE({col}, '{pattern}') THEN OBJECT_CONSTRUCT("
+                "'expectation_id', '{expectation_id}', "
+                "'expectation_type', 'expect_column_values_to_match_regex', "
+                "'column', '{column}', "
+                "'failure_reason', 'REGEX_MISMATCH', "
+                "'unexpected_value', {col}, "
+                "'regex', '{pattern}'"
+                ") END".format(
+                    col=quoted_col,
+                    pattern=escaped_pattern,
+                    expectation_id=expectation_id,
+                    column=column,
+                )
             )
 
-        return flags
+        return objects
 
     def _build_column_pair_equal_validation(self, validation: Dict) -> List[str]:
         """Build SQL for column pair equality validation flags."""
         col_a = validation.get("column_a")
         col_b = validation.get("column_b")
 
-        safe_name = f"{col_a}_{col_b}_equal".lower().replace('"', '')
         quoted_a = f'"{col_a}"'
         quoted_b = f'"{col_b}"'
-        flag_name = f"{safe_name}_mismatch_flag"
+        expectation_id = build_scoped_expectation_id(validation, f"{col_a}|{col_b}")
 
-        # Get context for both columns
-        flag_expr = f"CASE\n    WHEN {quoted_a} != {quoted_b}\n      OR ({quoted_a} IS NULL AND {quoted_b} IS NOT NULL)\n      OR ({quoted_a} IS NOT NULL AND {quoted_b} IS NULL)\n    THEN 1 ELSE 0\n  END as {flag_name}"
+        object_expr = (
+            "CASE\n    WHEN {a} != {b}\n      OR ({a} IS NULL AND {b} IS NOT NULL)\n      OR ({a} IS NOT NULL AND {b} IS NULL)\n    THEN OBJECT_CONSTRUCT("
+            "'expectation_id', '{expectation_id}', "
+            "'expectation_type', 'expect_column_pair_values_to_be_equal', "
+            "'columns', ARRAY_CONSTRUCT('{col_a}', '{col_b}'), "
+            "'failure_reason', 'VALUES_NOT_EQUAL', "
+            "'unexpected_value_a', {a}, "
+            "'unexpected_value_b', {b}"
+            ") END\n  "
+        ).format(a=quoted_a, b=quoted_b, expectation_id=expectation_id, col_a=col_a, col_b=col_b)
 
-        return [flag_expr]
+        return [object_expr]
 
     def _build_column_pair_greater_validation(self, validation: Dict) -> List[str]:
         """Build SQL for column pair greater-than validation flags."""
@@ -302,18 +357,32 @@ FROM base_data
         col_b = validation.get("column_b")
         or_equal = validation.get("or_equal", False)
 
-        safe_name = f"{col_a}_{col_b}_greater".lower().replace('"', '')
         quoted_a = f'"{col_a}"'
         quoted_b = f'"{col_b}"'
-        flag_name = f"{safe_name}_fail_flag"
+        expectation_id = build_scoped_expectation_id(validation, f"{col_a}|{col_b}")
 
         # Build comparison operator
         operator = ">=" if or_equal else ">"
 
-        # Get context for both columns
-        flag_expr = f"CASE\n    WHEN {quoted_a} < {quoted_b}\n      OR {quoted_a} IS NULL\n      OR {quoted_b} IS NULL\n    THEN 1 ELSE 0\n  END as {flag_name}"
+        object_expr = (
+            "CASE\n    WHEN {a} < {b}\n      OR {a} IS NULL\n      OR {b} IS NULL\n    THEN OBJECT_CONSTRUCT("
+            "'expectation_id', '{expectation_id}', "
+            "'expectation_type', 'expect_column_pair_values_a_to_be_greater_than_b', "
+            "'columns', ARRAY_CONSTRUCT('{col_a}', '{col_b}'), "
+            "'failure_reason', 'VALUE_NOT_GREATER', "
+            "'unexpected_value_a', {a}, "
+            "'unexpected_value_b', {b}, "
+            "'or_equal', {or_equal}""\n    ) END\n  "
+        ).format(
+            a=quoted_a,
+            b=quoted_b,
+            expectation_id=expectation_id,
+            col_a=col_a,
+            col_b=col_b,
+            or_equal=str(or_equal).upper(),
+        )
 
-        return [flag_expr]
+        return [object_expr]
 
     def _build_conditional_required_validation(self, validation: Dict) -> List[str]:
         """Build SQL for conditional required validation flags."""
@@ -321,19 +390,35 @@ FROM base_data
         condition_values = validation.get("condition_values", [])
         required_col = validation.get("required_column")
 
-        safe_name = f"{condition_col}_{required_col}_conditional".lower().replace('"', '')
         quoted_condition = f'"{condition_col}"'
         quoted_required = f'"{required_col}"'
-        flag_name = f"{safe_name}_violation_flag"
+        expectation_id = build_scoped_expectation_id(validation, f"{condition_col}|{required_col}")
 
         # Format condition values
         value_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
                              for v in condition_values)
 
-        # Get context for both columns
-        flag_expr = f"CASE\n    WHEN {quoted_condition} IN ({value_set}) AND {quoted_required} IS NULL\n    THEN 1 ELSE 0\n  END as {flag_name}"
+        object_expr = (
+            "CASE\n    WHEN {condition} IN ({value_set}) AND {required} IS NULL\n    THEN OBJECT_CONSTRUCT("
+            "'expectation_id', '{expectation_id}', "
+            "'expectation_type', 'custom:conditional_required', "
+            "'columns', ARRAY_CONSTRUCT('{condition_col}', '{required_col}'), "
+            "'failure_reason', 'MISSING_REQUIRED_WHEN_CONDITION_MET', "
+            "'condition_values', ARRAY_CONSTRUCT({condition_values}), "
+            "'unexpected_condition_value', {condition}, "
+            "'unexpected_required_value', {required}"
+            ") END\n  "
+        ).format(
+            condition=quoted_condition,
+            required=quoted_required,
+            value_set=value_set,
+            expectation_id=expectation_id,
+            condition_col=condition_col,
+            required_col=required_col,
+            condition_values=value_set,
+        )
 
-        return [flag_expr]
+        return [object_expr]
 
     def _build_conditional_value_in_set_validation(self, validation: Dict) -> List[str]:
         """Build SQL for conditional value in set validation flags."""
@@ -342,10 +427,9 @@ FROM base_data
         target_col = validation.get("target_column")
         allowed_values = validation.get("allowed_values", [])
 
-        safe_name = f"{condition_col}_{target_col}_conditional_set".lower().replace('"', '')
         quoted_condition = f'"{condition_col}"'
         quoted_target = f'"{target_col}"'
-        flag_name = f"{safe_name}_violation_flag"
+        expectation_id = build_scoped_expectation_id(validation, f"{condition_col}|{target_col}")
 
         # Format value sets
         condition_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
@@ -353,10 +437,30 @@ FROM base_data
         allowed_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
                                for v in allowed_values)
 
-        # Get context for both columns
-        flag_expr = f"CASE\n    WHEN {quoted_condition} IN ({condition_set})\n      AND {quoted_target} NOT IN ({allowed_set})\n    THEN 1 ELSE 0\n  END as {flag_name}"
+        object_expr = (
+            "CASE\n    WHEN {condition} IN ({condition_set})\n      AND {target} NOT IN ({allowed_set})\n    THEN OBJECT_CONSTRUCT("
+            "'expectation_id', '{expectation_id}', "
+            "'expectation_type', 'custom:conditional_value_in_set', "
+            "'columns', ARRAY_CONSTRUCT('{condition_col}', '{target_col}'), "
+            "'failure_reason', 'VALUE_NOT_IN_ALLOWED_SET_WHEN_CONDITION_MET', "
+            "'condition_values', ARRAY_CONSTRUCT({condition_values}), "
+            "'allowed_values', ARRAY_CONSTRUCT({allowed_values}), "
+            "'unexpected_condition_value', {condition}, "
+            "'unexpected_target_value', {target}"
+            ") END\n  "
+        ).format(
+            condition=quoted_condition,
+            target=quoted_target,
+            condition_set=condition_set,
+            allowed_set=allowed_set,
+            expectation_id=expectation_id,
+            condition_col=condition_col,
+            target_col=target_col,
+            condition_values=condition_set,
+            allowed_values=allowed_set,
+        )
 
-        return [flag_expr]
+        return [object_expr]
 
     def _build_context_fields(self, context_cols: List[str],
                              unexpected_col: str = None,
@@ -385,3 +489,36 @@ FROM base_data
                 fields.append(f"'{name}', {quoted_col}")
 
         return ",\n        ".join(fields)
+
+
+def _annotate_expectation_ids(validations: List[Dict[str, Any]], suite_name: str) -> List[Dict[str, Any]]:
+    """Attach deterministic expectation IDs so SQL and parser stay aligned."""
+
+    annotated = []
+    for idx, validation in enumerate(validations):
+        val_copy = dict(validation)
+
+        # If the validation already carries an expectation_id (from a prior
+        # annotation pass), keep it so the generator and parser stay in sync
+        # across call sites. This also prevents double-annotation when the
+        # suite is decorated before reaching the SQL generator.
+        existing_id = val_copy.get("expectation_id")
+        if existing_id:
+            annotated.append(val_copy)
+            continue
+
+        raw_id = f"{suite_name}|{idx}|{validation.get('type', '')}"
+        expectation_id = hashlib.md5(raw_id.encode()).hexdigest()[:12]
+        val_copy["expectation_id"] = f"exp_{expectation_id}"
+        annotated.append(val_copy)
+
+    return annotated
+
+
+def build_scoped_expectation_id(validation: Dict[str, Any], discriminator: str) -> str:
+    """Create a stable expectation id for a specific validation target."""
+
+    base_id = validation.get("expectation_id", "")
+    raw_scope = f"{base_id}|{discriminator}"
+    scoped_hash = hashlib.md5(raw_scope.encode()).hexdigest()[:8]
+    return f"{base_id}_{scoped_hash}"
