@@ -1289,20 +1289,34 @@ else:
 expectation_catalog = []
 expectation_label_lookup = {}
 available_expectation_types = set()
+target_lookup = {}
+
+def add_targets_for_entry(entry_targets: list[str]):
+    """Track targets for filter dropdown while avoiding duplicates."""
+    if not entry_targets:
+        target_lookup.setdefault("(no column/field)", "(no column/field)")
+        return
+
+    for target in entry_targets:
+        target_lookup.setdefault(target, target)
 
 for val in st.session_state.validations:
     exp_id = val.get("expectation_id")
     summary = format_validation_summary(val)
     label = f"{exp_id} — {summary}" if exp_id else summary
+    targets = extract_validation_targets(val)
 
     expectation_catalog.append({
         "id": exp_id,
         "label": label,
         "type": val.get("type", ""),
+        "targets": targets,
     })
 
     if exp_id:
         expectation_label_lookup[exp_id] = label
+
+    add_targets_for_entry(targets)
 
     if val.get("type"):
         available_expectation_types.add(val["type"])
@@ -1329,21 +1343,50 @@ with st.form("derived_status_form", enter_to_submit=False):
         key="derived_expectation_type",
     )
 
+    # Build column/field filter options based on the selected expectation type
     filtered_catalog = [
         entry for entry in expectation_catalog
-        if expectation_type == "(All types)" or entry["type"] == expectation_type
+        if expectation_type in {"(All types)", entry["type"]}
     ]
 
-    selection_options = [entry["id"] for entry in filtered_catalog if entry.get("id")]
+    target_options = sorted(target_lookup.keys())
+    selected_targets = st.multiselect(
+        "Columns/fields to include",
+        options=target_options,
+        default=target_options,
+        help="Narrow the validation list to specific columns/fields",
+        key="derived_target_filter",
+    )
+
+    def _matches_target(entry_targets: list[str]) -> bool:
+        if not selected_targets:
+            return True
+        if not entry_targets:
+            return "(no column/field)" in selected_targets
+        return any(target in selected_targets for target in entry_targets)
+
+    filtered_ids = [
+        entry["id"] for entry in filtered_catalog
+        if entry.get("id") and _matches_target(entry.get("targets", []))
+    ]
+
+    selection_label_lookup = {
+        entry["id"]: f"{', '.join(entry.get('targets') or ['(no column/field)'])} • {entry['type']} • {entry['label']}"
+        for entry in filtered_catalog
+        if entry.get("id") in filtered_ids
+    }
+
+    # Keep any pre-existing defaults visible even if the current filter would hide them
     for exp_id in default_expectation_ids:
-        if exp_id and exp_id not in selection_options:
-            selection_options.append(exp_id)
+        if exp_id and exp_id not in filtered_ids:
+            filtered_ids.append(exp_id)
+            selection_label_lookup.setdefault(exp_id, expectation_label_lookup.get(exp_id, exp_id))
 
     selected_expectation_ids = st.multiselect(
         "Select validations to include in this derived status",
-        options=selection_options,
-        default=default_expectation_ids,
-        format_func=lambda exp_id: expectation_label_lookup.get(exp_id, exp_id),
+        options=filtered_ids,
+        default=[exp_id for exp_id in default_expectation_ids if exp_id in filtered_ids] or filtered_ids,
+        format_func=lambda exp_id: selection_label_lookup.get(exp_id, exp_id),
         help="Expectation IDs are generated automatically from validation type and target columns.",
         key="derived_expectation_ids_picker",
     )
