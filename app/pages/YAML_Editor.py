@@ -15,6 +15,7 @@ import streamlit as st
 import yaml
 from pathlib import Path
 from validations.sql_generator import build_scoped_expectation_id
+from validations.derived_status_resolver import DerivedStatusResolver
 from core.column_cache import get_cached_column_metadata, get_cache_info
 from core.queries import QUERY_REGISTRY
 
@@ -141,92 +142,8 @@ def annotate_session_validations_with_expectation_ids(validations: list[dict]):
             existing_ids.add(val["expectation_id"])
 
 
-def build_scoped_expectation_catalog(validations: list[dict]):
-    """Mirror the runner's catalog by emitting scoped expectation ids per target."""
-
-    catalog = []
-    label_lookup = {}
-    target_lookup = {}
-
-    def add_targets(entry_targets: list[str]):
-        if not entry_targets:
-            target_lookup.setdefault("(no column/field)", "(no column/field)")
-            return
-
-        for target in entry_targets:
-            target_lookup.setdefault(target, target)
-
-    def add_entry(validation: dict, discriminator: str, entry_targets: list[str]):
-        base_id = validation.get("expectation_id")
-        if not base_id:
-            return
-
-        scoped_id = build_scoped_expectation_id(validation, discriminator)
-        validation_type = validation.get("type", "")
-        target_text = ", ".join(entry_targets or ["(no column/field)"])
-        label = f"{scoped_id} — {validation_type} on {target_text}" if validation_type else scoped_id
-
-        catalog.append(
-            {
-                "id": scoped_id,
-                "label": label,
-                "type": validation_type,
-                "targets": entry_targets or [],
-            }
-        )
-
-        label_lookup[scoped_id] = label
-        add_targets(entry_targets)
-
-    for validation in validations:
-        val_type = validation.get("type", "")
-        base_id = validation.get("expectation_id")
-
-        if base_id:
-            label_lookup.setdefault(base_id, f"{base_id} — {format_validation_summary(validation)}")
-
-        if val_type == "expect_column_values_to_not_be_null":
-            for col in validation.get("columns", []):
-                add_entry(validation, col, [col])
-        elif val_type == "expect_column_values_to_be_in_set":
-            for column in validation.get("rules", {}).keys():
-                add_entry(validation, column, [column])
-        elif val_type == "expect_column_values_to_not_be_in_set":
-            column = validation.get("column")
-            if column:
-                add_entry(validation, column, [column])
-        elif val_type == "expect_column_values_to_match_regex":
-            for column in validation.get("columns", []):
-                add_entry(validation, column, [column])
-        elif val_type in {
-            "expect_column_pair_values_to_be_equal",
-            "expect_column_pair_values_a_to_be_greater_than_b",
-            "custom:conditional_required",
-            "custom:conditional_value_in_set",
-        }:
-            col_a = validation.get("column_a") or validation.get("condition_column")
-            col_b = (
-                validation.get("column_b")
-                or validation.get("required_column")
-                or validation.get("target_column")
-            )
-            if col_a and col_b:
-                discriminator = "|".join([col_a, col_b])
-                add_entry(validation, discriminator, [col_a, col_b])
-        else:
-            targets = extract_validation_targets(validation)
-            if base_id:
-                catalog.append(
-                    {
-                        "id": base_id,
-                        "label": label_lookup[base_id],
-                        "type": val_type,
-                        "targets": targets,
-                    }
-                )
-                add_targets(targets)
-
-    return catalog, label_lookup, target_lookup
+# NOTE: Catalog building has been moved to DerivedStatusResolver
+# This eliminates code duplication and ensures UI and runtime use the same logic.
 
 
 def format_validation_summary(validation: dict) -> str:
@@ -1375,11 +1292,13 @@ else:
     default_expectation_type = ""
     default_expectation_id = ""
 
+# Use DerivedStatusResolver to build catalog - single source of truth with runtime
+resolver = DerivedStatusResolver(st.session_state.validations, st.session_state.derived_statuses)
 (
     expectation_catalog,
     expectation_label_lookup,
     target_lookup,
-) = build_scoped_expectation_catalog(st.session_state.validations)
+) = resolver.get_catalog_for_ui()
 
 available_expectation_types = {
     val.get("type") for val in st.session_state.validations if val.get("type")
