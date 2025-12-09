@@ -1382,14 +1382,22 @@ with st.form("derived_status_form", enter_to_submit=False):
             filtered_ids.append(exp_id)
             selection_label_lookup.setdefault(exp_id, expectation_label_lookup.get(exp_id, exp_id))
 
-    selected_expectation_ids = st.multiselect(
-        "Select validations to include in this derived status",
-        options=filtered_ids,
-        default=[exp_id for exp_id in default_expectation_ids if exp_id in filtered_ids] or filtered_ids,
-        format_func=lambda exp_id: selection_label_lookup.get(exp_id, exp_id),
-        help="Expectation IDs are generated automatically from validation type and target columns.",
-        key="derived_expectation_ids_picker",
-    )
+    preserved_defaults = [exp_id for exp_id in default_expectation_ids if exp_id and exp_id not in filtered_ids]
+    selected_expectation_ids = filtered_ids + preserved_defaults
+
+    if selected_expectation_ids:
+        st.caption("Validations automatically selected from the chosen expectation type and columns.")
+        st.code(
+            "\n".join(
+                selection_label_lookup.get(exp_id, expectation_label_lookup.get(exp_id, exp_id))
+                for exp_id in selected_expectation_ids
+            ),
+            language="text",
+        )
+    elif not expectation_catalog:
+        st.info("Add validation rules to populate selectable expectation IDs.")
+    else:
+        st.warning("No validations match the current filters. Adjust the type or column selection.")
 
     expectation_id = st.text_input(
         "Derived Expectation ID (optional)",
