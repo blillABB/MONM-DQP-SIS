@@ -4,6 +4,14 @@ import snowflake.connector
 from snowflake.connector.errors import DatabaseError
 from core.config import SNOWFLAKE_CONFIG
 
+
+def _extract_url(text: str) -> str:
+    """Return the first HTTPS URL inside the given error message (if any)."""
+    import re
+
+    match = re.search(r"https?://[^\s]+", text)
+    return match.group(0) if match else ""
+
 # =============================================================================
 # Snowflake connection
 # =============================================================================
@@ -103,12 +111,33 @@ def get_connection():
     except DatabaseError as e:
         message = str(e)
         lower_message = message.lower()
+
         if "user you were trying to authenticate as differs" in lower_message:
             raise RuntimeError(
                 "❌ Snowflake SSO mismatch detected. The IdP session is logged in as a different "
                 "user than SNOWFLAKE_USER. Sign out of your SSO session (or use an incognito "
                 "browser window) and retry, or set SNOWFLAKE_USER to match the active IdP user."
             ) from e
+
+        # When the Snowflake connector fails to launch the external browser (or the window
+        # opens blank), the raw DatabaseError only surfaces in the terminal. Streamlit users
+        # end up staring at an empty screen with no hint about what to do. Detect browser
+        # launch/auth failures and surface a copyable login URL plus next steps.
+        if any(keyword in lower_message for keyword in ["browser", "oauth", "external"]):
+            auth_url = _extract_url(message)
+            guidance = (
+                "❌ Snowflake SSO could not start in your browser. "
+                "Copy/paste the URL below into a new tab to complete login, then rerun the suite."
+            )
+            if auth_url:
+                guidance += f"\n\nLogin URL: {auth_url}"
+            else:
+                guidance += (
+                    "\n\nNo login URL was returned by Snowflake. Check that a default browser is "
+                    "available or set the BROWSER environment variable to a valid executable."
+                )
+            raise RuntimeError(guidance) from e
+
         raise RuntimeError(f"❌ Snowflake connection failed: {message}") from e
     except Exception as e:
         raise RuntimeError(f"❌ Snowflake connection failed: {e}") from e
