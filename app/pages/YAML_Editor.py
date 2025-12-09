@@ -9,9 +9,12 @@ This page provides a unified form-based interface for:
 - Saving YAML validation suites (no Python generation needed)
 """
 
+import hashlib
+import re
 import streamlit as st
 import yaml
 from pathlib import Path
+from validations.sql_generator import build_scoped_expectation_id
 from core.column_cache import get_cached_column_metadata, get_cache_info
 from core.queries import QUERY_REGISTRY
 
@@ -26,6 +29,7 @@ st.caption("Create new or edit existing validation suites using forms")
 # Constants
 # ----------------------------------------------------
 YAML_DIR = Path("validation_yaml")
+DEFAULT_TABLE = 'PROD_MO_MONM.REPORTING."vw_ProductDataAll"'
 
 # ----------------------------------------------------
 # Sidebar: Column Cache Management
@@ -77,7 +81,172 @@ def load_yaml_file(yaml_path: Path) -> dict:
     with open(yaml_path, 'r') as f:
         return yaml.safe_load(f)
 
-def save_yaml_suite(suite_metadata: dict, validations: list) -> bool:
+
+def extract_validation_targets(validation: dict) -> list[str]:
+    """Return a stable list of target fields/columns for a validation."""
+
+    targets = []
+
+    for key, value in validation.items():
+        if key in {"type", "expectation_id"}:
+            continue
+
+        if key == "rules" and isinstance(value, dict):
+            targets.extend(list(value.keys()))
+            continue
+
+        if "column" in key or "field" in key:
+            if isinstance(value, list):
+                targets.extend(str(v) for v in value)
+            elif value is not None:
+                targets.append(str(value))
+
+    # Return sorted/unique for stability
+    seen = set()
+    deduped = []
+    for target in sorted(targets):
+        if target and target not in seen:
+            deduped.append(target)
+            seen.add(target)
+
+    return deduped
+
+
+def build_stable_expectation_id(validation: dict, existing_ids: set[str]) -> str:
+    """Create a deterministic expectation_id from type/targets when missing."""
+
+    base_type = validation.get("type", "validation")
+    targets = extract_validation_targets(validation)
+    target_str = "_".join(targets) if targets else "notarget"
+    raw_base = f"{base_type}_{target_str}".lower()
+    safe_base = re.sub(r"[^a-z0-9]+", "_", raw_base).strip("_") or "validation"
+    candidate = f"exp_{safe_base}"
+
+    counter = 1
+    while candidate in existing_ids:
+        counter += 1
+        candidate = f"exp_{safe_base}_{counter}"
+
+    return candidate
+
+
+def annotate_session_validations_with_expectation_ids(validations: list[dict]):
+    """Ensure every validation has an expectation_id for downstream mapping."""
+
+    existing_ids = {val.get("expectation_id") for val in validations if val.get("expectation_id")}
+
+    for val in validations:
+        if not val.get("expectation_id"):
+            val["expectation_id"] = build_stable_expectation_id(val, existing_ids)
+            existing_ids.add(val["expectation_id"])
+
+
+def build_scoped_expectation_catalog(validations: list[dict]):
+    """Mirror the runner's catalog by emitting scoped expectation ids per target."""
+
+    catalog = []
+    label_lookup = {}
+    target_lookup = {}
+
+    def add_targets(entry_targets: list[str]):
+        if not entry_targets:
+            target_lookup.setdefault("(no column/field)", "(no column/field)")
+            return
+
+        for target in entry_targets:
+            target_lookup.setdefault(target, target)
+
+    def add_entry(validation: dict, discriminator: str, entry_targets: list[str]):
+        base_id = validation.get("expectation_id")
+        if not base_id:
+            return
+
+        scoped_id = build_scoped_expectation_id(validation, discriminator)
+        validation_type = validation.get("type", "")
+        target_text = ", ".join(entry_targets or ["(no column/field)"])
+        label = f"{scoped_id} — {validation_type} on {target_text}" if validation_type else scoped_id
+
+        catalog.append(
+            {
+                "id": scoped_id,
+                "label": label,
+                "type": validation_type,
+                "targets": entry_targets or [],
+            }
+        )
+
+        label_lookup[scoped_id] = label
+        add_targets(entry_targets)
+
+    for validation in validations:
+        val_type = validation.get("type", "")
+        base_id = validation.get("expectation_id")
+
+        if base_id:
+            label_lookup.setdefault(base_id, f"{base_id} — {format_validation_summary(validation)}")
+
+        if val_type == "expect_column_values_to_not_be_null":
+            for col in validation.get("columns", []):
+                add_entry(validation, col, [col])
+        elif val_type == "expect_column_values_to_be_in_set":
+            for column in validation.get("rules", {}).keys():
+                add_entry(validation, column, [column])
+        elif val_type == "expect_column_values_to_not_be_in_set":
+            column = validation.get("column")
+            if column:
+                add_entry(validation, column, [column])
+        elif val_type == "expect_column_values_to_match_regex":
+            for column in validation.get("columns", []):
+                add_entry(validation, column, [column])
+        elif val_type in {
+            "expect_column_pair_values_to_be_equal",
+            "expect_column_pair_values_a_to_be_greater_than_b",
+            "custom:conditional_required",
+            "custom:conditional_value_in_set",
+        }:
+            col_a = validation.get("column_a") or validation.get("condition_column")
+            col_b = (
+                validation.get("column_b")
+                or validation.get("required_column")
+                or validation.get("target_column")
+            )
+            if col_a and col_b:
+                discriminator = "|".join([col_a, col_b])
+                add_entry(validation, discriminator, [col_a, col_b])
+        else:
+            targets = extract_validation_targets(validation)
+            if base_id:
+                catalog.append(
+                    {
+                        "id": base_id,
+                        "label": label_lookup[base_id],
+                        "type": val_type,
+                        "targets": targets,
+                    }
+                )
+                add_targets(targets)
+
+    return catalog, label_lookup, target_lookup
+
+
+def format_validation_summary(validation: dict) -> str:
+    """Human-friendly description combining type and targets."""
+
+    validation_type = validation.get("type", "Unknown validation")
+    targets = extract_validation_targets(validation)
+
+    if targets:
+        target_text = ", ".join(targets)
+        return f"{validation_type} on {target_text}"
+
+    return validation_type
+
+def save_yaml_suite(
+    suite_metadata: dict,
+    validations: list,
+    data_source: dict | None = None,
+    derived_statuses: list | None = None,
+) -> bool:
     """
     Save YAML validation suite file.
 
@@ -94,7 +263,9 @@ def save_yaml_suite(suite_metadata: dict, validations: list) -> bool:
     # Build YAML structure
     yaml_content = {
         "metadata": suite_metadata,
-        "validations": validations
+        "data_source": data_source or {},
+        "validations": validations,
+        "derived_statuses": derived_statuses or [],
     }
 
     # Save YAML file
@@ -124,6 +295,7 @@ def save_yaml_suite(suite_metadata: dict, validations: list) -> bool:
 # Keep old function name as alias for backward compatibility
 save_yaml_and_generate_python = save_yaml_suite
 
+
 # ----------------------------------------------------
 # Session state initialization
 # ----------------------------------------------------
@@ -138,11 +310,24 @@ if "suite_metadata" not in st.session_state:
 if "validations" not in st.session_state:
     st.session_state.validations = []
 
+if "derived_statuses" not in st.session_state:
+    st.session_state.derived_statuses = []
+
+if "data_source" not in st.session_state:
+    st.session_state.data_source = {
+        "table": DEFAULT_TABLE,
+        "filters": {},
+        "distinct": False
+    }
+
 if "current_mode" not in st.session_state:
     st.session_state.current_mode = "new"  # "new" or "edit"
 
 if "editing_index" not in st.session_state:
     st.session_state.editing_index = None  # None or index of rule being edited
+
+if "editing_derived_index" not in st.session_state:
+    st.session_state.editing_derived_index = None  # None or index of derived group being edited
 
 # ----------------------------------------------------
 # Section 1: Mode Selection
@@ -186,7 +371,15 @@ if st.session_state.current_mode == "edit":
 
                 # Load into session state
                 st.session_state.suite_metadata = data.get("metadata", {})
-                st.session_state.validations = data.get("validations", [])
+                st.session_state.validations = data.get("validations", []) or []
+                st.session_state.derived_statuses = data.get("derived_statuses", []) or []
+                loaded_data_source = data.get("data_source")
+                if not isinstance(loaded_data_source, dict):
+                    loaded_data_source = {"table": DEFAULT_TABLE, "filters": {}, "distinct": False}
+                else:
+                    loaded_data_source.setdefault("distinct", False)
+                st.session_state.data_source = loaded_data_source
+                st.session_state.editing_derived_index = None
 
                 st.success(f"✅ Loaded suite: {selected_file_name}")
                 st.rerun()
@@ -336,8 +529,15 @@ else:
                         "data_source": "get_level_1_dataframe"
                     }
                     st.session_state.validations = []
+                    st.session_state.derived_statuses = []
+                    st.session_state.data_source = {
+                        "table": DEFAULT_TABLE,
+                        "filters": {},
+                        "distinct": False
+                    }
                     st.session_state.current_mode = "new"
                     st.session_state.confirm_delete = False
+                    st.session_state.editing_derived_index = None
                     st.rerun()
                 else:
                     st.error(f"❌ File not found: {yaml_file}")
@@ -347,12 +547,127 @@ else:
                 st.rerun()
 
 # ----------------------------------------------------
-# Section 4: Add/Edit Validation Rules
+# Section 4: Data Source & Query Filters
+# ----------------------------------------------------
+st.header("4. Data Source & Query Filters")
+
+table_value = st.text_input(
+    "Source Table",
+    value=st.session_state.data_source.get("table", DEFAULT_TABLE),
+    help="Fully qualified table or view name used in the generated query",
+)
+st.session_state.data_source["table"] = table_value.strip() or DEFAULT_TABLE
+
+distinct_rows = st.checkbox(
+    "Select distinct rows in base CTE",
+    value=st.session_state.data_source.get("distinct", False),
+    help="Apply SELECT DISTINCT when building the base data set to remove duplicates.",
+)
+st.session_state.data_source["distinct"] = distinct_rows
+
+st.caption(
+    "Filters can target any column from the source table. Distinct values are shown when "
+    "available from cached metadata."
+)
+
+current_filters = st.session_state.data_source.get("filters", {})
+
+with st.expander("Current Filters", expanded=bool(current_filters)):
+    if current_filters:
+        for col, condition in list(current_filters.items()):
+            col_display, col_remove = st.columns([4, 1])
+            with col_display:
+                st.write(f"**{col}**: {condition}")
+            with col_remove:
+                if st.button("Remove", key=f"remove_filter_{col}"):
+                    del st.session_state.data_source["filters"][col]
+                    st.rerun()
+    else:
+        st.info("No filters defined. Add one using the form below.")
+
+with st.form("add_filter_form", enter_to_submit=False):
+    col1, col2 = st.columns([2, 1])
+    selected_field = col1.selectbox(
+        "Field",
+        options=columns,
+        help="Choose any column from the source table to filter by",
+    )
+    filter_type = col2.selectbox(
+        "Filter Type",
+        options=["Equals", "One of (IN)", "LIKE pattern"],
+        help="How should the filter be applied?",
+    )
+
+    filter_value = None
+    if filter_type == "Equals":
+        if selected_field in distinct_values:
+            filter_value = st.selectbox(
+                "Value",
+                options=distinct_values[selected_field],
+            )
+        else:
+            filter_value = st.text_input(
+                "Value",
+                placeholder="Exact match value",
+            )
+    elif filter_type == "One of (IN)":
+        if selected_field in distinct_values:
+            filter_value = st.multiselect(
+                "Allowed Values",
+                options=distinct_values[selected_field],
+            )
+        else:
+            values_text = st.text_area(
+                "Allowed Values (one per line)",
+                placeholder="Value A\nValue B\nValue C",
+            )
+            filter_value = [
+                v.strip()
+                for v in values_text.split("\n")
+                if v.strip()
+            ]
+    elif filter_type == "LIKE pattern":
+        filter_value = st.text_input(
+            "Pattern",
+            placeholder="LIKE ABC%",
+            help="Use SQL LIKE syntax (e.g., ABC%, %XYZ)",
+        )
+
+    submitted = st.form_submit_button("Add / Update Filter", type="primary")
+    if submitted:
+        if filter_type == "Equals" and filter_value:
+            st.session_state.data_source.setdefault("filters", {})[
+                selected_field
+            ] = filter_value
+            st.success(f"Added filter: {selected_field} = {filter_value}")
+            st.rerun()
+        elif filter_type == "One of (IN)" and filter_value:
+            st.session_state.data_source.setdefault("filters", {})[
+                selected_field
+            ] = filter_value
+            st.success(
+                f"Added filter: {selected_field} IN ({', '.join(map(str, filter_value))})"
+            )
+            st.rerun()
+        elif filter_type == "LIKE pattern" and filter_value:
+            like_value = filter_value.strip()
+            if not like_value.upper().startswith("LIKE"):
+                like_value = f"LIKE '{like_value}'"
+            st.session_state.data_source.setdefault("filters", {})[
+                selected_field
+            ] = like_value
+            st.success(f"Added filter: {selected_field} {like_value}")
+            st.rerun()
+        else:
+            st.error("Please provide a filter value.")
+
+# ----------------------------------------------------
+# Section 5: Add/Edit Validation Rules
 # ----------------------------------------------------
 is_editing = st.session_state.editing_index is not None
 
 if is_editing:
-    st.header("4. Edit Validation Rule")
+    st.header("5. Edit Validation Rule")
     st.info(f"✏️ Editing Rule #{st.session_state.editing_index + 1}")
 
     # Load the rule being edited
@@ -364,7 +679,7 @@ if is_editing:
         st.session_state.editing_index = None
         st.rerun()
 else:
-    st.header("4. Add Validation Rules")
+    st.header("5. Add Validation Rules")
     editing_rule = None
     default_type = "expect_column_values_to_not_be_null"
 
@@ -999,9 +1314,11 @@ elif validation_type == "expect_compound_columns_to_be_unique":
             st.error("Please select at least 2 columns for a composite key")
 
 # ----------------------------------------------------
-# Section 5: Current Validation Rules
+# Section 6: Current Validation Rules
 # ----------------------------------------------------
-st.header("5. Current Validation Rules")
+st.header("6. Current Validation Rules")
+
+annotate_session_validations_with_expectation_ids(st.session_state.validations)
 
 if st.session_state.validations:
     st.success(f"📋 {len(st.session_state.validations)} validation rule(s) configured")
@@ -1034,15 +1351,223 @@ else:
     st.info("No validation rules added yet. Use the form above to add rules.")
 
 # ----------------------------------------------------
-# Section 6: YAML Preview & Save
+# Section 7: Derived Status Groups
 # ----------------------------------------------------
-st.header("6. YAML Preview & Save")
+st.header("7. Derived Status Groups")
+
+is_editing_derived = st.session_state.editing_derived_index is not None
+
+if is_editing_derived:
+    st.info(f"✏️ Editing Derived Group #{st.session_state.editing_derived_index + 1}")
+    derived_group = st.session_state.derived_statuses[st.session_state.editing_derived_index]
+    default_status_label = derived_group.get("status", "")
+    default_expectation_ids = derived_group.get("expectation_ids", []) or []
+    default_expectation_type = derived_group.get("expectation_type", "")
+    default_expectation_id = derived_group.get("expectation_id", "")
+
+    if st.button("❌ Cancel Derived Edit", key="cancel_derived_edit"):
+        st.session_state.editing_derived_index = None
+        st.rerun()
+else:
+    derived_group = None
+    default_status_label = ""
+    default_expectation_ids = []
+    default_expectation_type = ""
+    default_expectation_id = ""
+
+(
+    expectation_catalog,
+    expectation_label_lookup,
+    target_lookup,
+) = build_scoped_expectation_catalog(st.session_state.validations)
+
+available_expectation_types = {
+    val.get("type") for val in st.session_state.validations if val.get("type")
+}
+
+with st.form("derived_status_form", enter_to_submit=False):
+    status_label = st.text_input(
+        "Status Label",
+        value=default_status_label,
+        placeholder="Warning / Critical / Info",
+        help="Label for this derived status grouping",
+        key="derived_status_label",
+    )
+
+    type_options = ["(All types)"] + sorted(available_expectation_types)
+    if default_expectation_type and default_expectation_type not in type_options:
+        type_options.append(default_expectation_type)
+
+    type_default_index = type_options.index(default_expectation_type) if default_expectation_type in type_options else 0
+    expectation_type = st.selectbox(
+        "Filter validations by expectation type (optional)",
+        options=type_options,
+        index=type_default_index,
+        help="Limit the selection list to a specific expectation type and store it with the derived group.",
+        key="derived_expectation_type",
+    )
+
+    # Build column/field filter options based on the selected expectation type
+    filtered_catalog = [
+        entry for entry in expectation_catalog
+        if expectation_type in {"(All types)", entry["type"]}
+    ]
+
+    target_options = sorted(target_lookup.keys())
+    selected_targets = st.multiselect(
+        "Columns/fields to include",
+        options=target_options,
+        default=target_options,
+        help="Narrow the validation list to specific columns/fields",
+        key="derived_target_filter",
+    )
+
+    def _matches_target(entry_targets: list[str]) -> bool:
+        if not selected_targets:
+            return True
+        if not entry_targets:
+            return "(no column/field)" in selected_targets
+        return any(target in selected_targets for target in entry_targets)
+
+    filtered_ids = [
+        entry["id"] for entry in filtered_catalog
+        if entry.get("id") and _matches_target(entry.get("targets", []))
+    ]
+
+    selection_label_lookup = {
+        entry["id"]: f"{', '.join(entry.get('targets') or ['(no column/field)'])} • {entry['type']} • {entry['label']}"
+        for entry in filtered_catalog
+        if entry.get("id") in filtered_ids
+    }
+
+    # Keep any pre-existing defaults visible even if the current filter would hide them
+    for exp_id in default_expectation_ids:
+        if exp_id and exp_id not in filtered_ids:
+            filtered_ids.append(exp_id)
+            selection_label_lookup.setdefault(exp_id, expectation_label_lookup.get(exp_id, exp_id))
+
+    preserved_defaults = [exp_id for exp_id in default_expectation_ids if exp_id and exp_id not in filtered_ids]
+    selected_expectation_ids = filtered_ids + preserved_defaults
+
+    if selected_expectation_ids:
+        st.caption("Validations automatically selected from the chosen expectation type and columns.")
+        st.code(
+            "\n".join(
+                selection_label_lookup.get(exp_id, expectation_label_lookup.get(exp_id, exp_id))
+                for exp_id in selected_expectation_ids
+            ),
+            language="text",
+        )
+    elif not expectation_catalog:
+        st.info("Add validation rules to populate selectable expectation IDs.")
+    else:
+        st.warning("No validations match the current filters. Adjust the type or column selection.")
+
+    expectation_id = st.text_input(
+        "Derived Expectation ID (optional)",
+        value=default_expectation_id,
+        help="Provide a custom identifier for the derived group. Leave blank to auto-name during execution.",
+        key="derived_expectation_id",
+    )
+
+    if selected_expectation_ids:
+        st.caption("Selected expectation IDs for this derived status group")
+        st.code("\n".join(selected_expectation_ids), language="text")
+    elif not expectation_catalog:
+        st.info("Add validation rules to populate selectable expectation IDs.")
+
+    submit_label = "Update Derived Group" if is_editing_derived else "Add Derived Group"
+    submitted = st.form_submit_button(submit_label, type="primary")
+
+    if submitted:
+        if not status_label:
+            st.error("Please provide a status label")
+        elif not selected_expectation_ids:
+            st.error("Please select at least one validation for this derived status")
+        else:
+            derived_entry = {
+                "status": status_label,
+                "expectation_ids": selected_expectation_ids,
+            }
+
+            if expectation_type and expectation_type != "(All types)":
+                derived_entry["expectation_type"] = expectation_type
+
+            if expectation_id:
+                derived_entry["expectation_id"] = expectation_id
+
+            if is_editing_derived:
+                st.session_state.derived_statuses[st.session_state.editing_derived_index] = derived_entry
+                st.session_state.editing_derived_index = None
+                st.success("✅ Updated derived status group")
+            else:
+                st.session_state.derived_statuses.append(derived_entry)
+                st.success("✅ Added derived status group")
+
+            st.rerun()
+
+st.divider()
+
+if st.session_state.derived_statuses:
+    st.success(f"📋 {len(st.session_state.derived_statuses)} derived group(s) configured")
+
+    for idx, derived in enumerate(st.session_state.derived_statuses):
+        status_title = derived.get("status", f"Group {idx + 1}") or f"Group {idx + 1}"
+        with st.expander(f"Derived Group {idx + 1}: {status_title}", expanded=False):
+            expectation_ids = derived.get("expectation_ids", [])
+            expectation_type = derived.get("expectation_type")
+
+            if expectation_ids:
+                st.markdown("**Selected validations**")
+                summary_lines = []
+                for exp_id in expectation_ids:
+                    label = expectation_label_lookup.get(exp_id, exp_id)
+                    summary_lines.append(f"- {label}")
+                st.markdown("\n".join(summary_lines))
+            else:
+                st.info("No expectation IDs configured for this group.")
+
+            if expectation_type:
+                st.caption(f"Expectation type filter: {expectation_type}")
+
+            st.json(derived)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"✏️ Edit Derived {idx + 1}", key=f"edit_derived_{idx}"):
+                    st.session_state.editing_derived_index = idx
+                    st.rerun()
+            with col2:
+                if st.button(f"🗑️ Remove Derived {idx + 1}", key=f"remove_derived_{idx}"):
+                    st.session_state.derived_statuses.pop(idx)
+                    if st.session_state.editing_derived_index == idx:
+                        st.session_state.editing_derived_index = None
+                    elif (
+                        st.session_state.editing_derived_index is not None
+                        and st.session_state.editing_derived_index > idx
+                    ):
+                        st.session_state.editing_derived_index -= 1
+                    st.rerun()
+
+    if st.button("🗑️ Clear All Derived Groups", key="clear_all_derived"):
+        st.session_state.derived_statuses = []
+        st.session_state.editing_derived_index = None
+        st.rerun()
+else:
+    st.info("No derived status groups defined. Use the form above to add groups.")
+
+# ----------------------------------------------------
+# Section 8: YAML Preview & Save
+# ----------------------------------------------------
+st.header("8. YAML Preview & Save")
 
 if st.session_state.suite_metadata["suite_name"]:
     # Generate YAML preview
     yaml_content = yaml.dump({
         "metadata": st.session_state.suite_metadata,
-        "validations": st.session_state.validations
+        "data_source": st.session_state.data_source,
+        "validations": st.session_state.validations,
+        "derived_statuses": st.session_state.derived_statuses,
     }, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
     st.code(yaml_content, language="yaml")
@@ -1052,7 +1577,12 @@ if st.session_state.suite_metadata["suite_name"]:
 
     with col1:
         if st.button("💾 Save Suite (YAML + Generate Python)", type="primary", key="save_suite"):
-            if save_yaml_and_generate_python(st.session_state.suite_metadata, st.session_state.validations):
+            if save_yaml_and_generate_python(
+                st.session_state.suite_metadata,
+                st.session_state.validations,
+                st.session_state.data_source,
+                st.session_state.derived_statuses,
+            ):
                 st.balloons()
                 st.info("🎉 Suite saved successfully! You can now use it in validations.")
 
@@ -1065,6 +1595,13 @@ if st.session_state.suite_metadata["suite_name"]:
                 "data_source": "get_level_1_dataframe"
             }
             st.session_state.validations = []
+            st.session_state.derived_statuses = []
+            st.session_state.data_source = {
+                "table": DEFAULT_TABLE,
+                "filters": {},
+                "distinct": False
+            }
+            st.session_state.editing_derived_index = None
             st.rerun()
 
 else:

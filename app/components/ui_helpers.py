@@ -10,7 +10,11 @@ def render_failure_summary(results):
 
     for r in failures:
         st.markdown(f"**{r['expectation_type']} – {r.get('column')}**")
-        st.dataframe(r["failed_materials"], use_container_width=True)
+        failed_materials = r.get("failed_materials")
+        if failed_materials is not None:
+            st.dataframe(failed_materials, use_container_width=True)
+        else:
+            st.info("Failure details were not materialized for this run.")
 
 def render_send_to_datalark_button(payload):
     if st.button("🚀 Send Failures to Data Lark"):
