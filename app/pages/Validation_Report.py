@@ -11,18 +11,9 @@ import plotly.graph_objects as go
 import plotly.express as px
 from pathlib import Path
 from datetime import date
-from io import StringIO
 
-from validations import run_validation_from_yaml_snowflake
-from core.queries import snowflake_config_summary, ensure_snowflake_config
-from core.cache_manager import (
-    get_cached_results,
-    get_cached_failures_csv,
-    save_cached_results,
-    save_cached_failures_csv,
-    save_daily_suite_artifacts,
-    clear_cache,
-)
+from validations.snowflake_runner import run_validation_from_yaml_snowflake
+from core.cache_manager import get_cached_results, save_cached_results, clear_cache
 from validations.base_validation import BaseValidationSuite
 from app.components.drill_down import render_expectation_drill_down
 from app.suite_discovery import discover_suites, get_suite_by_name
@@ -148,21 +139,7 @@ def load_or_run_validation(suite_config):
             unsafe_allow_html=True,
         )
         with st.spinner(f"Running {suite_config['suite_name']} validation..."):
-            try:
-                payload = run_validation_from_yaml_snowflake(suite_config["yaml_path"])
-            except RuntimeError as e:
-                placeholder.empty()
-                st.error(str(e))
-                st.info(
-                    "Tip: If you recently switched SSO users, sign out of the IdP or use an "
-                    "incognito window so externalbrowser opens the correct account."
-                )
-                st.stop()
-            except Exception as e:
-                placeholder.empty()
-                st.error(f"❌ Validation failed: {e}")
-                st.stop()
-
+            payload = run_validation_from_yaml_snowflake(suite_config["yaml_path"])
             results = payload.get("results", []) if isinstance(payload, dict) else payload
             validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
             full_results_df = payload.get("full_results_df") if isinstance(payload, dict) else None
