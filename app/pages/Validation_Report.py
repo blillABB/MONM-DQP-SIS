@@ -220,8 +220,6 @@ else:
 # DEBUG: Log what we extracted
 print(f"📊 DEBUG: Extracted results type={type(results)}, len={len(results) if results else 0}", flush=True)
 print(f"📊 DEBUG: Extracted validated_materials len={len(validated_materials)}", flush=True)
-if results and len(results) > 0:
-    print(f"📊 DEBUG: First result item: {results[0]}", flush=True)
 
 # ----------------------------------------------------------
 # Handle validation failure
@@ -297,7 +295,6 @@ if df is None:
 
 if not df.empty:
     print(f"📊 DEBUG: DataFrame columns: {list(df.columns)}", flush=True)
-    print(f"📊 DEBUG: DataFrame head:\n{df.head()}", flush=True)
 
 # ----------------------------------------------------------
 # View Selection (persists across reruns via key)

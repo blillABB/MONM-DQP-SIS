@@ -781,6 +781,31 @@ def _collect_validation_failures(
     return counts_map, failure_rows_map
 
 
+def _preview_list(values: list[str], max_items: int = 10) -> str:
+    """Return a comma-delimited preview of list contents without dumping everything."""
+
+    if not values:
+        return "none"
+
+    if len(values) <= max_items:
+        return ", ".join(values)
+
+    remaining = len(values) - max_items
+    return ", ".join(values[:max_items]) + f", ... (+{remaining} more)"
+
+
+def _preview_counts(expectation_ids: list[str], counts_map: Dict[str, int], max_items: int = 10) -> str:
+    """Preview only non-zero unexpected counts for scoped expectation IDs."""
+
+    non_zero_counts = [
+        f"{exp_id}:{counts_map.get(exp_id, 0)}"
+        for exp_id in expectation_ids
+        if counts_map.get(exp_id, 0)
+    ]
+
+    return _preview_list(non_zero_counts, max_items=max_items)
+
+
 def _build_derived_status_results(
     derived_statuses: list[Dict[str, Any]],
     counts_map: Dict[str, int],
@@ -796,13 +821,28 @@ def _build_derived_status_results(
     for status in derived_statuses:
         expectation_ids = status.get("expectation_ids", [])
         if not expectation_ids:
+            print("[derived-status] Skipping entry with no expectation_ids:", status)
             continue
+
+        missing_ids = [exp_id for exp_id in expectation_ids if exp_id not in counts_map]
+        status_label = status.get("status") or status.get("status_label") or "Derived Status"
+        print(
+            "[derived-status] Evaluating",
+            {
+                "status": status_label,
+                "expectation_ids": _preview_list(expectation_ids),
+                "missing_in_counts_map": _preview_list(missing_ids),
+                "unexpected_counts": _preview_counts(expectation_ids, counts_map),
+            },
+        )
 
         unexpected_count = sum(counts_map.get(exp_id, 0) for exp_id in expectation_ids)
         if unexpected_count == 0:
+            print(
+                f"[derived-status] No failures counted for '{status_label}', skipping result.",
+            )
             continue
 
-        status_label = status.get("status_label", "Derived Status")
         expectation_type = status.get(
             "expectation_type", "custom:derived_null_group"
         )
