@@ -796,13 +796,28 @@ def _build_derived_status_results(
     for status in derived_statuses:
         expectation_ids = status.get("expectation_ids", [])
         if not expectation_ids:
+            print("[derived-status] Skipping entry with no expectation_ids:", status)
             continue
+
+        missing_ids = [exp_id for exp_id in expectation_ids if exp_id not in counts_map]
+        status_label = status.get("status") or status.get("status_label") or "Derived Status"
+        print(
+            "[derived-status] Evaluating",
+            {
+                "status": status_label,
+                "expectation_ids": expectation_ids,
+                "missing_in_counts_map": missing_ids,
+                "counts": {exp_id: counts_map.get(exp_id, 0) for exp_id in expectation_ids},
+            },
+        )
 
         unexpected_count = sum(counts_map.get(exp_id, 0) for exp_id in expectation_ids)
         if unexpected_count == 0:
+            print(
+                f"[derived-status] No failures counted for '{status_label}', skipping result.",
+            )
             continue
 
-        status_label = status.get("status_label", "Derived Status")
         expectation_type = status.get(
             "expectation_type", "custom:derived_null_group"
         )
