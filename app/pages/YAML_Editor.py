@@ -14,6 +14,7 @@ import re
 import streamlit as st
 import yaml
 from pathlib import Path
+from validations.sql_generator import build_scoped_expectation_id
 from core.column_cache import get_cached_column_metadata, get_cache_info
 from core.queries import QUERY_REGISTRY
 
@@ -138,6 +139,94 @@ def annotate_session_validations_with_expectation_ids(validations: list[dict]):
         if not val.get("expectation_id"):
             val["expectation_id"] = build_stable_expectation_id(val, existing_ids)
             existing_ids.add(val["expectation_id"])
+
+
+def build_scoped_expectation_catalog(validations: list[dict]):
+    """Mirror the runner's catalog by emitting scoped expectation ids per target."""
+
+    catalog = []
+    label_lookup = {}
+    target_lookup = {}
+
+    def add_targets(entry_targets: list[str]):
+        if not entry_targets:
+            target_lookup.setdefault("(no column/field)", "(no column/field)")
+            return
+
+        for target in entry_targets:
+            target_lookup.setdefault(target, target)
+
+    def add_entry(validation: dict, discriminator: str, entry_targets: list[str]):
+        base_id = validation.get("expectation_id")
+        if not base_id:
+            return
+
+        scoped_id = build_scoped_expectation_id(validation, discriminator)
+        validation_type = validation.get("type", "")
+        target_text = ", ".join(entry_targets or ["(no column/field)"])
+        label = f"{scoped_id} — {validation_type} on {target_text}" if validation_type else scoped_id
+
+        catalog.append(
+            {
+                "id": scoped_id,
+                "label": label,
+                "type": validation_type,
+                "targets": entry_targets or [],
+            }
+        )
+
+        label_lookup[scoped_id] = label
+        add_targets(entry_targets)
+
+    for validation in validations:
+        val_type = validation.get("type", "")
+        base_id = validation.get("expectation_id")
+
+        if base_id:
+            label_lookup.setdefault(base_id, f"{base_id} — {format_validation_summary(validation)}")
+
+        if val_type == "expect_column_values_to_not_be_null":
+            for col in validation.get("columns", []):
+                add_entry(validation, col, [col])
+        elif val_type == "expect_column_values_to_be_in_set":
+            for column in validation.get("rules", {}).keys():
+                add_entry(validation, column, [column])
+        elif val_type == "expect_column_values_to_not_be_in_set":
+            column = validation.get("column")
+            if column:
+                add_entry(validation, column, [column])
+        elif val_type == "expect_column_values_to_match_regex":
+            for column in validation.get("columns", []):
+                add_entry(validation, column, [column])
+        elif val_type in {
+            "expect_column_pair_values_to_be_equal",
+            "expect_column_pair_values_a_to_be_greater_than_b",
+            "custom:conditional_required",
+            "custom:conditional_value_in_set",
+        }:
+            col_a = validation.get("column_a") or validation.get("condition_column")
+            col_b = (
+                validation.get("column_b")
+                or validation.get("required_column")
+                or validation.get("target_column")
+            )
+            if col_a and col_b:
+                discriminator = "|".join([col_a, col_b])
+                add_entry(validation, discriminator, [col_a, col_b])
+        else:
+            targets = extract_validation_targets(validation)
+            if base_id:
+                catalog.append(
+                    {
+                        "id": base_id,
+                        "label": label_lookup[base_id],
+                        "type": val_type,
+                        "targets": targets,
+                    }
+                )
+                add_targets(targets)
+
+    return catalog, label_lookup, target_lookup
 
 
 def format_validation_summary(validation: dict) -> str:
@@ -1286,40 +1375,15 @@ else:
     default_expectation_type = ""
     default_expectation_id = ""
 
-expectation_catalog = []
-expectation_label_lookup = {}
-available_expectation_types = set()
-target_lookup = {}
+(
+    expectation_catalog,
+    expectation_label_lookup,
+    target_lookup,
+) = build_scoped_expectation_catalog(st.session_state.validations)
 
-def add_targets_for_entry(entry_targets: list[str]):
-    """Track targets for filter dropdown while avoiding duplicates."""
-    if not entry_targets:
-        target_lookup.setdefault("(no column/field)", "(no column/field)")
-        return
-
-    for target in entry_targets:
-        target_lookup.setdefault(target, target)
-
-for val in st.session_state.validations:
-    exp_id = val.get("expectation_id")
-    summary = format_validation_summary(val)
-    label = f"{exp_id} — {summary}" if exp_id else summary
-    targets = extract_validation_targets(val)
-
-    expectation_catalog.append({
-        "id": exp_id,
-        "label": label,
-        "type": val.get("type", ""),
-        "targets": targets,
-    })
-
-    if exp_id:
-        expectation_label_lookup[exp_id] = label
-
-    add_targets_for_entry(targets)
-
-    if val.get("type"):
-        available_expectation_types.add(val["type"])
+available_expectation_types = {
+    val.get("type") for val in st.session_state.validations if val.get("type")
+}
 
 with st.form("derived_status_form", enter_to_submit=False):
     status_label = st.text_input(
