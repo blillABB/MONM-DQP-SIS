@@ -144,7 +144,10 @@ def load_or_run_validation(suite_config):
             unsafe_allow_html=True,
         )
         with st.spinner(f"Running {suite_config['suite_name']} validation..."):
-            payload = run_validation_from_yaml_snowflake(suite_config["yaml_path"])
+            payload = run_validation_from_yaml_snowflake(
+                suite_config["yaml_path"],
+                include_failure_details=True
+            )
             results = payload.get("results", []) if isinstance(payload, dict) else payload
             validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
             full_results_df = payload.get("full_results_df") if isinstance(payload, dict) else None
