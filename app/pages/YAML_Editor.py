@@ -1406,6 +1406,12 @@ with st.form("derived_status_form", enter_to_submit=False):
         key="derived_expectation_id",
     )
 
+    if selected_expectation_ids:
+        st.caption("Selected expectation IDs for this derived status group")
+        st.code("\n".join(selected_expectation_ids), language="text")
+    elif not expectation_catalog:
+        st.info("Add validation rules to populate selectable expectation IDs.")
+
     submit_label = "Update Derived Group" if is_editing_derived else "Add Derived Group"
     submitted = st.form_submit_button(submit_label, type="primary")
 
