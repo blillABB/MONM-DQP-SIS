@@ -497,6 +497,16 @@ def _annotate_expectation_ids(validations: List[Dict[str, Any]], suite_name: str
     annotated = []
     for idx, validation in enumerate(validations):
         val_copy = dict(validation)
+
+        # If the validation already carries an expectation_id (from a prior
+        # annotation pass), keep it so the generator and parser stay in sync
+        # across call sites. This also prevents double-annotation when the
+        # suite is decorated before reaching the SQL generator.
+        existing_id = val_copy.get("expectation_id")
+        if existing_id:
+            annotated.append(val_copy)
+            continue
+
         raw_id = f"{suite_name}|{idx}|{validation.get('type', '')}"
         expectation_id = hashlib.md5(raw_id.encode()).hexdigest()[:12]
         val_copy["expectation_id"] = f"exp_{expectation_id}"
