@@ -90,7 +90,7 @@ def run_validation_from_yaml_snowflake(
 
     # Execute query
     try:
-        df = run_query(sql)
+        df = _normalize_dataframe_columns(run_query(sql))
         execution_time = time.time() - start_time
         print(f"✅ Query executed in {execution_time:.2f} seconds")
     except RuntimeError:
@@ -108,6 +108,14 @@ def run_validation_from_yaml_snowflake(
     print(f"✅ Validation complete: {len(results['results'])} rules checked")
 
     return results
+
+
+def _normalize_dataframe_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Return a copy with all column names normalized to lowercase strings."""
+
+    normalized = df.copy()
+    normalized.columns = [str(col).lower() for col in normalized.columns]
+    return normalized
 
 
 def _parse_sql_results(
