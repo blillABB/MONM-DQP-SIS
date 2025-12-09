@@ -13,7 +13,7 @@ from pathlib import Path
 from datetime import date
 
 from validations.snowflake_runner import run_validation_from_yaml_snowflake
-from core.cache_manager import get_cached_results, save_cached_results, clear_cache, get_cached_failures_csv, save_cached_failures_csv
+from core.cache_manager import get_cached_results, save_cached_results, clear_cache, get_cached_failures_csv, save_cached_failures_csv, save_daily_suite_artifacts
 from core.config import ensure_snowflake_config, snowflake_config_summary
 from validations.base_validation import BaseValidationSuite
 from app.components.drill_down import render_expectation_drill_down
