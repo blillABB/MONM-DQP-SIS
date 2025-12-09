@@ -824,19 +824,23 @@ def _build_derived_status_results(
             print("[derived-status] Skipping entry with no expectation_ids:", status)
             continue
 
-        missing_ids = [exp_id for exp_id in expectation_ids if exp_id not in counts_map]
+        resolved_ids, missing_ids = _resolve_derived_expectation_ids(
+            expectation_ids, counts_map
+        )
+
         status_label = status.get("status") or status.get("status_label") or "Derived Status"
         print(
             "[derived-status] Evaluating",
             {
                 "status": status_label,
                 "expectation_ids": _preview_list(expectation_ids),
+                "resolved_ids": _preview_list(resolved_ids),
                 "missing_in_counts_map": _preview_list(missing_ids),
-                "unexpected_counts": _preview_counts(expectation_ids, counts_map),
+                "unexpected_counts": _preview_counts(resolved_ids, counts_map),
             },
         )
 
-        unexpected_count = sum(counts_map.get(exp_id, 0) for exp_id in expectation_ids)
+        unexpected_count = sum(counts_map.get(exp_id, 0) for exp_id in resolved_ids)
         if unexpected_count == 0:
             print(
                 f"[derived-status] No failures counted for '{status_label}', skipping result.",
@@ -849,7 +853,7 @@ def _build_derived_status_results(
         expectation_id = status.get("expectation_id") or f"derived::{status_label}"
 
         context_columns: set[str] = set()
-        for exp_id in expectation_ids:
+        for exp_id in resolved_ids:
             context_columns.update(expectation_context_map.get(exp_id, []))
 
         sorted_context_columns = sorted(context_columns)
@@ -879,7 +883,7 @@ def _build_derived_status_results(
 
         if include_failure_details:
             failure_rows: list[pd.Series] = []
-            for exp_id in expectation_ids:
+            for exp_id in resolved_ids:
                 failure_rows.extend(failure_rows_map.get(exp_id, []))
 
             result["failed_materials"] = _build_failure_records_from_rows(
@@ -890,6 +894,34 @@ def _build_derived_status_results(
         derived_results.append(result)
 
     return derived_results
+
+
+def _resolve_derived_expectation_ids(
+    expectation_ids: list[str], counts_map: Dict[str, int]
+) -> tuple[list[str], list[str]]:
+    """
+    Map derived-status expectation IDs to scoped IDs in the counts map.
+
+    Derived status entries may still reference unscoped base expectation_ids. When
+    that happens, we match any scoped ids that share the same base prefix so the
+    derived counts reflect all relevant targets.
+    """
+
+    resolved: list[str] = []
+    missing: list[str] = []
+
+    for exp_id in expectation_ids:
+        if exp_id in counts_map:
+            resolved.append(exp_id)
+            continue
+
+        scoped_matches = [key for key in counts_map if key.startswith(f"{exp_id}_")]
+        if scoped_matches:
+            resolved.extend(scoped_matches)
+        else:
+            missing.append(exp_id)
+
+    return resolved, missing
 
 
 def _parse_json_array(json_data) -> list:
