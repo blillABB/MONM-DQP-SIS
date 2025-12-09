@@ -241,17 +241,40 @@ class BaseValidationSuite:
 
             # Backward compatibility: if failure details were materialized, use them
             if failures is not None:
-                for material in failures or [None]:
-                    rows.append({
-                        "Expectation Type": result.get("expectation_type"),
-                        "Column": result.get("column"),
-                        "Material Number": material,
-                        "Unexpected Value": material,
-                        "Element Count": result.get("element_count", 0),
-                        "Unexpected Count": result.get("unexpected_count", 0),
-                        "Unexpected Percent": result.get("unexpected_percent", 0.0),
-                        "Status": "Pass" if result.get("success") else "Fail",
-                    })
+                # Handle both old format (simple strings) and new format (dicts with context)
+                for failure in failures or [None]:
+                    if isinstance(failure, dict):
+                        # New format: extract material number and unexpected value from dict
+                        material_number = failure.get("material_number") or failure.get("MATERIAL_NUMBER")
+                        unexpected_value = failure.get("Unexpected Value")
+                        # Add all context columns to the row
+                        row = {
+                            "Expectation Type": result.get("expectation_type"),
+                            "Column": result.get("column"),
+                            "Material Number": material_number,
+                            "Unexpected Value": unexpected_value,
+                            "Element Count": result.get("element_count", 0),
+                            "Unexpected Count": result.get("unexpected_count", 0),
+                            "Unexpected Percent": result.get("unexpected_percent", 0.0),
+                            "Status": "Pass" if result.get("success") else "Fail",
+                        }
+                        # Add all other context fields from the failure dict
+                        for key, value in failure.items():
+                            if key not in row and key not in ["material_number", "MATERIAL_NUMBER", "Unexpected Value"]:
+                                row[key] = value
+                        rows.append(row)
+                    else:
+                        # Old format: simple material number string
+                        rows.append({
+                            "Expectation Type": result.get("expectation_type"),
+                            "Column": result.get("column"),
+                            "Material Number": failure,
+                            "Unexpected Value": failure,
+                            "Element Count": result.get("element_count", 0),
+                            "Unexpected Count": result.get("unexpected_count", 0),
+                            "Unexpected Percent": result.get("unexpected_percent", 0.0),
+                            "Status": "Pass" if result.get("success") else "Fail",
+                        })
                 continue
 
             # New contract: derive failure rows from the full results DataFrame
