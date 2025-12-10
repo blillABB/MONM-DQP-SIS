@@ -1354,7 +1354,7 @@ with st.form("derived_status_form", enter_to_submit=False):
     ]
 
     selection_label_lookup = {
-        entry["id"]: f"{', '.join(entry.get('targets') or ['(no column/field)'])} • {entry['type']} • {entry['label']}"
+        entry["id"]: entry["label"]
         for entry in filtered_catalog
         if entry.get("id") in filtered_ids
     }
@@ -1368,15 +1368,32 @@ with st.form("derived_status_form", enter_to_submit=False):
     preserved_defaults = [exp_id for exp_id in default_expectation_ids if exp_id and exp_id not in filtered_ids]
     selected_expectation_ids = filtered_ids + preserved_defaults
 
+    # Display summary instead of overwhelming list
     if selected_expectation_ids:
-        st.caption("Validations automatically selected from the chosen expectation type and columns.")
-        st.code(
-            "\n".join(
-                selection_label_lookup.get(exp_id, expectation_label_lookup.get(exp_id, exp_id))
-                for exp_id in selected_expectation_ids
-            ),
-            language="text",
-        )
+        st.success(f"✓ {len(selected_expectation_ids)} expectation(s) will be included in this derived status")
+
+        # Group by validation type for cleaner display
+        type_counts = {}
+        for exp_id in selected_expectation_ids:
+            entry = next((e for e in filtered_catalog if e.get("id") == exp_id), None)
+            if entry:
+                val_type = entry.get("type", "unknown")
+                type_counts[val_type] = type_counts.get(val_type, 0) + 1
+
+        if type_counts:
+            st.caption("Breakdown by validation type:")
+            for val_type, count in sorted(type_counts.items()):
+                st.caption(f"  • {val_type}: {count} expectation(s)")
+
+        # Show detailed list in an expander (not overwhelming)
+        with st.expander("View all selected expectations", expanded=False):
+            st.code(
+                "\n".join(
+                    selection_label_lookup.get(exp_id, expectation_label_lookup.get(exp_id, exp_id))
+                    for exp_id in selected_expectation_ids[:100]  # Limit to first 100
+                ) + (f"\n... and {len(selected_expectation_ids) - 100} more" if len(selected_expectation_ids) > 100 else ""),
+                language="text",
+            )
     elif not expectation_catalog:
         st.info("Add validation rules to populate selectable expectation IDs.")
     else:
@@ -1388,12 +1405,6 @@ with st.form("derived_status_form", enter_to_submit=False):
         help="Provide a custom identifier for the derived group. Leave blank to auto-name during execution.",
         key="derived_expectation_id",
     )
-
-    if selected_expectation_ids:
-        st.caption("Selected expectation IDs for this derived status group")
-        st.code("\n".join(selected_expectation_ids), language="text")
-    elif not expectation_catalog:
-        st.info("Add validation rules to populate selectable expectation IDs.")
 
     submit_label = "Update Derived Group" if is_editing_derived else "Add Derived Group"
     submitted = st.form_submit_button(submit_label, type="primary")
