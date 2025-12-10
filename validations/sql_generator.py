@@ -242,7 +242,7 @@ FROM base_data
             regex = group_config.get("regex", "")
             escaped_pattern = regex.replace("'", "''")
             for col in columns:
-                conditions.append(f"NOT RLIKE({col.upper()}, '{escaped_pattern}')")
+                conditions.append(f"NOT REGEXP_LIKE({col.upper()}, '{escaped_pattern}')")
 
         elif expectation_type == "expect_column_values_to_be_in_set":
             rules = group_config.get("rules", {})
@@ -526,7 +526,7 @@ FROM base_data
             escaped_pattern = regex_pattern.replace("'", "''")
 
             # Build WHEN condition with optional membership check
-            when_condition = f"NOT RLIKE({col_upper}, '{escaped_pattern}')"
+            when_condition = f"NOT REGEXP_LIKE({col_upper}, '{escaped_pattern}')"
             if conditional_check:
                 when_condition = f"({conditional_check}) AND {when_condition}"
 
