@@ -1286,7 +1286,8 @@ if is_editing_derived:
     st.info(f"✏️ Editing Derived Group #{st.session_state.editing_derived_index + 1}")
     derived_group = st.session_state.derived_statuses[st.session_state.editing_derived_index]
     default_status_label = derived_group.get("status", "")
-    default_expectation_ids = derived_group.get("expectation_ids", []) or []
+    default_columns = derived_group.get("columns", []) or []  # New filter-based format
+    default_expectation_ids = derived_group.get("expectation_ids", []) or []  # Legacy format
     default_expectation_type = derived_group.get("expectation_type", "")
     default_expectation_id = derived_group.get("expectation_id", "")
 
@@ -1296,6 +1297,7 @@ if is_editing_derived:
 else:
     derived_group = None
     default_status_label = ""
+    default_columns = []
     default_expectation_ids = []
     default_expectation_type = ""
     default_expectation_id = ""
@@ -1357,12 +1359,16 @@ with st.form("derived_status_form", enter_to_submit=False):
     # Default to existing selection when editing, empty when creating new
     default_targets = []
     if is_editing_derived:
-        # When editing, populate based on current expectation IDs
-        for exp_id in default_expectation_ids:
-            entry = next((e for e in expectation_catalog if e.get("id") == exp_id), None)
-            if entry and entry.get("targets"):
-                default_targets.extend(entry["targets"])
-        default_targets = sorted(set(default_targets))
+        # Prefer new format (columns) if available
+        if default_columns:
+            default_targets = default_columns
+        # Fallback to legacy format (extract from expectation IDs)
+        elif default_expectation_ids:
+            for exp_id in default_expectation_ids:
+                entry = next((e for e in expectation_catalog if e.get("id") == exp_id), None)
+                if entry and entry.get("targets"):
+                    default_targets.extend(entry["targets"])
+            default_targets = sorted(set(default_targets))
     # else: leave empty for new groups - user must explicitly select
 
     selected_targets = st.multiselect(
@@ -1439,11 +1445,13 @@ with st.form("derived_status_form", enter_to_submit=False):
         elif not selected_expectation_ids:
             st.error("No expectations match your selection. Please adjust the expectation type or column selection.")
         else:
+            # Use filter-based format (columns + type) instead of pre-resolved expectation_ids
             derived_entry = {
                 "status": status_label,
-                "expectation_ids": selected_expectation_ids,
+                "columns": selected_targets,  # Store selected columns for filtering
             }
 
+            # Expectation type is required for filter-based resolution
             if expectation_type and expectation_type != "(All types)":
                 derived_entry["expectation_type"] = expectation_type
 
@@ -1468,21 +1476,29 @@ if st.session_state.derived_statuses:
     for idx, derived in enumerate(st.session_state.derived_statuses):
         status_title = derived.get("status", f"Group {idx + 1}") or f"Group {idx + 1}"
         with st.expander(f"Derived Group {idx + 1}: {status_title}", expanded=False):
-            expectation_ids = derived.get("expectation_ids", [])
+            # Support both new (filter-based) and old (expectation_ids) formats
+            columns = derived.get("columns", [])
             expectation_type = derived.get("expectation_type")
+            expectation_ids = derived.get("expectation_ids", [])  # Legacy format
 
-            if expectation_ids:
+            if columns:
+                # NEW format: Filter-based (expectation_type + columns)
+                st.markdown(f"**Expectation type:** {expectation_type or '(Any)'}")
+                st.markdown(f"**Columns:** {len(columns)} selected")
+                st.markdown(", ".join(columns[:10]) + (f", ... and {len(columns) - 10} more" if len(columns) > 10 else ""))
+            elif expectation_ids:
+                # LEGACY format: Pre-resolved expectation IDs
+                st.warning("⚠️ This group uses the legacy expectation_ids format. Consider recreating it with the new column-based approach.")
                 st.markdown("**Selected validations**")
                 summary_lines = []
-                for exp_id in expectation_ids:
+                for exp_id in expectation_ids[:5]:  # Show first 5
                     label = expectation_label_lookup.get(exp_id, exp_id)
                     summary_lines.append(f"- {label}")
+                if len(expectation_ids) > 5:
+                    summary_lines.append(f"- ... and {len(expectation_ids) - 5} more")
                 st.markdown("\n".join(summary_lines))
             else:
-                st.info("No expectation IDs configured for this group.")
-
-            if expectation_type:
-                st.caption(f"Expectation type filter: {expectation_type}")
+                st.info("No filters configured for this group.")
 
             st.json(derived)
 
