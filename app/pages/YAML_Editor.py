@@ -118,8 +118,16 @@ def build_stable_expectation_id(validation: dict, existing_ids: set[str]) -> str
 
     base_type = validation.get("type", "validation")
     targets = extract_validation_targets(validation)
-    target_str = "_".join(targets) if targets else "notarget"
-    raw_base = f"{base_type}_{target_str}".lower()
+
+    # Use a hash of targets instead of concatenating all names (keeps IDs short)
+    if targets:
+        targets_str = "|".join(sorted(targets))  # Sort for determinism
+        targets_hash = hashlib.md5(targets_str.encode()).hexdigest()[:8]
+        target_identifier = f"cols_{targets_hash}"
+    else:
+        target_identifier = "notarget"
+
+    raw_base = f"{base_type}_{target_identifier}".lower()
     safe_base = re.sub(r"[^a-z0-9]+", "_", raw_base).strip("_") or "validation"
     candidate = f"exp_{safe_base}"
 
