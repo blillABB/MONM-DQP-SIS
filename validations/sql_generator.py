@@ -370,6 +370,18 @@ FROM base_data
                 validation_objects.extend(self._build_value_not_in_set_validation(validation))
             elif val_type == "expect_column_values_to_match_regex":
                 validation_objects.extend(self._build_regex_validation(validation))
+            elif val_type == "expect_column_values_to_not_match_regex":
+                validation_objects.extend(self._build_not_regex_validation(validation))
+            elif val_type == "expect_column_value_lengths_to_equal":
+                validation_objects.extend(self._build_length_equal_validation(validation))
+            elif val_type == "expect_column_value_lengths_to_be_between":
+                validation_objects.extend(self._build_length_between_validation(validation))
+            elif val_type == "expect_column_values_to_be_between":
+                validation_objects.extend(self._build_value_between_validation(validation))
+            elif val_type == "expect_column_values_to_be_unique":
+                validation_objects.extend(self._build_unique_validation(validation))
+            elif val_type == "expect_compound_columns_to_be_unique":
+                validation_objects.extend(self._build_compound_unique_validation(validation))
             elif val_type == "expect_column_pair_values_to_be_equal":
                 validation_objects.extend(self._build_column_pair_equal_validation(validation))
             elif val_type == "expect_column_pair_values_a_to_be_greater_than_b":
@@ -420,6 +432,234 @@ FROM base_data
                     col_name=col
                 )
             )
+
+        return objects
+
+    def _build_not_regex_validation(self, validation: Dict) -> List[str]:
+        """Build SQL for NOT matching regex validation flags."""
+        columns = validation.get("columns", [])
+        regex_pattern = validation.get("regex", "")
+        objects: List[str] = []
+
+        # Get conditional membership check (if any)
+        conditional_check = self._get_conditional_check(validation)
+
+        for column in columns:
+            col_upper = column.upper()
+            expectation_id = build_scoped_expectation_id(validation, column)
+
+            # Escape backslashes first, then single quotes for SQL string literal
+            escaped_pattern = regex_pattern.replace("\\", "\\\\").replace("'", "''")
+
+            # Build WHEN condition - matches when value DOES match regex (should NOT match)
+            when_condition = f"REGEXP_LIKE({col_upper}, '{escaped_pattern}')"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
+            objects.append(
+                "CASE WHEN {when_condition} THEN OBJECT_CONSTRUCT("
+                "'expectation_id', '{expectation_id}', "
+                "'expectation_type', 'expect_column_values_to_not_match_regex', "
+                "'column', '{column}', "
+                "'failure_reason', 'REGEX_MATCH', "
+                "'unexpected_value', {col}, "
+                "'regex', '{pattern}'"
+                ") END".format(
+                    when_condition=when_condition,
+                    col=col_upper,
+                    pattern=escaped_pattern,
+                    expectation_id=expectation_id,
+                    column=column,
+                )
+            )
+
+        return objects
+
+    def _build_length_equal_validation(self, validation: Dict) -> List[str]:
+        """Build SQL for exact length validation."""
+        columns = validation.get("columns", [])
+        expected_length = validation.get("value", 0)
+        objects: List[str] = []
+
+        conditional_check = self._get_conditional_check(validation)
+
+        for column in columns:
+            col_upper = column.upper()
+            expectation_id = build_scoped_expectation_id(validation, column)
+
+            when_condition = f"LENGTH({col_upper}) != {expected_length}"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
+            objects.append(
+                "CASE WHEN {when_condition} THEN OBJECT_CONSTRUCT("
+                "'expectation_id', '{expectation_id}', "
+                "'expectation_type', 'expect_column_value_lengths_to_equal', "
+                "'column', '{column}', "
+                "'failure_reason', 'LENGTH_MISMATCH', "
+                "'unexpected_value', {col}, "
+                "'actual_length', LENGTH({col}), "
+                "'expected_length', {expected_length}"
+                ") END".format(
+                    when_condition=when_condition,
+                    col=col_upper,
+                    expectation_id=expectation_id,
+                    column=column,
+                    expected_length=expected_length,
+                )
+            )
+
+        return objects
+
+    def _build_length_between_validation(self, validation: Dict) -> List[str]:
+        """Build SQL for length range validation."""
+        columns = validation.get("columns", [])
+        min_length = validation.get("min_value", 0)
+        max_length = validation.get("max_value", 999999)
+        objects: List[str] = []
+
+        conditional_check = self._get_conditional_check(validation)
+
+        for column in columns:
+            col_upper = column.upper()
+            expectation_id = build_scoped_expectation_id(validation, column)
+
+            when_condition = f"(LENGTH({col_upper}) < {min_length} OR LENGTH({col_upper}) > {max_length})"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
+            objects.append(
+                "CASE WHEN {when_condition} THEN OBJECT_CONSTRUCT("
+                "'expectation_id', '{expectation_id}', "
+                "'expectation_type', 'expect_column_value_lengths_to_be_between', "
+                "'column', '{column}', "
+                "'failure_reason', 'LENGTH_OUT_OF_RANGE', "
+                "'unexpected_value', {col}, "
+                "'actual_length', LENGTH({col}), "
+                "'min_length', {min_length}, "
+                "'max_length', {max_length}"
+                ") END".format(
+                    when_condition=when_condition,
+                    col=col_upper,
+                    expectation_id=expectation_id,
+                    column=column,
+                    min_length=min_length,
+                    max_length=max_length,
+                )
+            )
+
+        return objects
+
+    def _build_value_between_validation(self, validation: Dict) -> List[str]:
+        """Build SQL for numeric value range validation."""
+        columns = validation.get("columns", [])
+        min_value = validation.get("min_value", 0)
+        max_value = validation.get("max_value", 999999)
+        objects: List[str] = []
+
+        conditional_check = self._get_conditional_check(validation)
+
+        for column in columns:
+            col_upper = column.upper()
+            expectation_id = build_scoped_expectation_id(validation, column)
+
+            when_condition = f"({col_upper} < {min_value} OR {col_upper} > {max_value})"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
+            objects.append(
+                "CASE WHEN {when_condition} THEN OBJECT_CONSTRUCT("
+                "'expectation_id', '{expectation_id}', "
+                "'expectation_type', 'expect_column_values_to_be_between', "
+                "'column', '{column}', "
+                "'failure_reason', 'VALUE_OUT_OF_RANGE', "
+                "'unexpected_value', {col}, "
+                "'min_value', {min_value}, "
+                "'max_value', {max_value}"
+                ") END".format(
+                    when_condition=when_condition,
+                    col=col_upper,
+                    expectation_id=expectation_id,
+                    column=column,
+                    min_value=min_value,
+                    max_value=max_value,
+                )
+            )
+
+        return objects
+
+    def _build_unique_validation(self, validation: Dict) -> List[str]:
+        """Build SQL for uniqueness validation."""
+        columns = validation.get("columns", [])
+        objects: List[str] = []
+
+        conditional_check = self._get_conditional_check(validation)
+
+        for column in columns:
+            col_upper = column.upper()
+            expectation_id = build_scoped_expectation_id(validation, column)
+
+            # For uniqueness, we need to check if there are duplicates
+            # This is complex in a single SELECT, so we use a window function approach
+            when_condition = f"COUNT(*) OVER (PARTITION BY {col_upper}) > 1"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
+            objects.append(
+                "CASE WHEN {when_condition} THEN OBJECT_CONSTRUCT("
+                "'expectation_id', '{expectation_id}', "
+                "'expectation_type', 'expect_column_values_to_be_unique', "
+                "'column', '{column}', "
+                "'failure_reason', 'DUPLICATE_VALUE', "
+                "'unexpected_value', {col}, "
+                "'duplicate_count', COUNT(*) OVER (PARTITION BY {col})"
+                ") END".format(
+                    when_condition=when_condition,
+                    col=col_upper,
+                    expectation_id=expectation_id,
+                    column=column,
+                )
+            )
+
+        return objects
+
+    def _build_compound_unique_validation(self, validation: Dict) -> List[str]:
+        """Build SQL for compound (multi-column) uniqueness validation."""
+        column_list = validation.get("column_list", [])
+        objects: List[str] = []
+
+        if not column_list or len(column_list) < 2:
+            return objects
+
+        conditional_check = self._get_conditional_check(validation)
+
+        # Build expectation_id for compound validation
+        expectation_id = build_scoped_expectation_id(validation, "_".join(column_list))
+
+        # Build partition clause for all columns
+        partition_cols = ", ".join([col.upper() for col in column_list])
+        concat_cols = " || '|' || ".join([f"COALESCE(CAST({col.upper()} AS VARCHAR), 'NULL')" for col in column_list])
+
+        when_condition = f"COUNT(*) OVER (PARTITION BY {partition_cols}) > 1"
+        if conditional_check:
+            when_condition = f"({conditional_check}) AND {when_condition}"
+
+        objects.append(
+            "CASE WHEN {when_condition} THEN OBJECT_CONSTRUCT("
+            "'expectation_id', '{expectation_id}', "
+            "'expectation_type', 'expect_compound_columns_to_be_unique', "
+            "'columns', ARRAY_CONSTRUCT({column_array}), "
+            "'failure_reason', 'DUPLICATE_COMBINATION', "
+            "'unexpected_value', {concat_cols}, "
+            "'duplicate_count', COUNT(*) OVER (PARTITION BY {partition_cols})"
+            ") END".format(
+                when_condition=when_condition,
+                expectation_id=expectation_id,
+                column_array=", ".join([f"'{col}'" for col in column_list]),
+                concat_cols=concat_cols,
+                partition_cols=partition_cols,
+            )
+        )
 
         return objects
 
