@@ -168,10 +168,14 @@ class DerivedStatusResolver:
 
     def _resolve_all_derived_statuses(self) -> List[Dict[str, Any]]:
         """
-        Pre-resolve all derived statuses to their scoped expectation IDs.
+        Resolve all derived statuses to their scoped expectation IDs.
 
-        This happens once at initialization, so runtime evaluation just needs
-        to look up the pre-resolved IDs instead of doing expensive matching.
+        Supports two modes:
+        1. Legacy: expectation_ids list (pre-resolved specific IDs)
+        2. Filter-based: expectation_type + columns (runtime filtering)
+
+        The filter-based approach is cleaner for cases where you have one
+        validation checking many columns but want to group subsets differently.
 
         Returns:
             List of derived statuses with added "resolved_scoped_ids" field
@@ -179,30 +183,56 @@ class DerivedStatusResolver:
         resolved = []
 
         for derived_status in self.derived_statuses:
-            expectation_ids = derived_status.get("expectation_ids", [])
+            # Check if using filter-based approach (expectation_type + columns)
+            expectation_type = derived_status.get("expectation_type")
+            filter_columns = derived_status.get("columns", [])
 
-            # Resolve each expectation ID to its scoped variants
-            resolved_scoped_ids = []
-            missing_ids = []
+            if filter_columns:
+                # NEW: Filter-based resolution
+                # Find all catalog entries matching type and columns
+                resolved_scoped_ids = []
+                for entry in self.catalog:
+                    # Match by expectation type (if specified)
+                    if expectation_type and entry["type"] != expectation_type:
+                        continue
 
-            for exp_id in expectation_ids:
-                scoped_ids = self.base_to_scoped_map.get(exp_id, [])
-                if scoped_ids:
-                    resolved_scoped_ids.extend(scoped_ids)
-                else:
-                    # Check if it's already a scoped ID (direct match in catalog)
-                    if any(entry["scoped_id"] == exp_id for entry in self.catalog):
-                        resolved_scoped_ids.append(exp_id)
+                    # Match if entry targets any of the specified columns
+                    entry_targets = entry.get("targets", [])
+                    if any(target in filter_columns for target in entry_targets):
+                        resolved_scoped_ids.append(entry["scoped_id"])
+
+                resolved_entry = {
+                    **derived_status,
+                    "resolved_scoped_ids": resolved_scoped_ids,
+                    "missing_ids": [],  # N/A for filter-based approach
+                    "resolution_mode": "filter",
+                }
+                resolved.append(resolved_entry)
+
+            else:
+                # LEGACY: expectation_ids list (backward compatibility)
+                expectation_ids = derived_status.get("expectation_ids", [])
+                resolved_scoped_ids = []
+                missing_ids = []
+
+                for exp_id in expectation_ids:
+                    scoped_ids = self.base_to_scoped_map.get(exp_id, [])
+                    if scoped_ids:
+                        resolved_scoped_ids.extend(scoped_ids)
                     else:
-                        missing_ids.append(exp_id)
+                        # Check if it's already a scoped ID (direct match in catalog)
+                        if any(entry["scoped_id"] == exp_id for entry in self.catalog):
+                            resolved_scoped_ids.append(exp_id)
+                        else:
+                            missing_ids.append(exp_id)
 
-            # Create a new dict with resolved IDs
-            resolved_entry = {
-                **derived_status,
-                "resolved_scoped_ids": resolved_scoped_ids,
-                "missing_ids": missing_ids,
-            }
-            resolved.append(resolved_entry)
+                resolved_entry = {
+                    **derived_status,
+                    "resolved_scoped_ids": resolved_scoped_ids,
+                    "missing_ids": missing_ids,
+                    "resolution_mode": "ids",
+                }
+                resolved.append(resolved_entry)
 
         return resolved
 
