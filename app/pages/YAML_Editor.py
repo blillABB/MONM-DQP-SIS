@@ -15,6 +15,7 @@ import streamlit as st
 import yaml
 from pathlib import Path
 from validations.sql_generator import build_scoped_expectation_id
+from validations.derived_status_resolver import DerivedStatusResolver
 from core.column_cache import get_cached_column_metadata, get_cache_info
 from core.queries import QUERY_REGISTRY
 
@@ -117,8 +118,16 @@ def build_stable_expectation_id(validation: dict, existing_ids: set[str]) -> str
 
     base_type = validation.get("type", "validation")
     targets = extract_validation_targets(validation)
-    target_str = "_".join(targets) if targets else "notarget"
-    raw_base = f"{base_type}_{target_str}".lower()
+
+    # Use a hash of targets instead of concatenating all names (keeps IDs short)
+    if targets:
+        targets_str = "|".join(sorted(targets))  # Sort for determinism
+        targets_hash = hashlib.md5(targets_str.encode()).hexdigest()[:8]
+        target_identifier = f"cols_{targets_hash}"
+    else:
+        target_identifier = "notarget"
+
+    raw_base = f"{base_type}_{target_identifier}".lower()
     safe_base = re.sub(r"[^a-z0-9]+", "_", raw_base).strip("_") or "validation"
     candidate = f"exp_{safe_base}"
 
@@ -141,92 +150,8 @@ def annotate_session_validations_with_expectation_ids(validations: list[dict]):
             existing_ids.add(val["expectation_id"])
 
 
-def build_scoped_expectation_catalog(validations: list[dict]):
-    """Mirror the runner's catalog by emitting scoped expectation ids per target."""
-
-    catalog = []
-    label_lookup = {}
-    target_lookup = {}
-
-    def add_targets(entry_targets: list[str]):
-        if not entry_targets:
-            target_lookup.setdefault("(no column/field)", "(no column/field)")
-            return
-
-        for target in entry_targets:
-            target_lookup.setdefault(target, target)
-
-    def add_entry(validation: dict, discriminator: str, entry_targets: list[str]):
-        base_id = validation.get("expectation_id")
-        if not base_id:
-            return
-
-        scoped_id = build_scoped_expectation_id(validation, discriminator)
-        validation_type = validation.get("type", "")
-        target_text = ", ".join(entry_targets or ["(no column/field)"])
-        label = f"{scoped_id} — {validation_type} on {target_text}" if validation_type else scoped_id
-
-        catalog.append(
-            {
-                "id": scoped_id,
-                "label": label,
-                "type": validation_type,
-                "targets": entry_targets or [],
-            }
-        )
-
-        label_lookup[scoped_id] = label
-        add_targets(entry_targets)
-
-    for validation in validations:
-        val_type = validation.get("type", "")
-        base_id = validation.get("expectation_id")
-
-        if base_id:
-            label_lookup.setdefault(base_id, f"{base_id} — {format_validation_summary(validation)}")
-
-        if val_type == "expect_column_values_to_not_be_null":
-            for col in validation.get("columns", []):
-                add_entry(validation, col, [col])
-        elif val_type == "expect_column_values_to_be_in_set":
-            for column in validation.get("rules", {}).keys():
-                add_entry(validation, column, [column])
-        elif val_type == "expect_column_values_to_not_be_in_set":
-            column = validation.get("column")
-            if column:
-                add_entry(validation, column, [column])
-        elif val_type == "expect_column_values_to_match_regex":
-            for column in validation.get("columns", []):
-                add_entry(validation, column, [column])
-        elif val_type in {
-            "expect_column_pair_values_to_be_equal",
-            "expect_column_pair_values_a_to_be_greater_than_b",
-            "custom:conditional_required",
-            "custom:conditional_value_in_set",
-        }:
-            col_a = validation.get("column_a") or validation.get("condition_column")
-            col_b = (
-                validation.get("column_b")
-                or validation.get("required_column")
-                or validation.get("target_column")
-            )
-            if col_a and col_b:
-                discriminator = "|".join([col_a, col_b])
-                add_entry(validation, discriminator, [col_a, col_b])
-        else:
-            targets = extract_validation_targets(validation)
-            if base_id:
-                catalog.append(
-                    {
-                        "id": base_id,
-                        "label": label_lookup[base_id],
-                        "type": val_type,
-                        "targets": targets,
-                    }
-                )
-                add_targets(targets)
-
-    return catalog, label_lookup, target_lookup
+# NOTE: Catalog building has been moved to DerivedStatusResolver
+# This eliminates code duplication and ensures UI and runtime use the same logic.
 
 
 def format_validation_summary(validation: dict) -> str:
@@ -1361,7 +1286,8 @@ if is_editing_derived:
     st.info(f"✏️ Editing Derived Group #{st.session_state.editing_derived_index + 1}")
     derived_group = st.session_state.derived_statuses[st.session_state.editing_derived_index]
     default_status_label = derived_group.get("status", "")
-    default_expectation_ids = derived_group.get("expectation_ids", []) or []
+    default_columns = derived_group.get("columns", []) or []  # New filter-based format
+    default_expectation_ids = derived_group.get("expectation_ids", []) or []  # Legacy format
     default_expectation_type = derived_group.get("expectation_type", "")
     default_expectation_id = derived_group.get("expectation_id", "")
 
@@ -1371,27 +1297,33 @@ if is_editing_derived:
 else:
     derived_group = None
     default_status_label = ""
+    default_columns = []
     default_expectation_ids = []
     default_expectation_type = ""
     default_expectation_id = ""
 
+# Use DerivedStatusResolver to build catalog - single source of truth with runtime
+resolver = DerivedStatusResolver(st.session_state.validations, st.session_state.derived_statuses)
 (
     expectation_catalog,
     expectation_label_lookup,
     target_lookup,
-) = build_scoped_expectation_catalog(st.session_state.validations)
+) = resolver.get_catalog_for_ui()
 
 available_expectation_types = {
     val.get("type") for val in st.session_state.validations if val.get("type")
 }
 
 with st.form("derived_status_form", enter_to_submit=False):
+    # Use dynamic keys to prevent Streamlit from caching form state across submissions
+    form_suffix = f"{st.session_state.editing_derived_index if is_editing_derived else f'new_{len(st.session_state.derived_statuses)}'}"
+
     status_label = st.text_input(
         "Status Label",
         value=default_status_label,
         placeholder="Warning / Critical / Info",
         help="Label for this derived status grouping",
-        key="derived_status_label",
+        key=f"derived_status_label_{form_suffix}",
     )
 
     type_options = ["(All types)"] + sorted(available_expectation_types)
@@ -1404,7 +1336,7 @@ with st.form("derived_status_form", enter_to_submit=False):
         options=type_options,
         index=type_default_index,
         help="Limit the selection list to a specific expectation type and store it with the derived group.",
-        key="derived_expectation_type",
+        key=f"derived_expectation_type_{form_suffix}",
     )
 
     # Build column/field filter options based on the selected expectation type
@@ -1413,18 +1345,43 @@ with st.form("derived_status_form", enter_to_submit=False):
         if expectation_type in {"(All types)", entry["type"]}
     ]
 
-    target_options = sorted(target_lookup.keys())
+    # Get available targets from the filtered catalog only
+    filtered_targets = set()
+    for entry in filtered_catalog:
+        targets = entry.get("targets", [])
+        if targets:
+            filtered_targets.update(targets)
+        else:
+            filtered_targets.add("(no column/field)")
+
+    target_options = sorted(filtered_targets)
+
+    # Default to existing selection when editing, empty when creating new
+    default_targets = []
+    if is_editing_derived:
+        # Prefer new format (columns) if available
+        if default_columns:
+            default_targets = default_columns
+        # Fallback to legacy format (extract from expectation IDs)
+        elif default_expectation_ids:
+            for exp_id in default_expectation_ids:
+                entry = next((e for e in expectation_catalog if e.get("id") == exp_id), None)
+                if entry and entry.get("targets"):
+                    default_targets.extend(entry["targets"])
+            default_targets = sorted(set(default_targets))
+    # else: leave empty for new groups - user must explicitly select
+
     selected_targets = st.multiselect(
         "Columns/fields to include",
         options=target_options,
-        default=target_options,
-        help="Narrow the validation list to specific columns/fields",
-        key="derived_target_filter",
+        default=default_targets,
+        help="Select which columns/fields to include in this derived status. Only expectations targeting these columns will be included.",
+        key=f"derived_target_filter_{form_suffix}",
     )
 
     def _matches_target(entry_targets: list[str]) -> bool:
         if not selected_targets:
-            return True
+            return False  # No columns selected = no matches (explicit selection required)
         if not entry_targets:
             return "(no column/field)" in selected_targets
         return any(target in selected_targets for target in entry_targets)
@@ -1435,7 +1392,7 @@ with st.form("derived_status_form", enter_to_submit=False):
     ]
 
     selection_label_lookup = {
-        entry["id"]: f"{', '.join(entry.get('targets') or ['(no column/field)'])} • {entry['type']} • {entry['label']}"
+        entry["id"]: entry["label"]
         for entry in filtered_catalog
         if entry.get("id") in filtered_ids
     }
@@ -1449,15 +1406,22 @@ with st.form("derived_status_form", enter_to_submit=False):
     preserved_defaults = [exp_id for exp_id in default_expectation_ids if exp_id and exp_id not in filtered_ids]
     selected_expectation_ids = filtered_ids + preserved_defaults
 
+    # Display clean summary only
     if selected_expectation_ids:
-        st.caption("Validations automatically selected from the chosen expectation type and columns.")
-        st.code(
-            "\n".join(
-                selection_label_lookup.get(exp_id, expectation_label_lookup.get(exp_id, exp_id))
-                for exp_id in selected_expectation_ids
-            ),
-            language="text",
-        )
+        st.success(f"✓ {len(selected_expectation_ids)} expectation(s) will be included in this derived status")
+
+        # Group by validation type for cleaner display
+        type_counts = {}
+        for exp_id in selected_expectation_ids:
+            entry = next((e for e in filtered_catalog if e.get("id") == exp_id), None)
+            if entry:
+                val_type = entry.get("type", "unknown")
+                type_counts[val_type] = type_counts.get(val_type, 0) + 1
+
+        if type_counts:
+            st.caption("Breakdown by validation type:")
+            for val_type, count in sorted(type_counts.items()):
+                st.caption(f"  • {val_type}: {count} expectation(s)")
     elif not expectation_catalog:
         st.info("Add validation rules to populate selectable expectation IDs.")
     else:
@@ -1467,14 +1431,8 @@ with st.form("derived_status_form", enter_to_submit=False):
         "Derived Expectation ID (optional)",
         value=default_expectation_id,
         help="Provide a custom identifier for the derived group. Leave blank to auto-name during execution.",
-        key="derived_expectation_id",
+        key=f"derived_expectation_id_{form_suffix}",
     )
-
-    if selected_expectation_ids:
-        st.caption("Selected expectation IDs for this derived status group")
-        st.code("\n".join(selected_expectation_ids), language="text")
-    elif not expectation_catalog:
-        st.info("Add validation rules to populate selectable expectation IDs.")
 
     submit_label = "Update Derived Group" if is_editing_derived else "Add Derived Group"
     submitted = st.form_submit_button(submit_label, type="primary")
@@ -1482,14 +1440,18 @@ with st.form("derived_status_form", enter_to_submit=False):
     if submitted:
         if not status_label:
             st.error("Please provide a status label")
+        elif not selected_targets:
+            st.error("Please select at least one column/field to include in this derived status")
         elif not selected_expectation_ids:
-            st.error("Please select at least one validation for this derived status")
+            st.error("No expectations match your selection. Please adjust the expectation type or column selection.")
         else:
+            # Use filter-based format (columns + type) instead of pre-resolved expectation_ids
             derived_entry = {
                 "status": status_label,
-                "expectation_ids": selected_expectation_ids,
+                "columns": selected_targets,  # Store selected columns for filtering
             }
 
+            # Expectation type is required for filter-based resolution
             if expectation_type and expectation_type != "(All types)":
                 derived_entry["expectation_type"] = expectation_type
 
@@ -1514,21 +1476,29 @@ if st.session_state.derived_statuses:
     for idx, derived in enumerate(st.session_state.derived_statuses):
         status_title = derived.get("status", f"Group {idx + 1}") or f"Group {idx + 1}"
         with st.expander(f"Derived Group {idx + 1}: {status_title}", expanded=False):
-            expectation_ids = derived.get("expectation_ids", [])
+            # Support both new (filter-based) and old (expectation_ids) formats
+            columns = derived.get("columns", [])
             expectation_type = derived.get("expectation_type")
+            expectation_ids = derived.get("expectation_ids", [])  # Legacy format
 
-            if expectation_ids:
+            if columns:
+                # NEW format: Filter-based (expectation_type + columns)
+                st.markdown(f"**Expectation type:** {expectation_type or '(Any)'}")
+                st.markdown(f"**Columns:** {len(columns)} selected")
+                st.markdown(", ".join(columns[:10]) + (f", ... and {len(columns) - 10} more" if len(columns) > 10 else ""))
+            elif expectation_ids:
+                # LEGACY format: Pre-resolved expectation IDs
+                st.warning("⚠️ This group uses the legacy expectation_ids format. Consider recreating it with the new column-based approach.")
                 st.markdown("**Selected validations**")
                 summary_lines = []
-                for exp_id in expectation_ids:
+                for exp_id in expectation_ids[:5]:  # Show first 5
                     label = expectation_label_lookup.get(exp_id, exp_id)
                     summary_lines.append(f"- {label}")
+                if len(expectation_ids) > 5:
+                    summary_lines.append(f"- ... and {len(expectation_ids) - 5} more")
                 st.markdown("\n".join(summary_lines))
             else:
-                st.info("No expectation IDs configured for this group.")
-
-            if expectation_type:
-                st.caption(f"Expectation type filter: {expectation_type}")
+                st.info("No filters configured for this group.")
 
             st.json(derived)
 
