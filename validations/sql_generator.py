@@ -12,8 +12,36 @@ Key features:
 """
 
 import hashlib
+import re
 from typing import Dict, List, Any
 from core.grain_mapping import get_context_columns_for_columns
+
+
+def sanitize_cte_name(name: str) -> str:
+    """
+    Sanitize a string to create a valid SQL identifier for CTE names.
+
+    Args:
+        name: Raw string to sanitize
+
+    Returns:
+        Valid SQL identifier with no spaces or special characters
+    """
+    # Replace spaces and hyphens with underscores
+    sanitized = name.replace(' ', '_').replace('-', '_')
+
+    # Remove any characters that aren't alphanumeric or underscore
+    sanitized = re.sub(r'[^a-zA-Z0-9_]', '', sanitized)
+
+    # Ensure it doesn't start with a number
+    if sanitized and sanitized[0].isdigit():
+        sanitized = f"grp_{sanitized}"
+
+    # Ensure it's not empty
+    if not sanitized:
+        sanitized = "derived_group"
+
+    return sanitized
 
 
 class ValidationSQLGenerator:
@@ -239,8 +267,8 @@ FROM base_data
         # Join conditions with OR (material fails if ANY condition is true)
         condition_clause = " OR ".join(conditions)
 
-        # Build CTE
-        cte_name = f"{group_id}_materials"
+        # Build CTE with sanitized name
+        cte_name = f"{sanitize_cte_name(group_id)}_materials"
         cte_sql = f"""{cte_name} AS (
   SELECT DISTINCT {self.index_column}
   FROM {table_name}
@@ -321,7 +349,7 @@ FROM base_data
         if not derived_group:
             return ""
 
-        cte_name = f"{derived_group}_materials"
+        cte_name = f"{sanitize_cte_name(derived_group)}_materials"
         operator = "NOT IN" if membership == "exclude" else "IN"
 
         return f"{self.index_column} {operator} (SELECT {self.index_column} FROM {cte_name})"
