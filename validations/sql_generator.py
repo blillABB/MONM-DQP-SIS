@@ -240,7 +240,8 @@ FROM base_data
 
         elif expectation_type == "expect_column_values_to_match_regex":
             regex = group_config.get("regex", "")
-            escaped_pattern = regex.replace("'", "''")
+            # Escape backslashes first, then single quotes for SQL string literal
+            escaped_pattern = regex.replace("\\", "\\\\").replace("'", "''")
             for col in columns:
                 conditions.append(f"NOT REGEXP_LIKE({col.upper()}, '{escaped_pattern}')")
 
@@ -522,8 +523,8 @@ FROM base_data
             col_upper = column.upper()
             expectation_id = build_scoped_expectation_id(validation, column)
 
-            # Escape single quotes in regex pattern
-            escaped_pattern = regex_pattern.replace("'", "''")
+            # Escape backslashes first, then single quotes for SQL string literal
+            escaped_pattern = regex_pattern.replace("\\", "\\\\").replace("'", "''")
 
             # Build WHEN condition with optional membership check
             when_condition = f"NOT REGEXP_LIKE({col_upper}, '{escaped_pattern}')"
