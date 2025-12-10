@@ -692,31 +692,6 @@ def _collect_validation_failures(
     return counts_map, failure_rows_map
 
 
-def _preview_list(values: list[str], max_items: int = 10) -> str:
-    """Return a comma-delimited preview of list contents without dumping everything."""
-
-    if not values:
-        return "none"
-
-    if len(values) <= max_items:
-        return ", ".join(values)
-
-    remaining = len(values) - max_items
-    return ", ".join(values[:max_items]) + f", ... (+{remaining} more)"
-
-
-def _preview_counts(expectation_ids: list[str], counts_map: Dict[str, int], max_items: int = 10) -> str:
-    """Preview only non-zero unexpected counts for scoped expectation IDs."""
-
-    non_zero_counts = [
-        f"{exp_id}:{counts_map.get(exp_id, 0)}"
-        for exp_id in expectation_ids
-        if counts_map.get(exp_id, 0)
-    ]
-
-    return _preview_list(non_zero_counts, max_items=max_items)
-
-
 def _build_derived_status_results(
     resolver: DerivedStatusResolver,
     counts_map: Dict[str, int],
@@ -747,18 +722,7 @@ def _build_derived_status_results(
         status_label = resolved_status.get("status") or resolved_status.get("status_label") or "Derived Status"
 
         if not resolved_ids:
-            print(f"[derived-status] No resolved expectation IDs for '{status_label}', skipping.")
             continue
-
-        print(
-            "[derived-status] Evaluating",
-            {
-                "status": status_label,
-                "resolved_ids": _preview_list(resolved_ids),
-                "missing_ids": _preview_list(missing_ids),
-                "unexpected_counts": _preview_counts(resolved_ids, counts_map),
-            },
-        )
 
         # Build a map of material -> {expectations failed, columns failed, row data}
         material_failures: Dict[str, Dict[str, Any]] = {}
@@ -794,14 +758,7 @@ def _build_derived_status_results(
         unexpected_count = len(material_failures)
 
         if unexpected_count == 0:
-            print(
-                f"[derived-status] No unique materials failed for '{status_label}', skipping result.",
-            )
             continue
-
-        print(
-            f"[derived-status] Found {unexpected_count} unique materials (from {sum(counts_map.get(exp_id, 0) for exp_id in resolved_ids)} total failure records)",
-        )
 
         expectation_type = resolved_status.get(
             "expectation_type", "custom:derived_null_group"
