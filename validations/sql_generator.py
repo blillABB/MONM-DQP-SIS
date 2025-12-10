@@ -65,15 +65,21 @@ class ValidationSQLGenerator:
         # Build parts of the query
         table_name = self._get_table_name()
         where_clause = self._build_where_clause()
+
+        # Build derived group CTEs for conditional validations
+        derived_group_ctes = self._build_derived_group_ctes(table_name, where_clause)
+
         validation_results_clause = self._build_validation_results_clause()
         select_columns = self._build_select_clause(
             validated_columns, context_columns, extra_columns=[validation_results_clause]
         )
         select_keyword = "SELECT DISTINCT" if self._use_distinct() else "SELECT"
 
-        # Assemble complete query
+        # Assemble complete query with derived group CTEs if needed
+        cte_prefix = derived_group_ctes + ",\n" if derived_group_ctes else ""
+
         query = f"""
-WITH base_data AS (
+WITH {cte_prefix}base_data AS (
   {select_keyword}
     {select_columns}
   FROM {table_name}
@@ -122,6 +128,127 @@ FROM base_data
         if conditions:
             return "WHERE " + " AND ".join(conditions)
         return ""
+
+    def _get_referenced_derived_groups(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Identify all derived groups referenced in conditional validations.
+
+        Returns:
+            Dictionary mapping derived_group_id -> derived_status_config
+        """
+        referenced_groups = {}
+
+        # Scan validations for conditional_on clauses
+        for validation in self.validations:
+            conditional_on = validation.get("conditional_on")
+            if conditional_on:
+                derived_group_id = conditional_on.get("derived_group")
+                if derived_group_id and derived_group_id not in referenced_groups:
+                    # Find the derived status configuration
+                    for derived_status in self.suite_config.get("derived_statuses", []):
+                        if derived_status.get("expectation_id") == derived_group_id:
+                            referenced_groups[derived_group_id] = derived_status
+                            break
+
+        return referenced_groups
+
+    def _build_derived_group_ctes(self, table_name: str, where_clause: str) -> str:
+        """
+        Build CTEs that identify materials belonging to each derived group.
+
+        Args:
+            table_name: Source table name
+            where_clause: WHERE clause from main query
+
+        Returns:
+            SQL string with all derived group CTEs
+        """
+        referenced_groups = self._get_referenced_derived_groups()
+
+        if not referenced_groups:
+            return ""
+
+        ctes = []
+        for group_id, group_config in referenced_groups.items():
+            cte_sql = self._build_single_derived_group_cte(
+                group_id, group_config, table_name, where_clause
+            )
+            if cte_sql:
+                ctes.append(cte_sql)
+
+        return ",\n".join(ctes)
+
+    def _build_single_derived_group_cte(
+        self, group_id: str, group_config: Dict[str, Any], table_name: str, where_clause: str
+    ) -> str:
+        """
+        Build a CTE for a single derived group.
+
+        The CTE selects all materials (index column values) that fail
+        any of the expectations in the derived group.
+
+        Args:
+            group_id: The expectation_id of the derived group
+            group_config: The derived status configuration
+            table_name: Source table name
+            where_clause: WHERE clause from main query
+
+        Returns:
+            SQL CTE string
+        """
+        expectation_type = group_config.get("expectation_type")
+        columns = group_config.get("columns", [])
+
+        if not columns:
+            return ""
+
+        # Build conditions based on expectation type
+        conditions = []
+
+        if expectation_type == "expect_column_values_to_not_be_null":
+            # Material is in group if ANY of the columns is NULL
+            for col in columns:
+                conditions.append(f"{col.upper()} IS NULL")
+
+        elif expectation_type == "expect_column_values_to_match_regex":
+            regex = group_config.get("regex", "")
+            escaped_pattern = regex.replace("'", "''")
+            for col in columns:
+                conditions.append(f"NOT RLIKE({col.upper()}, '{escaped_pattern}')")
+
+        elif expectation_type == "expect_column_values_to_be_in_set":
+            rules = group_config.get("rules", {})
+            for col, allowed_values in rules.items():
+                value_set = ', '.join(
+                    f"'{v}'" if isinstance(v, str) else str(v) for v in allowed_values
+                )
+                conditions.append(f"{col.upper()} NOT IN ({value_set})")
+
+        elif expectation_type == "expect_column_values_to_not_be_in_set":
+            forbidden_values = group_config.get("value_set", [])
+            col = group_config.get("column")
+            if col and forbidden_values:
+                value_set = ', '.join(
+                    f"'{v}'" if isinstance(v, str) else str(v) for v in forbidden_values
+                )
+                conditions.append(f"{col.upper()} IN ({value_set})")
+
+        if not conditions:
+            return ""
+
+        # Join conditions with OR (material fails if ANY condition is true)
+        condition_clause = " OR ".join(conditions)
+
+        # Build CTE
+        cte_name = f"{group_id}_materials"
+        cte_sql = f"""{cte_name} AS (
+  SELECT DISTINCT {self.index_column}
+  FROM {table_name}
+  {where_clause}
+  {'WHERE ' if not where_clause else 'AND '}({condition_clause})
+)"""
+
+        return cte_sql
 
     def _build_select_clause(self, validated_columns: List[str],
                             context_columns: List[str],
@@ -173,6 +300,32 @@ FROM base_data
         # Remove None values and duplicates
         return list(set(col for col in columns if col))
 
+    def _get_conditional_check(self, validation: Dict) -> str:
+        """
+        Build SQL condition for conditional validation membership check.
+
+        Args:
+            validation: Validation configuration with optional conditional_on
+
+        Returns:
+            SQL condition string (e.g., "MATERIAL_NUMBER NOT IN (SELECT * FROM group_materials)")
+            or empty string if no condition
+        """
+        conditional_on = validation.get("conditional_on")
+        if not conditional_on:
+            return ""
+
+        derived_group = conditional_on.get("derived_group")
+        membership = conditional_on.get("membership", "exclude")  # default to exclude
+
+        if not derived_group:
+            return ""
+
+        cte_name = f"{derived_group}_materials"
+        operator = "NOT IN" if membership == "exclude" else "IN"
+
+        return f"{self.index_column} {operator} (SELECT {self.index_column} FROM {cte_name})"
+
     def _build_validation_results_clause(self) -> str:
         """Build ARRAY_CONSTRUCT of validation failure objects."""
         validation_objects: list[str] = []
@@ -212,18 +365,31 @@ FROM base_data
         columns = validation.get("columns", [])
         objects: List[str] = []
 
+        # Get conditional membership check (if any)
+        conditional_check = self._get_conditional_check(validation)
+
         for col in columns:
             col_upper = col.upper()
             expectation_id = build_scoped_expectation_id(validation, col)
 
+            # Build WHEN condition with optional membership check
+            when_condition = f"{col_upper} IS NULL"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
             objects.append(
-                "CASE WHEN {col} IS NULL THEN OBJECT_CONSTRUCT("
+                "CASE WHEN {when_condition} THEN OBJECT_CONSTRUCT("
                 "'expectation_id', '{expectation_id}', "
                 "'expectation_type', 'expect_column_values_to_not_be_null', "
                 "'column', '{col_name}', "
                 "'failure_reason', 'NULL_VALUE', "
                 "'unexpected_value', {col}"
-                ") END".format(col=col_upper, expectation_id=expectation_id, col_name=col)
+                ") END".format(
+                    when_condition=when_condition,
+                    col=col_upper,
+                    expectation_id=expectation_id,
+                    col_name=col
+                )
             )
 
         return objects
@@ -232,6 +398,9 @@ FROM base_data
         """Build SQL for value-in-set validation flags."""
         rules = validation.get("rules", {})
         objects: List[str] = []
+
+        # Get conditional membership check (if any)
+        conditional_check = self._get_conditional_check(validation)
 
         for column, allowed_values in rules.items():
             col_upper = column.upper()
@@ -244,8 +413,13 @@ FROM base_data
             else:
                 value_set = f"'{allowed_values}'"
 
+            # Build WHEN condition with optional membership check
+            when_condition = f"{col_upper} NOT IN ({value_set})"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
             objects.append(
-                "CASE WHEN {col} NOT IN ({value_set}) THEN OBJECT_CONSTRUCT("
+                "CASE WHEN {when_condition} THEN OBJECT_CONSTRUCT("
                 "'expectation_id', '{expectation_id}', "
                 "'expectation_type', 'expect_column_values_to_be_in_set', "
                 "'column', '{column}', "
@@ -253,6 +427,7 @@ FROM base_data
                 "'unexpected_value', {col}, "
                 "'allowed_values', ARRAY_CONSTRUCT({allowed_values})"
                 ") END".format(
+                    when_condition=when_condition,
                     col=col_upper,
                     value_set=value_set,
                     expectation_id=expectation_id,
@@ -274,12 +449,20 @@ FROM base_data
         col_upper = column.upper()
         expectation_id = build_scoped_expectation_id(validation, column)
 
+        # Get conditional membership check (if any)
+        conditional_check = self._get_conditional_check(validation)
+
         # Format value set for SQL
         value_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
                              for v in forbidden_values)
 
+        # Build WHEN condition with optional membership check
+        when_condition = f"{col_upper} IN ({value_set})"
+        if conditional_check:
+            when_condition = f"({conditional_check}) AND {when_condition}"
+
         object_expr = (
-            "CASE WHEN {col} IN ({value_set}) THEN OBJECT_CONSTRUCT("
+            "CASE WHEN {when_condition} THEN OBJECT_CONSTRUCT("
             "'expectation_id', '{expectation_id}', "
             "'expectation_type', 'expect_column_values_to_not_be_in_set', "
             "'column', '{column}', "
@@ -287,6 +470,7 @@ FROM base_data
             "'unexpected_value', {col}, "
             "'forbidden_values', ARRAY_CONSTRUCT({forbidden_values})"
             ") END".format(
+                when_condition=when_condition,
                 col=col_upper,
                 value_set=value_set,
                 expectation_id=expectation_id,
@@ -303,16 +487,23 @@ FROM base_data
         regex_pattern = validation.get("regex", "")
         objects: List[str] = []
 
+        # Get conditional membership check (if any)
+        conditional_check = self._get_conditional_check(validation)
+
         for column in columns:
             col_upper = column.upper()
             expectation_id = build_scoped_expectation_id(validation, column)
 
-            # Get grain-specific context
             # Escape single quotes in regex pattern
             escaped_pattern = regex_pattern.replace("'", "''")
 
+            # Build WHEN condition with optional membership check
+            when_condition = f"NOT RLIKE({col_upper}, '{escaped_pattern}')"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
             objects.append(
-                "CASE WHEN NOT RLIKE({col}, '{pattern}') THEN OBJECT_CONSTRUCT("
+                "CASE WHEN {when_condition} THEN OBJECT_CONSTRUCT("
                 "'expectation_id', '{expectation_id}', "
                 "'expectation_type', 'expect_column_values_to_match_regex', "
                 "'column', '{column}', "
@@ -320,6 +511,7 @@ FROM base_data
                 "'unexpected_value', {col}, "
                 "'regex', '{pattern}'"
                 ") END".format(
+                    when_condition=when_condition,
                     col=col_upper,
                     pattern=escaped_pattern,
                     expectation_id=expectation_id,
