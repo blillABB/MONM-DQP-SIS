@@ -1332,18 +1332,39 @@ with st.form("derived_status_form", enter_to_submit=False):
         if expectation_type in {"(All types)", entry["type"]}
     ]
 
-    target_options = sorted(target_lookup.keys())
+    # Get available targets from the filtered catalog only
+    filtered_targets = set()
+    for entry in filtered_catalog:
+        targets = entry.get("targets", [])
+        if targets:
+            filtered_targets.update(targets)
+        else:
+            filtered_targets.add("(no column/field)")
+
+    target_options = sorted(filtered_targets)
+
+    # Default to existing selection when editing, empty when creating new
+    default_targets = []
+    if is_editing_derived:
+        # When editing, populate based on current expectation IDs
+        for exp_id in default_expectation_ids:
+            entry = next((e for e in expectation_catalog if e.get("id") == exp_id), None)
+            if entry and entry.get("targets"):
+                default_targets.extend(entry["targets"])
+        default_targets = sorted(set(default_targets))
+    # else: leave empty for new groups - user must explicitly select
+
     selected_targets = st.multiselect(
         "Columns/fields to include",
         options=target_options,
-        default=target_options,
-        help="Narrow the validation list to specific columns/fields",
+        default=default_targets,
+        help="Select which columns/fields to include in this derived status. Only expectations targeting these columns will be included.",
         key="derived_target_filter",
     )
 
     def _matches_target(entry_targets: list[str]) -> bool:
         if not selected_targets:
-            return True
+            return False  # No columns selected = no matches (explicit selection required)
         if not entry_targets:
             return "(no column/field)" in selected_targets
         return any(target in selected_targets for target in entry_targets)
@@ -1402,8 +1423,10 @@ with st.form("derived_status_form", enter_to_submit=False):
     if submitted:
         if not status_label:
             st.error("Please provide a status label")
+        elif not selected_targets:
+            st.error("Please select at least one column/field to include in this derived status")
         elif not selected_expectation_ids:
-            st.error("Please select at least one validation for this derived status")
+            st.error("No expectations match your selection. Please adjust the expectation type or column selection.")
         else:
             derived_entry = {
                 "status": status_label,
