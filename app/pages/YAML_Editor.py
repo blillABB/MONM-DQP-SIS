@@ -1305,12 +1305,15 @@ available_expectation_types = {
 }
 
 with st.form("derived_status_form", enter_to_submit=False):
+    # Use dynamic keys to prevent Streamlit from caching form state across submissions
+    form_suffix = f"{st.session_state.editing_derived_index if is_editing_derived else f'new_{len(st.session_state.derived_statuses)}'}"
+
     status_label = st.text_input(
         "Status Label",
         value=default_status_label,
         placeholder="Warning / Critical / Info",
         help="Label for this derived status grouping",
-        key="derived_status_label",
+        key=f"derived_status_label_{form_suffix}",
     )
 
     type_options = ["(All types)"] + sorted(available_expectation_types)
@@ -1323,7 +1326,7 @@ with st.form("derived_status_form", enter_to_submit=False):
         options=type_options,
         index=type_default_index,
         help="Limit the selection list to a specific expectation type and store it with the derived group.",
-        key="derived_expectation_type",
+        key=f"derived_expectation_type_{form_suffix}",
     )
 
     # Build column/field filter options based on the selected expectation type
@@ -1359,7 +1362,7 @@ with st.form("derived_status_form", enter_to_submit=False):
         options=target_options,
         default=default_targets,
         help="Select which columns/fields to include in this derived status. Only expectations targeting these columns will be included.",
-        key="derived_target_filter",
+        key=f"derived_target_filter_{form_suffix}",
     )
 
     def _matches_target(entry_targets: list[str]) -> bool:
@@ -1414,7 +1417,7 @@ with st.form("derived_status_form", enter_to_submit=False):
         "Derived Expectation ID (optional)",
         value=default_expectation_id,
         help="Provide a custom identifier for the derived group. Leave blank to auto-name during execution.",
-        key="derived_expectation_id",
+        key=f"derived_expectation_id_{form_suffix}",
     )
 
     submit_label = "Update Derived Group" if is_editing_derived else "Add Derived Group"
