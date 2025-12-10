@@ -443,6 +443,64 @@ if view == "Overview":
                 hide_index=True,
                 use_container_width=True,
             )
+
+            # Show detailed failure breakdown for each derived status
+            st.divider()
+            st.caption("**Detailed Failure Breakdown**")
+
+            for result in results or []:
+                status_label = result.get("status_label")
+                if not status_label:
+                    continue
+
+                failed_materials = result.get("failed_materials", [])
+                if not failed_materials:
+                    continue
+
+                with st.expander(f"📋 {status_label} - {len(failed_materials)} materials", expanded=False):
+                    st.caption(
+                        f"Materials that failed at least one expectation in the '{status_label}' group. "
+                        "Sorted by number of failures (most issues first)."
+                    )
+
+                    # Build a cleaner display dataframe
+                    detail_rows = []
+                    for failed_material in failed_materials:
+                        # Extract context columns (material number, etc.)
+                        context_cols = result.get("context_columns", [])
+                        row_data = {}
+
+                        for col in context_cols:
+                            row_data[col] = failed_material.get(col, "")
+
+                        # Add the new tracking fields
+                        row_data["Failed Columns"] = ", ".join(failed_material.get("failed_columns", []))
+                        row_data["# Failures"] = failed_material.get("failure_count", 0)
+
+                        # Optionally show expectation IDs (can be verbose)
+                        if st.session_state.get("show_expectation_ids", False):
+                            row_data["Failed Expectations"] = ", ".join(failed_material.get("failed_expectations", []))
+
+                        detail_rows.append(row_data)
+
+                    if detail_rows:
+                        detail_df = pd.DataFrame(detail_rows)
+                        st.dataframe(
+                            detail_df,
+                            hide_index=True,
+                            use_container_width=True,
+                            height=min(400, len(detail_rows) * 35 + 38),
+                        )
+
+                        # Download option
+                        csv = detail_df.to_csv(index=False)
+                        st.download_button(
+                            label=f"⬇️ Download {status_label} failures as CSV",
+                            data=csv,
+                            file_name=f"{status_label.replace(' ', '_').lower()}_failures.csv",
+                            mime="text/csv",
+                        )
+
         else:
             st.info("No derived statuses were triggered for this validation run.")
 
