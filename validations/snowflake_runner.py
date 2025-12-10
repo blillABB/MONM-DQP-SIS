@@ -278,6 +278,7 @@ def _parse_sql_results(
                 expectation_context_map,
                 include_failure_details,
                 element_count,
+                index_column,
             )
         )
 
@@ -723,12 +724,16 @@ def _build_derived_status_results(
     expectation_context_map: Dict[str, list[str]],
     include_failure_details: bool,
     element_count: int,
+    index_column: str = "material_number",
 ) -> list[dict]:
     """
     Create synthesized results for derived status labels.
 
     Uses the DerivedStatusResolver to get pre-resolved scoped IDs,
     eliminating the need for runtime string matching.
+
+    Properly deduplicates materials and tracks which expectations/columns
+    each material failed.
     """
 
     derived_results: list[dict] = []
@@ -755,13 +760,48 @@ def _build_derived_status_results(
             },
         )
 
-        # Sum failures across all resolved scoped IDs
-        unexpected_count = sum(counts_map.get(exp_id, 0) for exp_id in resolved_ids)
+        # Build a map of material -> {expectations failed, columns failed, row data}
+        material_failures: Dict[str, Dict[str, Any]] = {}
+
+        for exp_id in resolved_ids:
+            failure_rows = failure_rows_map.get(exp_id, [])
+
+            # Extract column name from scoped expectation ID (if available from catalog)
+            failed_column = None
+            for catalog_entry in resolver.catalog:
+                if catalog_entry["scoped_id"] == exp_id and catalog_entry["targets"]:
+                    failed_column = catalog_entry["targets"][0] if len(catalog_entry["targets"]) == 1 else "|".join(catalog_entry["targets"])
+                    break
+
+            for row in failure_rows:
+                material_id = _get_row_value(row, index_column)
+                if not material_id:
+                    continue
+
+                if material_id not in material_failures:
+                    material_failures[material_id] = {
+                        "material": material_id,
+                        "failed_expectations": set(),
+                        "failed_columns": set(),
+                        "row": row,  # Keep first row for context data
+                    }
+
+                material_failures[material_id]["failed_expectations"].add(exp_id)
+                if failed_column:
+                    material_failures[material_id]["failed_columns"].add(failed_column)
+
+        # Count unique materials (FIX: was summing all failure counts before!)
+        unexpected_count = len(material_failures)
+
         if unexpected_count == 0:
             print(
-                f"[derived-status] No failures counted for '{status_label}', skipping result.",
+                f"[derived-status] No unique materials failed for '{status_label}', skipping result.",
             )
             continue
+
+        print(
+            f"[derived-status] Found {unexpected_count} unique materials (from {sum(counts_map.get(exp_id, 0) for exp_id in resolved_ids)} total failure records)",
+        )
 
         expectation_type = resolved_status.get(
             "expectation_type", "custom:derived_null_group"
@@ -798,16 +838,27 @@ def _build_derived_status_results(
             "context_columns": sorted_context_columns,
         }
 
-        # Aggregate failure details from all resolved expectations
+        # Build enriched failure details with expectation/column tracking
         if include_failure_details:
-            failure_rows: list[pd.Series] = []
-            for exp_id in resolved_ids:
-                failure_rows.extend(failure_rows_map.get(exp_id, []))
+            enriched_failures = []
+            for material_id, failure_data in material_failures.items():
+                failure_record = {}
 
-            result["failed_materials"] = _build_failure_records_from_rows(
-                failure_rows,
-                sorted_context_columns,
-            )
+                # Add context columns from the row
+                row = failure_data["row"]
+                for col in sorted_context_columns:
+                    failure_record[col] = _get_row_value(row, col)
+
+                # Add the new tracking fields
+                failure_record["failed_expectations"] = sorted(failure_data["failed_expectations"])
+                failure_record["failed_columns"] = sorted(failure_data["failed_columns"])
+                failure_record["failure_count"] = len(failure_data["failed_expectations"])
+
+                enriched_failures.append(failure_record)
+
+            # Sort by failure_count descending (most issues first)
+            enriched_failures.sort(key=lambda x: x["failure_count"], reverse=True)
+            result["failed_materials"] = enriched_failures
 
         derived_results.append(result)
 
