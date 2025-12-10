@@ -1368,7 +1368,7 @@ with st.form("derived_status_form", enter_to_submit=False):
     preserved_defaults = [exp_id for exp_id in default_expectation_ids if exp_id and exp_id not in filtered_ids]
     selected_expectation_ids = filtered_ids + preserved_defaults
 
-    # Display summary instead of overwhelming list
+    # Display clean summary only
     if selected_expectation_ids:
         st.success(f"✓ {len(selected_expectation_ids)} expectation(s) will be included in this derived status")
 
@@ -1384,16 +1384,6 @@ with st.form("derived_status_form", enter_to_submit=False):
             st.caption("Breakdown by validation type:")
             for val_type, count in sorted(type_counts.items()):
                 st.caption(f"  • {val_type}: {count} expectation(s)")
-
-        # Show detailed list in an expander (not overwhelming)
-        with st.expander("View all selected expectations", expanded=False):
-            st.code(
-                "\n".join(
-                    selection_label_lookup.get(exp_id, expectation_label_lookup.get(exp_id, exp_id))
-                    for exp_id in selected_expectation_ids[:100]  # Limit to first 100
-                ) + (f"\n... and {len(selected_expectation_ids) - 100} more" if len(selected_expectation_ids) > 100 else ""),
-                language="text",
-            )
     elif not expectation_catalog:
         st.info("Add validation rules to populate selectable expectation IDs.")
     else:
