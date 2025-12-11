@@ -578,11 +578,11 @@ with st.form("add_filter_form", enter_to_submit=False):
             st.success(f"Added filter: {selected_field} = {filter_value}")
             st.rerun()
         elif filter_type == "Not Equals (<>)" and filter_value:
-            # Store as != operator for SQL generator
+            # Store as <> operator for SQL generator
             st.session_state.data_source.setdefault("filters", {})[
                 selected_field
-            ] = f"!= '{filter_value}'"
-            st.success(f"Added filter: {selected_field} != {filter_value}")
+            ] = f"<> '{filter_value}'"
+            st.success(f"Added filter: {selected_field} <> {filter_value}")
             st.rerun()
         elif filter_type == "One of (IN)" and filter_value:
             st.session_state.data_source.setdefault("filters", {})[
