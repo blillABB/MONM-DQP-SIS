@@ -514,6 +514,14 @@ if view == "Overview":
             "Useful for seeing data completeness patterns across different data classes."
         )
 
+        # Add control for showing failure details
+        show_failure_details = st.checkbox(
+            "Show failure details (Failed Columns, # Failures, Failed Expectations)",
+            value=False,
+            key="show_matrix_failure_details",
+            help="Adds detailed failure information for each group. Warning: May be slow for large datasets."
+        )
+
         if derived_status_rows:
             # Build a unified matrix: rows = materials, columns = derived statuses with failure details
             material_status_map = {}
@@ -539,22 +547,25 @@ if view == "Overview":
                     if material_id not in material_status_map:
                         material_status_map[material_id] = {index_col: material_id}
 
-                    # Store failure details for this material in this group
-                    failed_cols = failed_material.get("failed_columns", [])
-                    failure_count = failed_material.get("failure_count", 0)
-                    failed_expectations = failed_material.get("failed_expectations", [])
-
-                    # Create column names for this status group
+                    # Store membership
                     col_membership = f"{status_label}"
-                    col_failed_cols = f"{status_label} - Failed Columns"
-                    col_failure_count = f"{status_label} - # Failures"
-                    col_expectations = f"{status_label} - Failed Expectations"
-
-                    # Store the data
                     material_status_map[material_id][col_membership] = "✓"
-                    material_status_map[material_id][col_failed_cols] = ", ".join(failed_cols)
-                    material_status_map[material_id][col_failure_count] = failure_count
-                    material_status_map[material_id][col_expectations] = ", ".join(failed_expectations)
+
+                    # Only store failure details if requested
+                    if show_failure_details:
+                        failed_cols = failed_material.get("failed_columns", [])
+                        failure_count = failed_material.get("failure_count", 0)
+                        failed_expectations = failed_material.get("failed_expectations", [])
+
+                        # Create column names for this status group
+                        col_failed_cols = f"{status_label} - Failed Columns"
+                        col_failure_count = f"{status_label} - # Failures"
+                        col_expectations = f"{status_label} - Failed Expectations"
+
+                        # Store the data (only for materials that belong to this group)
+                        material_status_map[material_id][col_failed_cols] = ", ".join(failed_cols)
+                        material_status_map[material_id][col_failure_count] = failure_count
+                        material_status_map[material_id][col_expectations] = ", ".join(failed_expectations)
 
             if material_status_map:
                 # Convert to DataFrame
