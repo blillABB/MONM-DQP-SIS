@@ -237,11 +237,14 @@ def _render_datalark_section(
         send_count = unrectified_count
 
     # Build payload
+    # Replace NaN values with None for JSON serialization
+    send_df_clean = send_df.fillna(value=None)
+
     payload = {
         "expectation_type": selected_expect,
         "column": selected_col,
         "expected": match.get("expected"),
-        "failed_materials": send_df.to_dict(orient="records"),
+        "failed_materials": send_df_clean.to_dict(orient="records"),
     }
 
     # Include suite name if provided
