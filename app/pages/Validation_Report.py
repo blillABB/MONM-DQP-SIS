@@ -505,6 +505,90 @@ if view == "Overview":
             st.info("No derived statuses were triggered for this validation run.")
 
     # =====================================================
+    # UNIFIED DERIVED STATUS MATRIX VIEW
+    # =====================================================
+    st.divider()
+    with st.expander("📊 Unified Derived Status Matrix", expanded=False):
+        st.caption(
+            "Pivot view showing which materials belong to which derived status groups. "
+            "Useful for seeing data completeness patterns across different data classes."
+        )
+
+        if derived_status_rows:
+            # Build a unified matrix: rows = materials, columns = derived statuses
+            material_status_map = {}
+
+            for result in results or []:
+                status_label = result.get("status_label")
+                if not status_label:
+                    continue
+
+                failed_materials = result.get("failed_materials", [])
+                context_columns = result.get("context_columns", ["MATERIAL_NUMBER"])
+
+                # Get the index column (usually MATERIAL_NUMBER)
+                index_col = context_columns[0] if context_columns else "MATERIAL_NUMBER"
+
+                for failed_material in failed_materials:
+                    material_id = failed_material.get(index_col, "")
+                    if not material_id:
+                        continue
+
+                    if material_id not in material_status_map:
+                        material_status_map[material_id] = {index_col: material_id}
+
+                    # Mark this material as belonging to this derived status
+                    material_status_map[material_id][status_label] = "✓"
+
+            if material_status_map:
+                # Convert to DataFrame
+                matrix_df = pd.DataFrame(list(material_status_map.values()))
+
+                # Get index column name
+                index_col = context_columns[0] if context_columns else "MATERIAL_NUMBER"
+
+                # Fill NaN with empty string (material doesn't belong to that group)
+                for col in matrix_df.columns:
+                    if col != index_col:
+                        matrix_df[col] = matrix_df[col].fillna("")
+
+                # Sort by number of groups (materials with most issues first)
+                derived_cols = [col for col in matrix_df.columns if col != index_col]
+                matrix_df["_total_groups"] = matrix_df[derived_cols].apply(
+                    lambda row: sum(1 for val in row if val == "✓"), axis=1
+                )
+                matrix_df = matrix_df.sort_values("_total_groups", ascending=False)
+                matrix_df = matrix_df.drop("_total_groups", axis=1)
+
+                # Reorder columns: index first, then derived statuses
+                column_order = [index_col] + derived_cols
+                matrix_df = matrix_df[column_order]
+
+                st.dataframe(
+                    matrix_df,
+                    hide_index=True,
+                    use_container_width=True,
+                    height=min(600, len(matrix_df) * 35 + 38),
+                )
+
+                # Summary stats
+                st.caption(f"**{len(matrix_df)} unique materials** across **{len(derived_cols)} derived status groups**")
+
+                # Download option
+                csv = matrix_df.to_csv(index=False)
+                st.download_button(
+                    label="⬇️ Download Derived Status Matrix as CSV",
+                    data=csv,
+                    file_name="derived_status_matrix.csv",
+                    mime="text/csv",
+                    key="download_matrix"
+                )
+            else:
+                st.info("No material-status mapping available.")
+        else:
+            st.info("No derived statuses to display in matrix view.")
+
+    # =====================================================
     # CHARTS ROW - Plotly visualizations
     # =====================================================
     col_left, col_right = st.columns([1, 2])
