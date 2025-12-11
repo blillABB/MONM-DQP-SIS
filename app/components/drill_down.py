@@ -237,15 +237,31 @@ def _render_datalark_section(
         send_count = unrectified_count
 
     # Build payload
-    # Replace NaN values with None for JSON serialization
-    # Use where() to replace NaN with None (fillna doesn't accept None)
-    send_df_clean = send_df.where(pd.notnull(send_df), None)
+    # Convert DataFrame to dict and clean NaN values for JSON serialization
+    import math
+
+    def clean_nan_values(obj):
+        """Recursively replace NaN/Inf values with None for JSON serialization."""
+        if isinstance(obj, dict):
+            return {k: clean_nan_values(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [clean_nan_values(item) for item in obj]
+        elif isinstance(obj, float):
+            if math.isnan(obj) or math.isinf(obj):
+                return None
+            return obj
+        elif pd.isna(obj):
+            return None
+        return obj
+
+    failed_materials = send_df.to_dict(orient="records")
+    failed_materials_clean = clean_nan_values(failed_materials)
 
     payload = {
         "expectation_type": selected_expect,
         "column": selected_col,
-        "expected": match.get("expected"),
-        "failed_materials": send_df_clean.to_dict(orient="records"),
+        "expected": clean_nan_values(match.get("expected")),
+        "failed_materials": failed_materials_clean,
     }
 
     # Include suite name if provided
