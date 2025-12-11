@@ -142,7 +142,7 @@ FROM base_data
         for column, condition in filters.items():
             # Handle different condition formats
             if isinstance(condition, str):
-                if condition.startswith(("LIKE", "IN", "=", "<", ">", "!=")):
+                if condition.startswith(("LIKE", "IN", "=", "<>", "<", ">", "!=")):
                     # Already has operator
                     conditions.append(f"{column} {condition}")
                 else:
