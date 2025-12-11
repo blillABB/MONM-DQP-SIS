@@ -238,7 +238,8 @@ def _render_datalark_section(
 
     # Build payload
     # Replace NaN values with None for JSON serialization
-    send_df_clean = send_df.fillna(value=None)
+    # Use where() to replace NaN with None (fillna doesn't accept None)
+    send_df_clean = send_df.where(pd.notnull(send_df), None)
 
     payload = {
         "expectation_type": selected_expect,
