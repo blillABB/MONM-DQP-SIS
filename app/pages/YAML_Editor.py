@@ -519,7 +519,7 @@ with st.form("add_filter_form", enter_to_submit=False):
     )
     filter_type = col2.selectbox(
         "Filter Type",
-        options=["Equals", "One of (IN)", "LIKE pattern"],
+        options=["Equals", "Not Equals (<>)", "One of (IN)", "LIKE pattern"],
         help="How should the filter be applied?",
     )
 
@@ -534,6 +534,17 @@ with st.form("add_filter_form", enter_to_submit=False):
             filter_value = st.text_input(
                 "Value",
                 placeholder="Exact match value",
+            )
+    elif filter_type == "Not Equals (<>)":
+        if selected_field in distinct_values:
+            filter_value = st.selectbox(
+                "Value to Exclude",
+                options=distinct_values[selected_field],
+            )
+        else:
+            filter_value = st.text_input(
+                "Value to Exclude",
+                placeholder="Value that should not match",
             )
     elif filter_type == "One of (IN)":
         if selected_field in distinct_values:
@@ -565,6 +576,13 @@ with st.form("add_filter_form", enter_to_submit=False):
                 selected_field
             ] = filter_value
             st.success(f"Added filter: {selected_field} = {filter_value}")
+            st.rerun()
+        elif filter_type == "Not Equals (<>)" and filter_value:
+            # Store as != operator for SQL generator
+            st.session_state.data_source.setdefault("filters", {})[
+                selected_field
+            ] = f"!= '{filter_value}'"
+            st.success(f"Added filter: {selected_field} != {filter_value}")
             st.rerun()
         elif filter_type == "One of (IN)" and filter_value:
             st.session_state.data_source.setdefault("filters", {})[
