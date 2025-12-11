@@ -524,6 +524,7 @@ if view == "Overview":
 
         if derived_status_rows:
             # Build a unified matrix: rows = materials, columns = derived statuses with failure details
+            # Always collect failure details for CSV download
             material_status_map = {}
             all_status_labels = []  # Track all status labels to ensure consistent column ordering
 
@@ -551,21 +552,20 @@ if view == "Overview":
                     col_membership = f"{status_label}"
                     material_status_map[material_id][col_membership] = "✓"
 
-                    # Only store failure details if requested
-                    if show_failure_details:
-                        failed_cols = failed_material.get("failed_columns", [])
-                        failure_count = failed_material.get("failure_count", 0)
-                        failed_expectations = failed_material.get("failed_expectations", [])
+                    # Always store failure details for CSV download
+                    failed_cols = failed_material.get("failed_columns", [])
+                    failure_count = failed_material.get("failure_count", 0)
+                    failed_expectations = failed_material.get("failed_expectations", [])
 
-                        # Create column names for this status group
-                        col_failed_cols = f"{status_label} - Failed Columns"
-                        col_failure_count = f"{status_label} - # Failures"
-                        col_expectations = f"{status_label} - Failed Expectations"
+                    # Create column names for this status group
+                    col_failed_cols = f"{status_label} - Failed Columns"
+                    col_failure_count = f"{status_label} - # Failures"
+                    col_expectations = f"{status_label} - Failed Expectations"
 
-                        # Store the data (only for materials that belong to this group)
-                        material_status_map[material_id][col_failed_cols] = ", ".join(failed_cols)
-                        material_status_map[material_id][col_failure_count] = failure_count
-                        material_status_map[material_id][col_expectations] = ", ".join(failed_expectations)
+                    # Store the data (only for materials that belong to this group)
+                    material_status_map[material_id][col_failed_cols] = ", ".join(failed_cols)
+                    material_status_map[material_id][col_failure_count] = failure_count
+                    material_status_map[material_id][col_expectations] = ", ".join(failed_expectations)
 
             if material_status_map:
                 # Convert to DataFrame
@@ -575,35 +575,59 @@ if view == "Overview":
                 index_col = context_columns[0] if context_columns else "MATERIAL_NUMBER"
 
                 # Build column order: index first, then for each status group: membership, failed columns, # failures, expectations
-                column_order = [index_col]
+                # Full column order for CSV download (includes all detail columns)
+                full_column_order = [index_col]
+                preview_column_order = [index_col]
+
                 for status_label in all_status_labels:
                     col_membership = f"{status_label}"
                     col_failed_cols = f"{status_label} - Failed Columns"
                     col_failure_count = f"{status_label} - # Failures"
                     col_expectations = f"{status_label} - Failed Expectations"
 
+                    # Always include membership in preview
                     if col_membership in matrix_df.columns:
-                        column_order.append(col_membership)
+                        full_column_order.append(col_membership)
+                        preview_column_order.append(col_membership)
+
+                    # Add detail columns to full order (for CSV)
                     if col_failed_cols in matrix_df.columns:
-                        column_order.append(col_failed_cols)
+                        full_column_order.append(col_failed_cols)
                     if col_failure_count in matrix_df.columns:
-                        column_order.append(col_failure_count)
+                        full_column_order.append(col_failure_count)
                     if col_expectations in matrix_df.columns:
-                        column_order.append(col_expectations)
+                        full_column_order.append(col_expectations)
+
+                    # Only add detail columns to preview if checkbox is checked
+                    if show_failure_details:
+                        if col_failed_cols in matrix_df.columns:
+                            preview_column_order.append(col_failed_cols)
+                        if col_failure_count in matrix_df.columns:
+                            preview_column_order.append(col_failure_count)
+                        if col_expectations in matrix_df.columns:
+                            preview_column_order.append(col_expectations)
 
                 # Reorder and fill missing values
-                matrix_df = matrix_df.reindex(columns=column_order, fill_value="")
+                matrix_df_full = matrix_df.reindex(columns=full_column_order, fill_value="")
+                matrix_df_preview = matrix_df.reindex(columns=preview_column_order, fill_value="")
 
-                # Sort by total number of groups (materials with most issues first)
-                membership_cols = [col for col in matrix_df.columns if " - " not in col and col != index_col]
-                matrix_df["_total_groups"] = matrix_df[membership_cols].apply(
+                # Sort both dataframes by total number of groups (materials with most issues first)
+                membership_cols = [col for col in matrix_df_full.columns if " - " not in col and col != index_col]
+                matrix_df_full["_total_groups"] = matrix_df_full[membership_cols].apply(
                     lambda row: sum(1 for val in row if val == "✓"), axis=1
                 )
-                matrix_df = matrix_df.sort_values("_total_groups", ascending=False)
-                matrix_df = matrix_df.drop("_total_groups", axis=1)
+                matrix_df_full = matrix_df_full.sort_values("_total_groups", ascending=False)
+                matrix_df_full = matrix_df_full.drop("_total_groups", axis=1)
+
+                # Apply same sorting to preview
+                matrix_df_preview["_total_groups"] = matrix_df_preview[membership_cols].apply(
+                    lambda row: sum(1 for val in row if val == "✓"), axis=1
+                )
+                matrix_df_preview = matrix_df_preview.sort_values("_total_groups", ascending=False)
+                matrix_df_preview = matrix_df_preview.drop("_total_groups", axis=1)
 
                 # Summary stats
-                st.info(f"**{len(matrix_df):,} unique materials** across **{len(all_status_labels)} derived status groups**")
+                st.info(f"**{len(matrix_df_full):,} unique materials** across **{len(all_status_labels)} derived status groups**")
 
                 # Show preview instead of full dataset (to prevent MessageSizeError)
                 preview_rows = st.number_input(
@@ -613,12 +637,19 @@ if view == "Overview":
                     value=100,
                     step=50,
                     key="matrix_preview_rows",
-                    help="Number of rows to preview in browser. Full dataset available via CSV download."
+                    help="Number of rows to preview in browser. Full dataset with all details available via CSV download."
                 )
 
                 if preview_rows > 0:
-                    st.caption(f"**Preview:** Showing top {min(preview_rows, len(matrix_df))} of {len(matrix_df):,} materials (sorted by most issues)")
-                    preview_df = matrix_df.head(preview_rows)
+                    preview_display_text = "Showing top {0} of {1:,} materials (sorted by most issues)".format(
+                        min(preview_rows, len(matrix_df_preview)),
+                        len(matrix_df_preview)
+                    )
+                    if not show_failure_details:
+                        preview_display_text += " - Enable 'Show failure details' to see columns in preview"
+
+                    st.caption(f"**Preview:** {preview_display_text}")
+                    preview_df = matrix_df_preview.head(preview_rows)
                     st.dataframe(
                         preview_df,
                         hide_index=True,
@@ -628,14 +659,15 @@ if view == "Overview":
                 else:
                     st.caption("Preview hidden. Use CSV download to access full dataset.")
 
-                # Download option - always available for full dataset
-                csv = matrix_df.to_csv(index=False)
+                # Download option - always includes all detail columns
+                csv = matrix_df_full.to_csv(index=False)
                 st.download_button(
-                    label=f"⬇️ Download Full Matrix as CSV ({len(matrix_df):,} materials)",
+                    label=f"⬇️ Download Full Matrix with Details as CSV ({len(matrix_df_full):,} materials)",
                     data=csv,
-                    file_name="derived_status_matrix.csv",
+                    file_name="derived_status_matrix_detailed.csv",
                     mime="text/csv",
-                    key="download_matrix"
+                    key="download_matrix",
+                    help="CSV includes all materials with Failed Columns, # Failures, and Failed Expectations"
                 )
             else:
                 st.info("No material-status mapping available.")
