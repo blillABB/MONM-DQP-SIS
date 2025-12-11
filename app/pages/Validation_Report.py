@@ -515,14 +515,16 @@ if view == "Overview":
         )
 
         if derived_status_rows:
-            # Build a unified matrix: rows = materials, columns = derived statuses
+            # Build a unified matrix: rows = materials, columns = derived statuses with failure details
             material_status_map = {}
+            all_status_labels = []  # Track all status labels to ensure consistent column ordering
 
             for result in results or []:
                 status_label = result.get("status_label")
                 if not status_label:
                     continue
 
+                all_status_labels.append(status_label)
                 failed_materials = result.get("failed_materials", [])
                 context_columns = result.get("context_columns", ["MATERIAL_NUMBER"])
 
@@ -537,8 +539,22 @@ if view == "Overview":
                     if material_id not in material_status_map:
                         material_status_map[material_id] = {index_col: material_id}
 
-                    # Mark this material as belonging to this derived status
-                    material_status_map[material_id][status_label] = "✓"
+                    # Store failure details for this material in this group
+                    failed_cols = failed_material.get("failed_columns", [])
+                    failure_count = failed_material.get("failure_count", 0)
+                    failed_expectations = failed_material.get("failed_expectations", [])
+
+                    # Create column names for this status group
+                    col_membership = f"{status_label}"
+                    col_failed_cols = f"{status_label} - Failed Columns"
+                    col_failure_count = f"{status_label} - # Failures"
+                    col_expectations = f"{status_label} - Failed Expectations"
+
+                    # Store the data
+                    material_status_map[material_id][col_membership] = "✓"
+                    material_status_map[material_id][col_failed_cols] = ", ".join(failed_cols)
+                    material_status_map[material_id][col_failure_count] = failure_count
+                    material_status_map[material_id][col_expectations] = ", ".join(failed_expectations)
 
             if material_status_map:
                 # Convert to DataFrame
@@ -547,22 +563,33 @@ if view == "Overview":
                 # Get index column name
                 index_col = context_columns[0] if context_columns else "MATERIAL_NUMBER"
 
-                # Fill NaN with empty string (material doesn't belong to that group)
-                for col in matrix_df.columns:
-                    if col != index_col:
-                        matrix_df[col] = matrix_df[col].fillna("")
+                # Build column order: index first, then for each status group: membership, failed columns, # failures, expectations
+                column_order = [index_col]
+                for status_label in all_status_labels:
+                    col_membership = f"{status_label}"
+                    col_failed_cols = f"{status_label} - Failed Columns"
+                    col_failure_count = f"{status_label} - # Failures"
+                    col_expectations = f"{status_label} - Failed Expectations"
 
-                # Sort by number of groups (materials with most issues first)
-                derived_cols = [col for col in matrix_df.columns if col != index_col]
-                matrix_df["_total_groups"] = matrix_df[derived_cols].apply(
+                    if col_membership in matrix_df.columns:
+                        column_order.append(col_membership)
+                    if col_failed_cols in matrix_df.columns:
+                        column_order.append(col_failed_cols)
+                    if col_failure_count in matrix_df.columns:
+                        column_order.append(col_failure_count)
+                    if col_expectations in matrix_df.columns:
+                        column_order.append(col_expectations)
+
+                # Reorder and fill missing values
+                matrix_df = matrix_df.reindex(columns=column_order, fill_value="")
+
+                # Sort by total number of groups (materials with most issues first)
+                membership_cols = [col for col in matrix_df.columns if " - " not in col and col != index_col]
+                matrix_df["_total_groups"] = matrix_df[membership_cols].apply(
                     lambda row: sum(1 for val in row if val == "✓"), axis=1
                 )
                 matrix_df = matrix_df.sort_values("_total_groups", ascending=False)
                 matrix_df = matrix_df.drop("_total_groups", axis=1)
-
-                # Reorder columns: index first, then derived statuses
-                column_order = [index_col] + derived_cols
-                matrix_df = matrix_df[column_order]
 
                 st.dataframe(
                     matrix_df,
@@ -572,7 +599,7 @@ if view == "Overview":
                 )
 
                 # Summary stats
-                st.caption(f"**{len(matrix_df)} unique materials** across **{len(derived_cols)} derived status groups**")
+                st.caption(f"**{len(matrix_df)} unique materials** across **{len(all_status_labels)} derived status groups**")
 
                 # Download option
                 csv = matrix_df.to_csv(index=False)
