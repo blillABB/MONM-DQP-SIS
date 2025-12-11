@@ -602,20 +602,36 @@ if view == "Overview":
                 matrix_df = matrix_df.sort_values("_total_groups", ascending=False)
                 matrix_df = matrix_df.drop("_total_groups", axis=1)
 
-                st.dataframe(
-                    matrix_df,
-                    hide_index=True,
-                    use_container_width=True,
-                    height=min(600, len(matrix_df) * 35 + 38),
+                # Summary stats
+                st.info(f"**{len(matrix_df):,} unique materials** across **{len(all_status_labels)} derived status groups**")
+
+                # Show preview instead of full dataset (to prevent MessageSizeError)
+                preview_rows = st.number_input(
+                    "Preview rows (set to 0 to hide preview)",
+                    min_value=0,
+                    max_value=1000,
+                    value=100,
+                    step=50,
+                    key="matrix_preview_rows",
+                    help="Number of rows to preview in browser. Full dataset available via CSV download."
                 )
 
-                # Summary stats
-                st.caption(f"**{len(matrix_df)} unique materials** across **{len(all_status_labels)} derived status groups**")
+                if preview_rows > 0:
+                    st.caption(f"**Preview:** Showing top {min(preview_rows, len(matrix_df))} of {len(matrix_df):,} materials (sorted by most issues)")
+                    preview_df = matrix_df.head(preview_rows)
+                    st.dataframe(
+                        preview_df,
+                        hide_index=True,
+                        use_container_width=True,
+                        height=min(600, len(preview_df) * 35 + 38),
+                    )
+                else:
+                    st.caption("Preview hidden. Use CSV download to access full dataset.")
 
-                # Download option
+                # Download option - always available for full dataset
                 csv = matrix_df.to_csv(index=False)
                 st.download_button(
-                    label="⬇️ Download Derived Status Matrix as CSV",
+                    label=f"⬇️ Download Full Matrix as CSV ({len(matrix_df):,} materials)",
                     data=csv,
                     file_name="derived_status_matrix.csv",
                     mime="text/csv",
