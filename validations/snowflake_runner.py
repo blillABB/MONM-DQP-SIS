@@ -682,15 +682,17 @@ def _collect_validation_failures(
 
     print(f"▶ Parsing validation results from {len(df):,} rows...")
 
+    # Get validation_results column index once (outside loop for performance)
+    validation_col_idx = df.columns.get_loc("validation_results")
+
     # Use itertuples() which is much faster than iterrows() for large DataFrames
     # For 1M+ rows, this is 10-100x faster
     for idx, row in enumerate(df.itertuples(index=False, name=None)):
-        # Progress indicator for large datasets
-        if idx > 0 and idx % 100000 == 0:
-            print(f"  • Processed {idx:,} rows...")
+        # Progress indicator for large datasets - every 10k rows for better visibility
+        if idx > 0 and idx % 10000 == 0:
+            print(f"  • Processed {idx:,} / {len(df):,} rows ({idx/len(df)*100:.1f}%)")
 
-        # Get validation_results column (find its position in the tuple)
-        validation_col_idx = df.columns.get_loc("validation_results")
+        # Get validation_results data from this row
         validation_data = row[validation_col_idx]
 
         entries = _parse_json_array(validation_data)
