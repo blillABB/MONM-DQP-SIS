@@ -298,7 +298,8 @@ class BaseValidationSuite:
                         })
                         continue
 
-                    for _, row in flagged_rows.iterrows():
+                    def create_record(row):
+                        """Create a record from a flagged row."""
                         record = {
                             "Expectation Type": result.get("expectation_type"),
                             "Column": result.get("column"),
@@ -309,11 +310,13 @@ class BaseValidationSuite:
                             "Unexpected Percent": result.get("unexpected_percent", 0.0),
                             "Status": "Pass" if result.get("success") else "Fail",
                         }
-
                         for col in context_columns:
                             record[col] = row.get(col)
+                        return record
 
-                        rows.append(record)
+                    # Use df.apply instead of iterrows for better performance
+                    flagged_records = flagged_rows.apply(create_record, axis=1)
+                    rows.extend(flagged_records.tolist())
             else:
                 # No failure materialization available; record aggregate-level summary row
                 rows.append({

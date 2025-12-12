@@ -680,14 +680,25 @@ def _collect_validation_failures(
     if "validation_results" not in df.columns:
         return counts_map, failure_rows_map
 
-    for _, row in df.iterrows():
+    def process_row(row):
+        """Process a single row and extract validation failures."""
         entries = _parse_json_array(row.get("validation_results"))
+        row_failures = []
         for entry in entries:
             exp_id = entry.get("expectation_id") if isinstance(entry, dict) else None
             if exp_id and exp_id in counts_map:
-                counts_map[exp_id] += 1
-                if include_failure_details:
-                    failure_rows_map[exp_id].append(row)
+                row_failures.append((exp_id, row))
+        return row_failures
+
+    # Use df.apply instead of iterrows for better performance
+    all_failures = df.apply(process_row, axis=1)
+
+    # Aggregate results
+    for failures in all_failures:
+        for exp_id, row in failures:
+            counts_map[exp_id] += 1
+            if include_failure_details:
+                failure_rows_map[exp_id].append(row)
 
     return counts_map, failure_rows_map
 
