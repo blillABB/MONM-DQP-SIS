@@ -178,16 +178,35 @@ def run_query(sql: str) -> pd.DataFrame:
         DataFrame of results
     """
     conn = get_connection()
+    cursor = conn.cursor()
     try:
-        print("▶ Fetching query results...")
-        df = pd.read_sql(sql, conn)
+        cursor.execute(sql)
 
-        if df is None:
-            df = pd.DataFrame()
+        # Use batched fetching for queries with large result sets (especially those with JSON columns)
+        # This prevents memory issues and provides progress feedback
+        batch_size = 10000
+        print(f"▶ Fetching query results in batches of {batch_size:,}...")
 
-        print(f"✅ Retrieved {len(df)} rows from Snowflake")
+        batches = []
+        total_rows = 0
+
+        for batch_index, batch_df in enumerate(cursor.fetch_pandas_batches(chunk_size=batch_size), start=1):
+            batch_rows = len(batch_df)
+            total_rows += batch_rows
+            batches.append(batch_df)
+            print(f"  • Batch {batch_index}: {batch_rows:,} rows (total: {total_rows:,})")
+
+        if batches:
+            df = pd.concat(batches, ignore_index=True)
+        else:
+            # No results - create empty DataFrame with column names
+            columns = [col[0] for col in cursor.description] if cursor.description else []
+            df = pd.DataFrame(columns=columns)
+
+        print(f"✅ Retrieved {total_rows:,} rows from Snowflake")
         return df
     finally:
+        cursor.close()
         conn.close()
 
 @register_query("get_aurora_motor_dataframe")
