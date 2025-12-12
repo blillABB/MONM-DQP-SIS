@@ -680,15 +680,30 @@ def _collect_validation_failures(
     if "validation_results" not in df.columns:
         return counts_map, failure_rows_map
 
-    for _, row in df.iterrows():
-        entries = _parse_json_array(row.get("validation_results"))
+    print(f"▶ Parsing validation results from {len(df):,} rows...")
+
+    # Use itertuples() which is much faster than iterrows() for large DataFrames
+    # For 1M+ rows, this is 10-100x faster
+    for idx, row in enumerate(df.itertuples(index=False, name=None)):
+        # Progress indicator for large datasets
+        if idx > 0 and idx % 100000 == 0:
+            print(f"  • Processed {idx:,} rows...")
+
+        # Get validation_results column (find its position in the tuple)
+        validation_col_idx = df.columns.get_loc("validation_results")
+        validation_data = row[validation_col_idx]
+
+        entries = _parse_json_array(validation_data)
         for entry in entries:
             exp_id = entry.get("expectation_id") if isinstance(entry, dict) else None
             if exp_id and exp_id in counts_map:
                 counts_map[exp_id] += 1
                 if include_failure_details:
-                    failure_rows_map[exp_id].append(row)
+                    # Convert tuple back to Series for compatibility
+                    row_series = pd.Series(row, index=df.columns)
+                    failure_rows_map[exp_id].append(row_series)
 
+    print(f"✅ Finished parsing {len(df):,} rows")
     return counts_map, failure_rows_map
 
 
