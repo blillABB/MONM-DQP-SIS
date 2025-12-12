@@ -179,7 +179,15 @@ def run_query(sql: str) -> pd.DataFrame:
     """
     conn = get_connection()
     try:
-        return pd.read_sql(sql, conn)
+        print(f"▶ Executing query ({len(sql)} characters)...")
+        cursor = conn.cursor()
+        try:
+            cursor.execute(sql)
+            df = cursor.fetch_pandas_all()
+            print(f"✅ Query returned {len(df)} rows")
+            return df
+        finally:
+            cursor.close()
     finally:
         conn.close()
 
