@@ -519,7 +519,7 @@ with st.form("add_filter_form", enter_to_submit=False):
     )
     filter_type = col2.selectbox(
         "Filter Type",
-        options=["Equals", "One of (IN)", "LIKE pattern"],
+        options=["Equals", "Not Equals (<>)", "One of (IN)", "LIKE pattern"],
         help="How should the filter be applied?",
     )
 
@@ -534,6 +534,17 @@ with st.form("add_filter_form", enter_to_submit=False):
             filter_value = st.text_input(
                 "Value",
                 placeholder="Exact match value",
+            )
+    elif filter_type == "Not Equals (<>)":
+        if selected_field in distinct_values:
+            filter_value = st.selectbox(
+                "Value to Exclude",
+                options=distinct_values[selected_field],
+            )
+        else:
+            filter_value = st.text_input(
+                "Value to Exclude",
+                placeholder="Value that should not match",
             )
     elif filter_type == "One of (IN)":
         if selected_field in distinct_values:
@@ -566,6 +577,13 @@ with st.form("add_filter_form", enter_to_submit=False):
             ] = filter_value
             st.success(f"Added filter: {selected_field} = {filter_value}")
             st.rerun()
+        elif filter_type == "Not Equals (<>)" and filter_value:
+            # Store as <> operator for SQL generator
+            st.session_state.data_source.setdefault("filters", {})[
+                selected_field
+            ] = f"<> '{filter_value}'"
+            st.success(f"Added filter: {selected_field} <> {filter_value}")
+            st.rerun()
         elif filter_type == "One of (IN)" and filter_value:
             st.session_state.data_source.setdefault("filters", {})[
                 selected_field
@@ -585,6 +603,99 @@ with st.form("add_filter_form", enter_to_submit=False):
             st.rerun()
         else:
             st.error("Please provide a filter value.")
+
+# ----------------------------------------------------
+# Helper function for conditional validation UI
+# ----------------------------------------------------
+def render_conditional_validation_ui(editing_rule=None, validation_type="", is_editing=False):
+    """
+    Renders the conditional validation UI controls for group inclusion/exclusion.
+
+    Args:
+        editing_rule: The rule being edited (if in edit mode)
+        validation_type: The type of validation (for unique widget keys)
+        is_editing: Whether we're in edit mode
+
+    Returns:
+        dict: conditional_on dict if enabled, None otherwise
+    """
+    st.markdown("---")
+    st.subheader("🔗 Conditional Validation (Optional)")
+    st.caption("Only run this validation on rows that are included/excluded from a derived group")
+
+    # Get available derived groups
+    available_groups = [
+        ds.get("expectation_id")
+        for ds in st.session_state.derived_statuses
+        if ds.get("expectation_id")
+    ]
+
+    if not available_groups:
+        st.info("💡 Create derived groups in Section 7 below to enable conditional validations")
+        return None
+
+    # Check if editing rule has conditional_on
+    has_conditional = editing_rule and editing_rule.get("conditional_on") if editing_rule else False
+
+    # Unique keys for widgets
+    key_suffix = f"edit_{st.session_state.editing_index}" if is_editing else "new"
+    enable_key = f"enable_conditional_{validation_type}_{key_suffix}"
+    group_key = f"conditional_group_{validation_type}_{key_suffix}"
+    membership_key = f"conditional_membership_{validation_type}_{key_suffix}"
+
+    enable_conditional = st.checkbox(
+        "Make this a conditional validation",
+        value=has_conditional,
+        key=enable_key,
+        help="Apply this validation only to rows included/excluded from a specific derived group"
+    )
+
+    if enable_conditional:
+        col1, col2 = st.columns([2, 1])
+
+        with col1:
+            # Get default values if editing
+            default_group = ""
+            default_membership = "exclude"
+            if has_conditional:
+                conditional_on = editing_rule.get("conditional_on", {})
+                default_group = conditional_on.get("derived_group", "")
+                default_membership = conditional_on.get("membership", "exclude")
+
+            # Ensure default_group is in available_groups or use empty string
+            if default_group and default_group not in available_groups:
+                default_group = ""
+
+            group_index = available_groups.index(default_group) + 1 if default_group in available_groups else 0
+
+            conditional_group = st.selectbox(
+                "Derived Group",
+                options=["(Select a group)"] + available_groups,
+                index=group_index,
+                key=group_key,
+                help="Select which derived group to reference"
+            )
+
+        with col2:
+            membership_options = ["exclude", "include"]
+            membership_index = membership_options.index(default_membership) if default_membership in membership_options else 0
+
+            conditional_membership = st.radio(
+                "Membership",
+                options=membership_options,
+                index=membership_index,
+                key=membership_key,
+                help="• exclude = validate only rows NOT in the group\n• include = validate only rows IN the group"
+            )
+
+        # Only return conditional_on if a group is selected
+        if conditional_group and conditional_group != "(Select a group)":
+            return {
+                "derived_group": conditional_group,
+                "membership": conditional_membership
+            }
+
+    return None
 
 # ----------------------------------------------------
 # Section 5: Add/Edit Validation Rules
@@ -649,6 +760,9 @@ if validation_type == "expect_column_values_to_not_be_null":
         key=widget_key
     )
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Not Null Rule"
     if st.button(button_label, key="add_not_null"):
         if selected_columns:
@@ -656,6 +770,8 @@ if validation_type == "expect_column_values_to_not_be_null":
                 "type": validation_type,
                 "columns": selected_columns
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -720,6 +836,9 @@ elif validation_type == "expect_column_values_to_be_in_set":
                     converted_values.append(val)
         allowed_values = converted_values
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Value In Set Rule"
     if st.button(button_label, key="add_value_in_set"):
         if allowed_values:
@@ -727,6 +846,8 @@ elif validation_type == "expect_column_values_to_be_in_set":
                 "type": validation_type,
                 "rules": {selected_column: allowed_values}
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -767,6 +888,9 @@ elif validation_type == "expect_column_values_to_not_be_in_set":
     )
     excluded_values = [val.strip() for val in excluded_values_text.split(',') if val.strip()]
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Value Not In Set Rule"
     if st.button(button_label, key="add_value_not_in_set"):
         if excluded_values:
@@ -775,6 +899,8 @@ elif validation_type == "expect_column_values_to_not_be_in_set":
                 "column": selected_column,
                 "value_set": excluded_values
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -816,6 +942,9 @@ elif validation_type == "expect_column_values_to_match_regex":
 
     st.caption("Common patterns: `^\\s*$` (blank), `^\\d{8}$` (8 digits), `^[A-Z]{2,3}$` (2-3 letters)")
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Regex Match Rule"
     if st.button(button_label, key="add_regex"):
         if selected_columns and regex_pattern:
@@ -824,6 +953,8 @@ elif validation_type == "expect_column_values_to_match_regex":
                 "columns": selected_columns,
                 "regex": regex_pattern
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -871,6 +1002,9 @@ elif validation_type == "expect_column_pair_values_a_to_be_greater_than_b":
 
     or_equal = st.checkbox("Allow equal values (>=)", value=default_or_equal, key=or_equal_key)
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Column Comparison Rule"
     if st.button(button_label, key="add_comparison"):
         if column_a != column_b:
@@ -880,6 +1014,8 @@ elif validation_type == "expect_column_pair_values_a_to_be_greater_than_b":
                 "column_b": column_b,
                 "or_equal": or_equal
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -924,6 +1060,9 @@ elif validation_type == "expect_column_pair_values_to_be_equal":
             key=col_b_key
         )
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Column Equality Rule"
     if st.button(button_label, key="add_equality"):
         if column_a != column_b:
@@ -932,6 +1071,8 @@ elif validation_type == "expect_column_pair_values_to_be_equal":
                 "column_a": column_a,
                 "column_b": column_b
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -973,6 +1114,9 @@ elif validation_type == "expect_column_values_to_not_match_regex":
 
     st.caption("Common patterns: `^TEMP.*` (starts with TEMP), `^TEST.*` (starts with TEST)")
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Regex Exclusion Rule"
     if st.button(button_label, key="add_not_regex"):
         if selected_columns and regex_pattern:
@@ -981,6 +1125,8 @@ elif validation_type == "expect_column_values_to_not_match_regex":
                 "columns": selected_columns,
                 "regex": regex_pattern
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -1021,6 +1167,9 @@ elif validation_type == "expect_column_value_lengths_to_equal":
         key=value_key
     )
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Fixed Length Rule"
     if st.button(button_label, key="add_length_equal"):
         if selected_columns:
@@ -1029,6 +1178,8 @@ elif validation_type == "expect_column_value_lengths_to_equal":
                 "columns": selected_columns,
                 "value": value_length
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -1081,6 +1232,9 @@ elif validation_type == "expect_column_value_lengths_to_be_between":
             key=max_key
         )
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Length Range Rule"
     if st.button(button_label, key="add_length_between"):
         if selected_columns and min_length <= max_length:
@@ -1090,6 +1244,8 @@ elif validation_type == "expect_column_value_lengths_to_be_between":
                 "min_value": min_length,
                 "max_value": max_length
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -1143,6 +1299,9 @@ elif validation_type == "expect_column_values_to_be_between":
             key=max_key
         )
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Numeric Range Rule"
     if st.button(button_label, key="add_value_between"):
         if selected_columns and min_value <= max_value:
@@ -1152,6 +1311,8 @@ elif validation_type == "expect_column_values_to_be_between":
                 "min_value": min_value,
                 "max_value": max_value
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -1183,6 +1344,9 @@ elif validation_type == "expect_column_values_to_be_unique":
         key=cols_key
     )
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Uniqueness Rule"
     if st.button(button_label, key="add_unique"):
         if selected_columns:
@@ -1190,6 +1354,8 @@ elif validation_type == "expect_column_values_to_be_unique":
                 "type": validation_type,
                 "columns": selected_columns
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -1220,6 +1386,9 @@ elif validation_type == "expect_compound_columns_to_be_unique":
 
     st.info("💡 This checks that the combination of selected columns is unique (like a composite primary key)")
 
+    # Conditional validation UI
+    conditional_on = render_conditional_validation_ui(editing_rule, validation_type, is_editing)
+
     button_label = "Update Rule" if is_editing else "Add Composite Uniqueness Rule"
     if st.button(button_label, key="add_compound_unique"):
         if len(selected_columns) >= 2:
@@ -1227,6 +1396,8 @@ elif validation_type == "expect_compound_columns_to_be_unique":
                 "type": validation_type,
                 "column_list": selected_columns
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
