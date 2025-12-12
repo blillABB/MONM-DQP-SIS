@@ -178,21 +178,16 @@ def run_query(sql: str) -> pd.DataFrame:
         DataFrame of results
     """
     conn = get_connection()
-    cursor = conn.cursor()
     try:
-        cursor.execute(sql)
-
         print("▶ Fetching query results...")
-        df = cursor.fetch_pandas_all()
+        df = pd.read_sql(sql, conn)
 
         if df is None:
-            columns = [col[0] for col in cursor.description] if cursor.description else []
-            df = pd.DataFrame(columns=columns)
+            df = pd.DataFrame()
 
         print(f"✅ Retrieved {len(df)} rows from Snowflake")
         return df
     finally:
-        cursor.close()
         conn.close()
 
 @register_query("get_aurora_motor_dataframe")
