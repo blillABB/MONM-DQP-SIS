@@ -179,7 +179,12 @@ def run_query(sql: str) -> pd.DataFrame:
     """
     conn = get_connection()
     try:
-        return pd.read_sql(sql, conn)
+        print(f"▶ Executing query ({len(sql)} characters)...")
+        df = pd.read_sql(sql, conn)
+        print(f"✅ Query returned {len(df)} rows with {len(df.columns)} columns")
+        if len(df) > 0:
+            print(f"▶ Column names: {', '.join(df.columns[:10])}" + ("..." if len(df.columns) > 10 else ""))
+        return df
     finally:
         conn.close()
 
