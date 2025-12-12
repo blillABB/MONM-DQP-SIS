@@ -182,21 +182,10 @@ def run_query(sql: str) -> pd.DataFrame:
     try:
         cursor.execute(sql)
 
-        # Stream batches to avoid hanging on large result sets and log progress.
-        batch_size = 10000
-        print(f"▶ Fetching query results in batches of {batch_size}...")
-        batches = []
-        total_rows = 0
+        print("▶ Fetching query results...")
+        df = cursor.fetch_pandas_all()
 
-        for batch_index, batch_df in enumerate(cursor.fetch_pandas_batches(chunk_size=batch_size), start=1):
-            batch_rows = len(batch_df)
-            total_rows += batch_rows
-            batches.append(batch_df)
-            print(f"  • Batch {batch_index}: {batch_rows} rows (total {total_rows})")
-
-        if batches:
-            df = pd.concat(batches, ignore_index=True)
-        else:
+        if df is None:
             columns = [col[0] for col in cursor.description] if cursor.description else []
             df = pd.DataFrame(columns=columns)
 
