@@ -57,6 +57,10 @@ validation_results/archives/
 # Validation cache (daily cache files, not tracked)
 validation_results/cache/
 
+# Validation result files (CSV/JSON files can be very large, keep local only)
+validation_results/**/*.csv
+validation_results/**/*.json
+
 # Column metadata cache
 column_metadata_cache.json
 
