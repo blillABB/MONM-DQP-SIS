@@ -94,6 +94,7 @@ def run_validation_from_yaml_snowflake(
         df = _normalize_dataframe_columns(run_query(sql))
         execution_time = time.time() - start_time
         print(f"✅ Query executed in {execution_time:.2f} seconds")
+        print(f"📊 Retrieved {len(df):,} rows from Snowflake", flush=True)
     except RuntimeError:
         # Propagate user-facing runtime errors (e.g., SSO mismatch) unchanged so the
         # UI can display the friendly guidance and halt gracefully.
@@ -104,7 +105,11 @@ def run_validation_from_yaml_snowflake(
         raise RuntimeError(f"❌ Query execution failed: {e}") from e
 
     # Parse results
+    print(f"▶ Parsing results (include_failure_details={include_failure_details})...", flush=True)
+    parse_start = time.time()
     results = _parse_sql_results(df, suite_config, include_failure_details)
+    parse_time = time.time() - parse_start
+    print(f"✅ Parsing completed in {parse_time:.2f} seconds", flush=True)
 
     print(f"✅ Validation complete: {len(results['results'])} rules checked")
 
@@ -668,7 +673,15 @@ def _collect_validation_failures(
     expectation_catalog: List[Dict[str, Any]],
     include_failure_details: bool,
 ) -> tuple[Dict[str, int], Dict[str, List[pd.Series]]]:
-    """Aggregate unexpected counts and optional failing rows keyed by expectation id."""
+    """
+    Aggregate unexpected counts and optional failing rows keyed by expectation id.
+
+    Optimized version using apply() instead of iterrows() for better performance on large datasets.
+    """
+    import time
+
+    collect_start = time.time()
+    print(f"▶ Collecting validation failures from {len(df):,} rows...", flush=True)
 
     counts_map: Dict[str, int] = {
         entry["expectation_id"]: 0 for entry in expectation_catalog
@@ -680,7 +693,9 @@ def _collect_validation_failures(
     if "validation_results" not in df.columns:
         return counts_map, failure_rows_map
 
-    for _, row in df.iterrows():
+    # Optimized approach: use apply() with axis=1 instead of iterrows()
+    # This is significantly faster for large DataFrames
+    def process_row(row):
         entries = _parse_json_array(row.get("validation_results"))
         for entry in entries:
             exp_id = entry.get("expectation_id") if isinstance(entry, dict) else None
@@ -688,7 +703,13 @@ def _collect_validation_failures(
                 counts_map[exp_id] += 1
                 if include_failure_details:
                     failure_rows_map[exp_id].append(row)
+        return None
 
+    # Process all rows
+    df.apply(process_row, axis=1)
+
+    collect_time = time.time() - collect_start
+    print(f"✅ Collected validation failures in {collect_time:.2f} seconds", flush=True)
     return counts_map, failure_rows_map
 
 
