@@ -128,18 +128,17 @@ def _parse_sql_results(
     Parse Snowflake query results into GX-compatible format.
 
     Args:
-        df: DataFrame containing validation failure rows with metadata
-            (Note: SQL filters to only rows with failures for efficiency)
+        df: DataFrame containing all validation rows from Snowflake
         suite_config: Original suite configuration
 
     Returns:
         Dictionary with keys:
         - 'results': list of regular expectation results
         - 'derived_status_results': list of derived status results (aggregated expectations)
-        - 'validated_materials': list of unique failed material numbers (for backward compat)
-        - 'all_validated_materials': list of ALL validated material numbers (from SQL metadata)
-        - 'total_validated_count': int, total materials validated count (from SQL metadata)
-        - 'full_results_df': DataFrame from Snowflake (failures only)
+        - 'validated_materials': list of all validated material numbers (for backward compat)
+        - 'all_validated_materials': list of all validated material numbers (for derived lists)
+        - 'total_validated_count': total count of validated materials
+        - 'full_results_df': DataFrame from Snowflake (all rows)
     """
     if df.empty:
         return {
@@ -155,22 +154,18 @@ def _parse_sql_results(
     df = df.copy()
     df.columns = df.columns.str.lower()
 
-    # Extract metadata (all rows have same value, so take first)
+    # Get index column for metadata calculation
+    index_column = (
+        suite_config.get("metadata", {}).get("index_column", "MATERIAL_NUMBER").lower()
+    )
+
+    # Calculate metadata from DataFrame (much faster than SQL ARRAY_AGG)
     total_validated = 0
     all_validated_materials = []
-    if "_total_validated_materials" in df.columns:
-        if not df.empty:
-            total_validated = int(df["_total_validated_materials"].iloc[0])
-            # Extract the array of all validated materials
-            if "_all_validated_materials" in df.columns:
-                # Snowflake returns array as JSON string, parse it
-                import json
-                all_materials_json = df["_all_validated_materials"].iloc[0]
-                if all_materials_json:
-                    all_validated_materials = json.loads(all_materials_json) if isinstance(all_materials_json, str) else all_materials_json
-        # Drop metadata columns as they're not part of actual data
-        df = df.drop(columns=["_total_validated_materials"], errors='ignore')
-        df = df.drop(columns=["_all_validated_materials"], errors='ignore')
+    if index_column in df.columns and not df.empty:
+        # Get all unique materials from DataFrame
+        all_validated_materials = df[index_column].dropna().unique().tolist()
+        total_validated = len(all_validated_materials)
 
     validations = suite_config.get("validations", [])
     derived_statuses = suite_config.get("derived_statuses", [])
@@ -294,14 +289,9 @@ def _parse_sql_results(
         suite_config.get("metadata", {}).get("index_column", "material_number")
     )
 
-    # Generate validated_materials list for backward compatibility
-    # Note: With SQL filtering, df now only contains failed rows, so this list
-    # only includes failed materials. Use total_validated_count for actual total.
-    validated_materials = []
-    if index_column.lower() in df.columns:
-        validated_materials = (
-            df[index_column.lower()].dropna().unique().tolist()
-        )
+    # validated_materials is same as all_validated_materials since we return all rows
+    # Kept for backward compatibility with existing code
+    validated_materials = all_validated_materials
 
     # Build derived status results using the resolver (kept separate from regular results)
     derived_status_results = []
@@ -319,9 +309,9 @@ def _parse_sql_results(
     return {
         "results": results,
         "derived_status_results": derived_status_results,
-        "validated_materials": validated_materials,  # Failed materials only (for backward compat)
-        "all_validated_materials": all_validated_materials,  # Full list from SQL metadata
-        "total_validated_count": total_validated,  # Count from SQL metadata
+        "validated_materials": validated_materials,  # All validated materials (for backward compat)
+        "all_validated_materials": all_validated_materials,  # All validated materials (for derived lists)
+        "total_validated_count": total_validated,  # Count of all validated materials
         "full_results_df": df,
     }
 
