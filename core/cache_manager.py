@@ -113,7 +113,9 @@ def get_cached_results(suite_name: str) -> Optional[dict]:
         return {
             "results": cache_data.get("results", []),
             "derived_status_results": cache_data.get("derived_status_results", []),
-            "validated_materials": cache_data.get("validated_materials", [])
+            "validated_materials": cache_data.get("validated_materials", []),
+            "all_validated_materials": cache_data.get("all_validated_materials", cache_data.get("validated_materials", [])),
+            "total_validated_count": cache_data.get("total_validated_count", len(cache_data.get("validated_materials", [])))
         }
 
     except (json.JSONDecodeError, KeyError) as e:
@@ -146,7 +148,14 @@ def get_cached_failures_csv(suite_name: str) -> Optional[str]:
         return f.read()
 
 
-def save_cached_results(suite_name: str, results: list, validated_materials: list = None, derived_status_results: list = None) -> None:
+def save_cached_results(
+    suite_name: str,
+    results: list,
+    validated_materials: list = None,
+    derived_status_results: list = None,
+    all_validated_materials: list = None,
+    total_validated_count: int = None
+) -> None:
     """
     Save validation results to cache.
 
@@ -160,6 +169,10 @@ def save_cached_results(suite_name: str, results: list, validated_materials: lis
         List of all material numbers that were validated
     derived_status_results : list, optional
         Derived status results (aggregated expectations)
+    all_validated_materials : list, optional
+        List of all validated materials (for derived lists)
+    total_validated_count : int, optional
+        Total count of validated materials
     """
     _ensure_cache_dir()
     cache_path = _get_cache_path(suite_name)
@@ -169,7 +182,9 @@ def save_cached_results(suite_name: str, results: list, validated_materials: lis
         "data_date": _get_today_date_str(),
         "results": results,
         "derived_status_results": derived_status_results or [],
-        "validated_materials": validated_materials or []
+        "validated_materials": validated_materials or [],
+        "all_validated_materials": all_validated_materials or validated_materials or [],
+        "total_validated_count": total_validated_count if total_validated_count is not None else len(validated_materials or [])
     }
 
     with open(cache_path, "w") as f:
@@ -198,6 +213,8 @@ def save_daily_suite_artifacts(
     raw_results_df,
     data_date: Optional[str] = None,
     derived_status_results: list = None,
+    all_validated_materials: list = None,
+    total_validated_count: int = None,
 ) -> None:
     """Persist the day's JSON and raw CSV results to the suite's validation_results folder once per day."""
 
@@ -223,6 +240,8 @@ def save_daily_suite_artifacts(
         "results": results or [],
         "derived_status_results": derived_status_results or [],
         "validated_materials": validated_materials or [],
+        "all_validated_materials": all_validated_materials or validated_materials or [],
+        "total_validated_count": total_validated_count if total_validated_count is not None else len(validated_materials or []),
     }
 
     with open(json_path, "w") as f:
