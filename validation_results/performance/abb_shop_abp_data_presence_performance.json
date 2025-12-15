@@ -1,0 +1,12 @@
+[
+  {
+    "timestamp": "2025-12-04T16:58:33.733343",
+    "chunk_size": 20000,
+    "max_workers": 6,
+    "total_rows": 64452,
+    "total_time": 161.4361298084259,
+    "num_chunks": 6,
+    "throughput": 399.24148377741915,
+    "time_per_row": 0.0025047497332654676
+  }
+]

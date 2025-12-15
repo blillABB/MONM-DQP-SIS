@@ -1,12 +1,8 @@
 metadata:
   suite_name: abb_shop_abp_data_presence
   index_column: MATERIAL_NUMBER
-  description: ''
-  data_source: get_level_1_dataframe
-data_source:
-  table: PROD_MO_MONM.REPORTING."vw_ProductDataAll"
-  filters: {}
-  distinct: true
+  description: Checks for data presence on critical ABP characteristics
+  data_source: abb_shop_data
 validations:
 - type: expect_column_values_to_not_be_null
   columns:
@@ -23,45 +19,10 @@ validations:
   - ABP_MOTORBASETYPE
   - ABP_MOUNTINGORIENTATION
   - ABP_BRAKEPRESENT
+  - ABP_EXPLOSIONPROTECTION
   - ABP_CERTIFICATIONAGENCY
+  - ABP_EXPPROGROCLA
   - ABP_DSTR_OUTPUT
   - ABP_DSTR_SSPEED
   - ABP_DSTR_VOLTAGE
   - ABP_DSTR_FREQUENCY
-  - Z01_MKT_AGENCY_LOGOS
-  - Z01_MKT_BASE_INDICATOR
-  - Z01_MKT_DUTY
-  - Z01_MKT_EFFICIENCY_LEVEL
-  - Z01_MKT_ENCLOSURE
-  - Z01_MKT_FRAME
-  - Z01_MKT_INSULATION_CLASS
-  - Z01_MKT_MOUNTING_ORIENT
-  - Z01_MKT_NAMEPLATE_AMPS
-  - Z01_MKT_NAMEPLATE_OUTPUT
-  - Z01_MKT_NAMEPLATE_FREQUENCY
-  - Z01_MKT_NAMEPLATE_SPEED
-  - Z01_MKT_NAMEPLATE_VOLTAGE
-  - Z01_MKT_DESIGN_CODE
-  - Z01_MKT_PHASE
-  - Z01_MKT_NUMBER_POLES
-  - Z01_MKT_SERVICE_FACTOR
-  - ENG_AGENCY_LOGOS_READABLE
-  - ENG_AMPS
-  - ENG_MOUNTING_TYPE
-  - ENG_BRAKE_CODE
-  - ENG_DUTY_TYPE
-  - ENG_EFFICIENCY_LEVEL
-  - ENG_ENCLOSURE
-  - ENG_FRAME_SIZE
-  - ENG_FREQUENCY
-  - ENG_INSULATION_CLASS
-  - ENG_MOUNTING_ORIENTATION
-  - ENG_NEMA_DESIGN_CODE
-  - ENG_OUTPUT
-  - ENG_PHASE
-  - ENG_POLES
-  - ENG_SERVICE_FACTOR
-  - ENG_RPM
-  - ENG_VOLTAGE
-  expectation_id: exp_expect_column_values_to_not_be_null_cols_359db236
-derived_statuses: []
