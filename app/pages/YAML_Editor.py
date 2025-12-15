@@ -531,7 +531,7 @@ with st.form("add_filter_form", enter_to_submit=False):
     )
     filter_type = col2.selectbox(
         "Filter Type",
-        options=["Equals", "One of (IN)", "LIKE pattern"],
+        options=["Equals", "One of (IN)", "LIKE pattern", "Date Comparison"],
         help="How should the filter be applied?",
     )
 
@@ -569,6 +569,35 @@ with st.form("add_filter_form", enter_to_submit=False):
             placeholder="LIKE ABC%",
             help="Use SQL LIKE syntax (e.g., ABC%, %XYZ)",
         )
+    elif filter_type == "Date Comparison":
+        st.markdown("**Relative Date Filter** (e.g., 'last 3 years', 'last 6 months')")
+
+        col_a, col_b, col_c = st.columns([1, 1, 1])
+        with col_a:
+            date_operator = st.selectbox(
+                "Operator",
+                options=[">", ">=", "<", "<=", "=", "!="],
+                help="Comparison operator"
+            )
+        with col_b:
+            date_amount = st.number_input(
+                "Amount",
+                min_value=-1000,
+                max_value=0,
+                value=-3,
+                step=1,
+                help="Negative number for past dates (e.g., -3 for '3 years ago')"
+            )
+        with col_c:
+            date_unit = st.selectbox(
+                "Unit",
+                options=["years", "months", "weeks", "days", "quarters"],
+                help="Time unit"
+            )
+
+        # Build the filter value
+        filter_value = f"{date_operator} {date_amount} {date_unit}"
+        st.caption(f"Will generate: `{selected_field} {filter_value}`")
 
     submitted = st.form_submit_button("Add / Update Filter", type="primary")
     if submitted:
@@ -594,6 +623,12 @@ with st.form("add_filter_form", enter_to_submit=False):
                 selected_field
             ] = like_value
             st.success(f"Added filter: {selected_field} {like_value}")
+            st.rerun()
+        elif filter_type == "Date Comparison" and filter_value:
+            st.session_state.data_source.setdefault("filters", {})[
+                selected_field
+            ] = filter_value
+            st.success(f"Added date filter: {selected_field} {filter_value}")
             st.rerun()
         else:
             st.error("Please provide a filter value.")
