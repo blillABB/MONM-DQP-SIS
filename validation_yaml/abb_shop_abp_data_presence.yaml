@@ -3,26 +3,54 @@ metadata:
   index_column: MATERIAL_NUMBER
   description: Checks for data presence on critical ABP characteristics
   data_source: abb_shop_data
+
 validations:
-- type: expect_column_values_to_not_be_null
-  columns:
-  - ABP_ELECTRICALDATA1
-  - ABP_EFFICIENCYLEVEL
-  - ABP_INSULATIONCLASS
-  - ABP_NEMADESIGNCODE
-  - ABP_NUMBEROFPHASES
-  - ABP_NUMBEROFPOLES
-  - ABP_SERVICEFACTOR
-  - ABP_TYPEOFDUTY
-  - ABP_ENCLOSURETYPE
-  - ABP_FRAMESIZE
-  - ABP_MOTORBASETYPE
-  - ABP_MOUNTINGORIENTATION
-  - ABP_BRAKEPRESENT
-  - ABP_EXPLOSIONPROTECTION
-  - ABP_CERTIFICATIONAGENCY
-  - ABP_EXPPROGROCLA
-  - ABP_DSTR_OUTPUT
-  - ABP_DSTR_SSPEED
-  - ABP_DSTR_VOLTAGE
-  - ABP_DSTR_FREQUENCY
+  - type: expect_column_values_to_not_be_null
+    columns:
+      - ABP_ELECTRICALDATA1
+      - ABP_EFFICIENCYLEVEL
+      - ABP_INSULATIONCLASS
+      - ABP_NEMADESIGNCODE
+      - ABP_NUMBEROFPHASES
+      - ABP_NUMBEROFPOLES
+      - ABP_SERVICEFACTOR
+      - ABP_TYPEOFDUTY
+      - ABP_ENCLOSURETYPE
+      - ABP_FRAMESIZE
+      - ABP_MOTORBASETYPE
+      - ABP_MOUNTINGORIENTATION
+      - ABP_BRAKEPRESENT
+      - ABP_EXPLOSIONPROTECTION
+      - ABP_CERTIFICATIONAGENCY
+      - ABP_EXPPROGROCLA
+      - ABP_DSTR_OUTPUT
+      - ABP_DSTR_SSPEED
+      - ABP_DSTR_VOLTAGE
+      - ABP_DSTR_FREQUENCY
+
+# Example derived statuses (uncomment and customize as needed)
+# derived_statuses:
+#   - expectation_id: eng_incomplete
+#     status: "ENG DATA INCOMPLETE"
+#     expectation_type: expect_column_values_to_not_be_null
+#     columns:
+#       - ABP_ELECTRICALDATA1
+#       - ABP_EFFICIENCYLEVEL
+#       - ABP_INSULATIONCLASS
+#
+#   - expectation_id: z01_incomplete
+#     status: "Z01 DATA INCOMPLETE"
+#     expectation_type: expect_column_values_to_not_be_null
+#     columns:
+#       - ABP_DSTR_OUTPUT
+#       - ABP_DSTR_SSPEED
+#       - ABP_DSTR_VOLTAGE
+
+# Derived lists - materials filtered by derived status membership
+# Uncomment when derived_statuses are configured
+# derived_lists:
+#   - name: "Ready for ABP Load"
+#     description: "Materials passing both ENG and Z01 validations, ready for data load"
+#     exclude_statuses:
+#       - "ENG DATA INCOMPLETE"
+#       - "Z01 DATA INCOMPLETE"

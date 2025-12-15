@@ -538,6 +538,103 @@ if view == "Overview":
             st.info("No derived statuses were triggered for this validation run.")
 
     # =====================================================
+    # DERIVED LISTS - Materials filtered by status exclusion
+    # =====================================================
+    # Load YAML to get derived_lists configuration
+    import yaml
+    with open(suite_config["yaml_path"], 'r') as f:
+        yaml_config = yaml.safe_load(f)
+
+    derived_lists_config = yaml_config.get("derived_lists", [])
+
+    if derived_lists_config:
+        st.divider()
+        with st.expander("Derived Lists", expanded=False):
+            st.caption(
+                "Derived lists identify materials based on derived status membership. "
+                "These lists can be downloaded for further processing."
+            )
+
+            # Build a map of status_label -> failed materials for quick lookup
+            status_to_materials = {}
+            for result in derived_status_results or []:
+                status_label = result.get("status_label")
+                if not status_label:
+                    continue
+
+                # Collect all failed material numbers from this status
+                failed_materials = result.get("failed_materials", [])
+                material_numbers = set()
+                for fm in failed_materials:
+                    # Get material number from context columns
+                    mat_num = fm.get("MATERIAL_NUMBER") or fm.get("Material Number") or fm.get("material_number")
+                    if mat_num:
+                        material_numbers.add(str(mat_num))
+
+                status_to_materials[status_label] = material_numbers
+
+            # Calculate and display each derived list
+            for derived_list in derived_lists_config:
+                list_name = derived_list.get("name", "Unnamed List")
+                description = derived_list.get("description", "")
+                exclude_statuses = derived_list.get("exclude_statuses", [])
+
+                # Calculate materials in this list (all materials minus excluded)
+                # Use all_validated_materials from SQL metadata (full list)
+                all_materials_list = payload.get("all_validated_materials", []) if isinstance(payload, dict) else []
+                all_material_numbers = set(str(m) for m in all_materials_list) if all_materials_list else set()
+
+                # If we don't have the full materials list, we can't calculate derived lists
+                if len(all_material_numbers) == 0:
+                    st.warning(f"⚠️ Cannot calculate '{list_name}' - full material list unavailable")
+                    continue
+
+                # Collect all materials to exclude
+                excluded_materials = set()
+                for status_label in exclude_statuses:
+                    if status_label in status_to_materials:
+                        excluded_materials.update(status_to_materials[status_label])
+
+                # Materials in this list = all materials - excluded materials
+                list_materials = all_material_numbers - excluded_materials
+
+                # Display the list
+                st.write(f"**{list_name}**")
+                if description:
+                    st.caption(description)
+
+                col1, col2 = st.columns([2, 1])
+                with col1:
+                    st.metric(
+                        "Materials in List",
+                        f"{len(list_materials):,}",
+                        delta=f"{len(list_materials) / actual_total * 100:.1f}% of total" if actual_total > 0 else None
+                    )
+
+                with col2:
+                    if list_materials:
+                        # Generate CSV with just material numbers
+                        csv_content = "MATERIAL_NUMBER\n" + "\n".join(sorted(list_materials))
+                        st.download_button(
+                            label=f"⬇️ Download CSV ({len(list_materials):,} materials)",
+                            data=csv_content,
+                            file_name=f"{list_name.replace(' ', '_').lower()}.csv",
+                            mime="text/csv",
+                            key=f"download_list_{list_name.replace(' ', '_')}"
+                        )
+                    else:
+                        st.info("No materials in this list")
+
+                # Show which statuses were excluded
+                if exclude_statuses:
+                    with st.expander(f"Excluded Statuses ({len(exclude_statuses)})", expanded=False):
+                        for status in exclude_statuses:
+                            excluded_count = len(status_to_materials.get(status, []))
+                            st.write(f"- {status}: {excluded_count:,} materials")
+
+                st.divider()
+
+    # =====================================================
     # CHARTS ROW - Plotly visualizations
     # =====================================================
     col_left, col_right = st.columns([1, 2])
