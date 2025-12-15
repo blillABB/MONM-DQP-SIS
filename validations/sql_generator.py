@@ -89,16 +89,28 @@ WITH {cte_prefix}base_data AS (
   {where_clause}
   {f'LIMIT {limit}' if limit else ''}
 ),
+failure_rows AS (
+  SELECT * FROM base_data
+  WHERE ARRAY_SIZE(validation_results) > 0
+),
 metadata AS (
   SELECT
     COUNT(DISTINCT {index_column}) as _total_validated_materials,
     ARRAY_AGG(DISTINCT {index_column}) as _all_validated_materials
   FROM base_data
 )
-SELECT bd.*, m._total_validated_materials, m._all_validated_materials
-FROM base_data bd
+SELECT
+  fr.*,
+  CASE WHEN ROW_NUMBER() OVER (ORDER BY {index_column}) = 1
+       THEN m._total_validated_materials
+       ELSE NULL
+  END as _total_validated_materials,
+  CASE WHEN ROW_NUMBER() OVER (ORDER BY {index_column}) = 1
+       THEN m._all_validated_materials
+       ELSE NULL
+  END as _all_validated_materials
+FROM failure_rows fr
 CROSS JOIN metadata m
-WHERE ARRAY_SIZE(bd.validation_results) > 0
 """
         return query.strip()
 
