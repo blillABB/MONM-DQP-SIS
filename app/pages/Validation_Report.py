@@ -580,13 +580,13 @@ if view == "Overview":
                 exclude_statuses = derived_list.get("exclude_statuses", [])
 
                 # Calculate materials in this list (all materials minus excluded)
-                # Use all_validated_materials from SQL metadata (full list)
-                all_materials_list = payload.get("all_validated_materials", []) if isinstance(payload, dict) else []
+                # Use validated_materials (contains all materials since we return all rows)
+                all_materials_list = payload.get("validated_materials", []) if isinstance(payload, dict) else []
                 all_material_numbers = set(str(m) for m in all_materials_list) if all_materials_list else set()
 
-                # If we don't have the full materials list, we can't calculate derived lists
+                # If we don't have the materials list, we can't calculate derived lists
                 if len(all_material_numbers) == 0:
-                    st.warning(f"⚠️ Cannot calculate '{list_name}' - full material list unavailable")
+                    st.warning(f"⚠️ Cannot calculate '{list_name}' - material list unavailable")
                     continue
 
                 # Collect all materials to exclude
