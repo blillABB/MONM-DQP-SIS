@@ -1,0 +1,4383 @@
+{
+    "results": [
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "GROSS_WEIGHT",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "NET_WEIGHT",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "GLOBAL_PRODUCT_ID",
+            "success": false,
+            "element_count": 1583,
+            "unexpected_count": 673,
+            "unexpected_percent": 42.5142135186355,
+            "failed_materials": [
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28FC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36AC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36AC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28FA15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FB42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44AC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FB42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44AC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FB14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44AD25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28AC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS010PE21AA15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300HE44FD15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28AA24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125HE40FC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150HE44FD25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44AD42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FD23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28FC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS040PE32AC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020HE25FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28FB14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350HE44FD24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AA13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350HE44FC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28FB24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS050HE32FC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AB42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44FD15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200PE44FD42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060HE36FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44FC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FB15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FA15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125HE40FC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FA25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125HE40FC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS7.5PE21AA24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100PE40FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28AC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FA24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FA13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS075HE36FC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28AA14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS7.5PE21FA15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FD24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200PE44FD24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS075PE36FC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28FC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS7.5HE21FA14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44FC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060HE36FC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025HE28FB25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36FC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28AA15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300PE44FC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150HE44FC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350HE44FD42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36FC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25FC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44AD15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FA24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AB23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS040HE32FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025HE28FC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25AB15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FA15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020HE25FB14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44AC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44FD46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100PE40FC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300PE44AC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44AD15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300PE44FD42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FB23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AA23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44FC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100PE40AC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FB15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350HE44FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS075PE36AC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44FD15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25AB23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FA42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44AD24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS040HE32FC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300HE44FD23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44FD23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FD46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030HE28FB15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150HE44FD14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200PE44AC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030HE28FC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150HE44FC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44FD13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28FA42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS010HE21FA25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030HE28FB42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200PE44AC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100PE40FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AA13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS075PE36AC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020HE25FC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200PE44FC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44AC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44AC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44FC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300PE44AD13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AB25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025HE28FA14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200HE44FC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44AD13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS010PE21AA13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FD42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28FB23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44AC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025HE28FB14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350HE44FD23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125PE40AC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS7.5PE21FA14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44FD23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS010PE21FA15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300PE44FD23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150HE44FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS040PE32FC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025HE28FA42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350HE44FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200HE44FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44FC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100HE40FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300PE44FD25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FA23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25FC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100PE40AC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060HE36FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS7.5PE21AA25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100PE40FC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25FB14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28FC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36AC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AB15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28FC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS075PE36FC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030HE28FC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS050PE32AC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AB14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150HE44FD24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150HE44FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS075PE36FC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125PE40AC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150HE44FD13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44AC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25AC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28FC42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200PE44FD46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200HE44FD46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36AC25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44AC24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36AC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28FC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200PE44AD42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300HE44FC15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS010PE21AA42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300PE44FC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS075HE36FC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300HE44FD25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44FD25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020HE25FA15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200HE44FD13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS075HE36FC23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AA15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FC14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100PE40AC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125PE40AC13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AA14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030HE28FA15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AA42",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25FA23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS050PE32FC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300HE44FC46",
+                    "Unexpected Value": null
+                }
+            ],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "SIZE_DIMENSIONS",
+            "success": false,
+            "element_count": 1583,
+            "unexpected_count": 40,
+            "unexpected_percent": 2.5268477574226154,
+            "failed_materials": [
+                {
+                    "MATERIAL_NUMBER": "4WPHS400PE50AE23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50AE23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50AE15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AD15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50AE25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AE46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AE24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50AE14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50AE46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AE13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50AE14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50AE24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS400PE50AE24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50AE25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AD24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2WPHS125PE40AC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AD25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50AE15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "V58-0000-0001",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50AE23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50AE13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS400PE50AE13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2WPHS075PE36AC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS400PE50AE25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50AE13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AD13",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AE14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS400PE50AE46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50AE46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS400PE50AE14",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS400PE50AE15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WP1HS250HP-F",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "2WPHS050PE32AC46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AD46",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AE25",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AD23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AE23",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AE15",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50AE24",
+                    "Unexpected Value": null
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AD14",
+                    "Unexpected Value": null
+                }
+            ],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "PROFIT_CENTER",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_in_set",
+            "column": "PROFIT_CENTER",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "HTS_CODE",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "EAN_NUMBER",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_not_be_null",
+            "column": "STANDARD_PRICE",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MBEW",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_pair_values_a_to_be_greater_than_b",
+            "column": null,
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "UNKNOWN",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_pair_values_to_be_equal",
+            "column": null,
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "UNKNOWN",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_match_regex",
+            "column": "PACK_INDICATOR",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": null,
+            "failed_materials": [],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_match_regex",
+            "column": "PURCHASING_VALUE_GROUP",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": null,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_match_regex",
+            "column": "AUTOMATIC_PO",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": null,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_match_regex",
+            "column": "PHYSICAL_INVENTORY_INDICATOR",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": null,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "Z01_MKT_MTART",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": null,
+            "failed_materials": [],
+            "table_grain": "UNKNOWN",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "INDUSTRY_SECTOR",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "ITEM_CATEGORY_GROUP",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "BASE_UNIT_OF_MEASURE",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "MATERIAL_GROUP",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "WEIGHT_UNIT",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "TOTAL_SHELF_LIFE_DAYS",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "LAB_OFFICE",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARA",
+            "unique_by": [
+                "MATERIAL_NUMBER"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "MRP_TYPE",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "SERIAL_NUMBER_PROFILE",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "MRP_CONTROLLER",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "PROCUREMENT_TYPE",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "PURCHASING_GROUP",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "AVAILABILITY_CHECK",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "LOADING_GROUP",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "SPECIAL_PROCUREMENT_TYPE",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "PLANNED_DELIVERY_TIME",
+            "success": false,
+            "element_count": 1583,
+            "unexpected_count": 5,
+            "unexpected_percent": 0.3158559696778269,
+            "failed_materials": [
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44FC25",
+                    "Unexpected Value": 0
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125PE40FC42",
+                    "Unexpected Value": 0
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030HE28FA42",
+                    "Unexpected Value": 0
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44AC15",
+                    "Unexpected Value": 0
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350HE44FC14",
+                    "Unexpected Value": 0
+                }
+            ],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "IN_HOUSE_PRODUCTION_TIME",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "PLANNING_TIME_FENCE",
+            "success": false,
+            "element_count": 1583,
+            "unexpected_count": 1583,
+            "unexpected_percent": 100.0,
+            "failed_materials": [
+                {
+                    "MATERIAL_NUMBER": "4WPHS300HE50FE25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28FC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500HE50FD13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36AC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36AC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015PE25AB25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015HE25FA23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28FA15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FB42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44AC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015HE25FB14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS150PE44FD42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250PE44AD15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS400PE50AE23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FB42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44AC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250HE44FD15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FB14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44AD25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020HE25FA13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28AC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE44AD13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050HE32FC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS010PE21AA15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300HE44FD15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE44FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020PE25FC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28AA24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE50FE42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040HE32FB13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS125PE40FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020HE25FB24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125HE40FC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS125PE40AC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS125PE40AC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE44FD46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025PE28FB23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250HE44FC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015PE25AA13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050HE32FB25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040HE32FC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150HE44FD25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050PE32FB46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44AD42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FD23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28FC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS200PE44FD46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS040PE32AC24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020HE25FC15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025PE28FC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020HE25FC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32FB46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50FE42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28FB14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50FD14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350HE44FD24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025HE28FA14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS125PE40AC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350HE50FD13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32AB23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AA13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50AE23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015PE25AC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015PE25FB15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350HE44FC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025PE28FC15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300HE44FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE50FE46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300HE44FC24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50FD25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28FB24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS050HE32FC24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FC15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AB42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50FD42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025HE28FC24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44FD15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020PE25AB42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200PE44FD42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060PE36FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250PE44FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250PE44FD23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS030PE28FB15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS150PE44AD14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060HE36FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FB15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FA15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125HE40FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FA25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025PE28FA14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125HE40FC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS7.5PE21AA24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100PE40FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060PE36FC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250HE44FC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300HE44FC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28AC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS150PE44FD23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FA24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FA13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250HE44FD46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS075HE36FC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28AA14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS7.5PE21FA15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE50FD15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040HE32FB23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450HE50FD46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FD24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS200PE44FD24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS075PE36FC24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060HE36FC24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020PE25AB25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025PE28FA24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50FD13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50FD25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050HE32FB13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350HE44FC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS7.5HE21FA14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44FC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE44FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060HE36FC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025HE28FB25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FC15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE44FC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS150PE44AC15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE44AD42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020HE25FB23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020PE25FB15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020PE25FB23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS030PE28AA15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300PE44FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050HE32FC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50FE14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS050PE32AC24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040HE32FB42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150HE44FC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350HE44FD42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020PE25AC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS060PE36FC13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25FC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250HE44FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS250PE44AD15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FA24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS200PE44AD24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AB23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS040HE32FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025HE28FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25AB15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS200PE44FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025HE28FB42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FA15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020HE25FB14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015HE25FC24",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44AC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44FD46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44FC15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32FB15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS030HE28FB42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS025PE28AC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020HE25FB15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050HE32FC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE44FD15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350HE50FD42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32AB25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100PE40FC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300PE44AC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS350PE44AD15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020HE25FA23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS200HE44FC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS030HE28FA13",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS300PE44FD42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300HE44FD25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350HE50FD25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015PE25FB23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS125HE40FC23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025PE28FC25",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS100PE40AC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS100PE40AC46",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS020PE25AA23",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS150PE44FC14",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS100PE40AC42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050PE32AB15",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450HE50FE42",
+                    "Unexpected Value": 20
+                },
+                {
+                    "MATERIAL_NUMBER": "4TEHS015HE25FB15",
+                    "Unexpected Value": 20
+                }
+            ],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "MINIMUM_LOT_SIZE",
+            "success": false,
+            "element_count": 1583,
+            "unexpected_count": 36,
+            "unexpected_percent": 2.274162981680354,
+            "failed_materials": [
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC42",
+                    "Unexpected Value": 6.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC42",
+                    "Unexpected Value": 6.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS100PE40AC46",
+                    "Unexpected Value": 2.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS100PE40AC46",
+                    "Unexpected Value": 2.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060PE36AC46",
+                    "Unexpected Value": 2.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060PE36AC46",
+                    "Unexpected Value": 2.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS125PE40AC42",
+                    "Unexpected Value": 3.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS125PE40AC42",
+                    "Unexpected Value": 3.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250PE44AC42",
+                    "Unexpected Value": 2.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250PE44AC42",
+                    "Unexpected Value": 2.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32AC46",
+                    "Unexpected Value": 3.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32AC46",
+                    "Unexpected Value": 3.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015PE25AA42",
+                    "Unexpected Value": 4.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015PE25AA42",
+                    "Unexpected Value": 4.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS150PE44AC42",
+                    "Unexpected Value": 4.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS150PE44AC42",
+                    "Unexpected Value": 4.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS100PE40AC42",
+                    "Unexpected Value": 5.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS100PE40AC42",
+                    "Unexpected Value": 5.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32AC42",
+                    "Unexpected Value": 5.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32AC42",
+                    "Unexpected Value": 5.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050PE32AC46",
+                    "Unexpected Value": 3.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050PE32AC46",
+                    "Unexpected Value": 3.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS030PE28AA42",
+                    "Unexpected Value": 6.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS030PE28AA42",
+                    "Unexpected Value": 6.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025PE28AA42",
+                    "Unexpected Value": 6.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025PE28AA42",
+                    "Unexpected Value": 6.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020PE25AA42",
+                    "Unexpected Value": 4.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020PE25AA42",
+                    "Unexpected Value": 4.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC46",
+                    "Unexpected Value": 3.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC46",
+                    "Unexpected Value": 3.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS200PE44AC42",
+                    "Unexpected Value": 3.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS200PE44AC42",
+                    "Unexpected Value": 3.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050PE32AC42",
+                    "Unexpected Value": 6.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050PE32AC42",
+                    "Unexpected Value": 6.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060PE36AC42",
+                    "Unexpected Value": 5.0
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060PE36AC42",
+                    "Unexpected Value": 5.0
+                }
+            ],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "COUNTRY_OF_ORIGIN",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "BATCH_MANAGEMENT",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "ABC_INDICATOR",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "GOODS_RECEIPT_TIME",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "MRP_GROUP",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MARC",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "MATERIAL_GROUP_1",
+            "success": false,
+            "element_count": 1583,
+            "unexpected_count": 52,
+            "unexpected_percent": 3.2849020846494,
+            "failed_materials": [
+                {
+                    "MATERIAL_NUMBER": "4WPHS125PE40AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS125PE40AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS100PE40AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS100PE40AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060PE36AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060PE36AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS125PE40AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS125PE40AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250PE44AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250PE44AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE44AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015PE25AA42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS015PE25AA42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS500PE50AE46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS150PE44AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS150PE44AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS100PE40AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS100PE40AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS040PE32AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050PE32AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050PE32AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS030PE28AA42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS030PE28AA42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS200PE44AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS200PE44AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE44AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE44AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250PE44AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS250PE44AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025PE28AA42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS025PE28AA42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020PE25AA42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS020PE25AA42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS150PE44AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS150PE44AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS075PE36AC46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS400PE50AE46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS450PE50AE46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS200PE44AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS200PE44AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050PE32AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS050PE32AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS350PE50AD46",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060PE36AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS060PE36AC42",
+                    "Unexpected Value": "STK"
+                },
+                {
+                    "MATERIAL_NUMBER": "4WPHS300PE50AD46",
+                    "Unexpected Value": "STK"
+                }
+            ],
+            "table_grain": "MVKE",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "SALES_ORGANIZATION",
+                "DISTRIBUTION_CHANNEL"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "MATERIAL_GROUP_2",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MVKE",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "SALES_ORGANIZATION",
+                "DISTRIBUTION_CHANNEL"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "MATERIAL_GROUP_3",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MVKE",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "SALES_ORGANIZATION",
+                "DISTRIBUTION_CHANNEL"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "MATERIAL_GROUP_4",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MVKE",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "SALES_ORGANIZATION",
+                "DISTRIBUTION_CHANNEL"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "DELIVERING_PLANT",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MVKE",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "SALES_ORGANIZATION",
+                "DISTRIBUTION_CHANNEL"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "PRICING_GROUP",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MVKE",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "SALES_ORGANIZATION",
+                "DISTRIBUTION_CHANNEL"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "CASH_DISCOUNT",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MVKE",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "SALES_ORGANIZATION",
+                "DISTRIBUTION_CHANNEL"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "OMS_FLAG",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MVKE",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "SALES_ORGANIZATION",
+                "DISTRIBUTION_CHANNEL"
+            ]
+        },
+        {
+            "expectation_type": "expect_column_values_to_be_in_set",
+            "column": "VALUATION_CLASS",
+            "success": true,
+            "element_count": 1583,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "failed_materials": [],
+            "table_grain": "MBEW",
+            "unique_by": [
+                "MATERIAL_NUMBER",
+                "PLANT"
+            ]
+        }
+    ],
+    "validated_materials": [
+        "4WPHS300HE50FE25",
+        "4TEHS015PE25FC23",
+        "4TEHS025PE28FC13",
+        "4WPHS500HE50FD13",
+        "4WPHS075PE36AC15",
+        "4TEHS060PE36AC23",
+        "4TEHS060PE36AC13",
+        "4WPHS015PE25AB25",
+        "4TEHS015PE25FC13",
+        "4WPHS015HE25FA23",
+        "4TEHS030PE28FA15",
+        "4TEHS015HE25FB42",
+        "4TEHS150PE44AC42",
+        "4WPHS015HE25FB14",
+        "4WPHS150PE44FD42",
+        "4WPHS250PE44AD15",
+        "4WPHS400PE50AE23",
+        "4TEHS015PE25FB42",
+        "4TEHS350PE44AC42",
+        "4WPHS250HE44FD15",
+        "4TEHS015HE25FB14",
+        "4TEHS150PE44AD25",
+        "4WPHS020HE25FA13",
+        "4TEHS030PE28AC14",
+        "4WPHS300PE44AD13",
+        "4WPHS050HE32FC42",
+        "4TEHS010PE21AA15",
+        "4TEHS300HE44FD15",
+        "4WPHS350PE44FC23",
+        "4WPHS020PE25FC13",
+        "4TEHS030PE28AA24",
+        "4WPHS300PE50FE42",
+        "4WPHS040HE32FB13",
+        "4TEHS060PE36FC23",
+        "4WPHS125PE40FC23",
+        "4WPHS020HE25FB24",
+        "4TEHS125HE40FC46",
+        "4WPHS125PE40AC46",
+        "4WPHS300PE44FD46",
+        "4WPHS025PE28FB23",
+        "4WPHS250HE44FC46",
+        "4WPHS015PE25AA13",
+        "4WPHS050HE32FB25",
+        "4WPHS040HE32FC25",
+        "4TEHS150HE44FD25",
+        "4WPHS050PE32FB46",
+        "4TEHS350PE44AD42",
+        "4TEHS250HE44FD23",
+        "4TEHS030PE28FC25",
+        "4WPHS200PE44FD46",
+        "4TEHS040PE32AC24",
+        "4TEHS020HE25FC15",
+        "4WPHS025PE28FC13",
+        "4WPHS020HE25FC13",
+        "4WPHS040PE32FB46",
+        "4WPHS500PE50FE42",
+        "4TEHS025PE28FB14",
+        "4WPHS450PE50FD14",
+        "4TEHS350HE44FD24",
+        "4WPHS025HE28FA14",
+        "4WPHS125PE40AC23",
+        "4WPHS350HE50FD13",
+        "4WPHS040PE32AB23",
+        "4TEHS025PE28AA13",
+        "4WPHS500PE50AE23",
+        "4WPHS015PE25AC42",
+        "4WPHS015PE25FB15",
+        "4TEHS350HE44FC42",
+        "4WPHS025PE28FC15",
+        "4WPHS300HE44FC23",
+        "4WPHS300PE50FE46",
+        "4WPHS300HE44FC24",
+        "4WPHS500PE50FD25",
+        "4TEHS030PE28FB24",
+        "4TEHS050HE32FC24",
+        "4TEHS015PE25FC15",
+        "4TEHS025PE28AB42",
+        "4WPHS500PE50FD42",
+        "4WPHS025HE28FC24",
+        "4TEHS350PE44FD15",
+        "4WPHS020PE25AB42",
+        "4TEHS200PE44FD42",
+        "4WPHS060PE36FC14",
+        "4WPHS250PE44FC14",
+        "4WPHS250PE44FD23",
+        "4WPHS030PE28FB15",
+        "4WPHS150PE44AD14",
+        "4TEHS060HE36FC23",
+        "4TEHS020PE25AC13",
+        "4TEHS250PE44FC14",
+        "4TEHS015PE25FB15",
+        "4TEHS015HE25FA15",
+        "4TEHS125HE40FC14",
+        "4TEHS015PE25FA25",
+        "4WPHS025PE28FA14",
+        "4TEHS125HE40FC25",
+        "4TEHS7.5PE21AA24",
+        "4TEHS015HE25FC13",
+        "4TEHS100PE40FC23",
+        "4WPHS060PE36FC25",
+        "4WPHS250HE44FC42",
+        "4WPHS300HE44FC42",
+        "4TEHS030PE28AC25",
+        "4WPHS150PE44FD23",
+        "4TEHS015PE25FA24",
+        "4TEHS015PE25FA13",
+        "4WPHS250HE44FD46",
+        "4TEHS075HE36FC25",
+        "4TEHS030PE28AA14",
+        "4TEHS7.5PE21FA15",
+        "4WPHS300PE50FD15",
+        "4WPHS040HE32FB23",
+        "4WPHS450HE50FD46",
+        "4TEHS250HE44FD24",
+        "4TEHS200PE44FD24",
+        "4TEHS075PE36FC24",
+        "4WPHS060HE36FC24",
+        "4WPHS075PE36AC13",
+        "4WPHS020PE25AB25",
+        "4WPHS025PE28FA24",
+        "4TEHS020PE25AC42",
+        "4WPHS500PE50FD13",
+        "4WPHS450PE50FD25",
+        "4TEHS250HE44FC25",
+        "4WPHS050HE32FB13",
+        "4WPHS350HE44FC46",
+        "4TEHS025PE28FC14",
+        "4TEHS7.5HE21FA14",
+        "4TEHS350PE44FC46",
+        "4WPHS350PE44FC14",
+        "4TEHS060HE36FC25",
+        "4TEHS025HE28FB25",
+        "4TEHS015HE25FC15",
+        "4WPHS300PE44FC42",
+        "4WPHS150PE44AC15",
+        "4TEHS060PE36FC14",
+        "4WPHS300PE44AD42",
+        "4WPHS020HE25FB23",
+        "4WPHS020PE25FB15",
+        "4WPHS020PE25FB23",
+        "4TEHS030PE28AA15",
+        "4TEHS300PE44FC14",
+        "4TEHS250PE44FC23",
+        "4WPHS050HE32FC25",
+        "4WPHS450PE50FE14",
+        "4TEHS050PE32AC24",
+        "4WPHS040HE32FB42",
+        "4TEHS150HE44FC25",
+        "4TEHS350HE44FD42",
+        "4WPHS020PE25AC13",
+        "4TEHS250HE44FC42",
+        "4TEHS060PE36FC13",
+        "4TEHS020PE25FC42",
+        "4TEHS250HE44FC14",
+        "4TEHS250PE44AD15",
+        "4TEHS015HE25FA24",
+        "4WPHS200PE44AD24",
+        "4TEHS020PE25AB23",
+        "4TEHS040HE32FC23",
+        "4TEHS025HE28FC14",
+        "4TEHS015PE25AB15",
+        "4WPHS200PE44FC23",
+        "4WPHS075PE36AC42",
+        "4WPHS025HE28FB42",
+        "4TEHS015PE25FA15",
+        "4TEHS020HE25FB14",
+        "4WPHS015HE25FC24",
+        "4TEHS350PE44AC46",
+        "4TEHS150PE44FD46",
+        "4TEHS350PE44FC15",
+        "4WPHS040PE32FB15",
+        "4WPHS030HE28FB42",
+        "4TEHS025PE28AC14",
+        "4WPHS020HE25FB15",
+        "4WPHS050HE32FC46",
+        "4WPHS350PE44FD15",
+        "4WPHS350HE50FD42",
+        "4WPHS040PE32AB25",
+        "4TEHS100PE40FC46",
+        "4TEHS300PE44AC42",
+        "4TEHS350PE44AD15",
+        "4WPHS020HE25FA23",
+        "4WPHS200HE44FC42",
+        "4WPHS030HE28FA13",
+        "4TEHS300PE44FD42",
+        "4WPHS300HE44FD25",
+        "4WPHS350HE50FD25",
+        "4TEHS015PE25FB23",
+        "4TEHS125HE40FC23",
+        "4WPHS025PE28FC25",
+        "4WPHS100PE40AC46",
+        "4TEHS020PE25AA23",
+        "4TEHS150PE44FC14",
+        "4TEHS100PE40AC42",
+        "4WPHS050PE32AB15",
+        "4WPHS450HE50FE42",
+        "4TEHS015HE25FB15",
+        "4WPHS015PE25FC24",
+        "4TEHS060PE36FC15",
+        "4TEHS350HE44FC23",
+        "4TEHS075PE36AC42",
+        "4TEHS250PE44FD15",
+        "4WPHS040PE32AB42",
+        "4WPHS250PE44AD25",
+        "4WPHS250HE44FD23",
+        "4WPHS015HE25FB13",
+        "4WPHS015PE25FC23",
+        "4WPHS300HE44FC46",
+        "4WPHS450PE50AE15",
+        "4WPHS300HE50FD15",
+        "4WPHS025PE28FB13",
+        "4WPHS200PE44FD14",
+        "4WPHS050PE32AB46",
+        "4WPHS350PE50FE25",
+        "4WPHS040HE32FB46",
+        "4WPHS450HE50FE14",
+        "4TEHS015PE25AB23",
+        "4TEHS015HE25FA42",
+        "4TEHS025PE28FC23",
+        "4WPHS015PE25AB24",
+        "4TEHS150PE44AD24",
+        "4WPHS030PE28FC42",
+        "4WPHS300PE44AD25",
+        "4TEHS040HE32FC25",
+        "4TEHS300HE44FD23",
+        "4WPHS015PE25AB13",
+        "4TEHS150PE44FD23",
+        "4TEHS250HE44FD46",
+        "4TEHS030HE28FB15",
+        "4TEHS150HE44FD14",
+        "4WPHS025PE28AA25",
+        "4WPHS015HE25FB24",
+        "4WPHS200PE44AD13",
+        "4WPHS200HE44FD23",
+        "4TEHS200PE44AC46",
+        "4WPHS020PE25AA24",
+        "4TEHS030HE28FC13",
+        "4TEHS150HE44FC13",
+        "4TEHS020PE25AC25",
+        "4TEHS350PE44FD13",
+        "4TEHS030PE28FA42",
+        "4WPHS350PE50FD23",
+        "4WPHS030PE28AA13",
+        "4WPHS150PE44FD15",
+        "4WPHS150PE44AD15",
+        "4TEHS010HE21FA25",
+        "4TEHS030HE28FB42",
+        "4TEHS200PE44AC24",
+        "4TEHS100PE40FC15",
+        "4TEHS020PE25AA13",
+        "4TEHS075PE36AC14",
+        "4WPHS060PE36AC46",
+        "4WPHS040PE32FB24",
+        "4TEHS020HE25FC24",
+        "4WPHS350HE44FD14",
+        "4TEHS200PE44FC24",
+        "4WPHS030HE28FC13",
+        "4TEHS250PE44AC42",
+        "4WPHS300PE50AE15",
+        "4WPHS300HE44FD15",
+        "4TEHS350PE44AC25",
+        "4TEHS150PE44FC24",
+        "4TEHS300PE44AD13",
+        "4WPHS450PE50FE13",
+        "4TEHS025PE28AB25",
+        "4WPHS020HE25FA14",
+        "4TEHS025HE28FA14",
+        "4TEHS200HE44FC25",
+        "4WPHS300PE44AC13",
+        "4TEHS250PE44AD13",
+        "4WPHS350PE50FD24",
+        "4WPHS300HE50FE42",
+        "4TEHS010PE21AA13",
+        "4WPHS350PE44FC24",
+        "4WPHS030HE28FC14",
+        "4TEHS250HE44FD42",
+        "4WPHS150PE44AD46",
+        "4TEHS030PE28FB23",
+        "4TEHS150PE44AC23",
+        "4WPHS300PE50FD23",
+        "4TEHS025HE28FB14",
+        "4TEHS350HE44FD23",
+        "4WPHS015HE25FA42",
+        "4WPHS300HE50FE14",
+        "4WPHS075HE36FC42",
+        "4WPHS350PE44FD25",
+        "4TEHS125PE40AC14",
+        "4TEHS7.5PE21FA14",
+        "4WPHS400PE50FD14",
+        "4WPHS300PE44AC14",
+        "4TEHS250PE44FD23",
+        "4WPHS250HE44FD24",
+        "4TEHS010PE21FA15",
+        "4WPHS050PE32FB42",
+        "4TEHS300PE44FD23",
+        "4TEHS150HE44FC15",
+        "4WPHS200HE44FD25",
+        "4TEHS040PE32FC42",
+        "4WPHS075HE36FC24",
+        "4WPHS250HE44FC25",
+        "4TEHS025HE28FA42",
+        "4TEHS025PE28FC15",
+        "4WPHS100HE40FC15",
+        "4WPHS050PE32AB13",
+        "4WPHS030PE28FC25",
+        "4WPHS350HE50FD24",
+        "4WPHS125PE40AC42",
+        "4TEHS350HE44FC15",
+        "4TEHS200HE44FC23",
+        "4TEHS250PE44FC46",
+        "4WPHS300PE44FC24",
+        "4TEHS100HE40FC15",
+        "4TEHS300PE44FD25",
+        "4WPHS150PE44FD46",
+        "4TEHS015PE25FA23",
+        "4TEHS020PE25FC13",
+        "4WPHS050HE32FC14",
+        "4WPHS040PE32FC15",
+        "4TEHS100PE40AC15",
+        "4WPHS300PE44FC13",
+        "4TEHS060HE36FC15",
+        "4WPHS450HE50FD42",
+        "4TEHS7.5PE21AA25",
+        "4TEHS100PE40FC24",
+        "4WPHS020PE25AA15",
+        "4WPHS400HE50FD42",
+        "4TEHS020PE25FB14",
+        "4TEHS025PE28FC25",
+        "4TEHS060PE36AC24",
+        "4WPHS150HE44FC15",
+        "4WPHS050PE32FB13",
+        "4TEHS025PE28AB15",
+        "4TEHS025PE28FC42",
+        "4WPHS020PE25FA23",
+        "4TEHS075PE36FC25",
+        "4TEHS025PE28AC15",
+        "4WPHS300PE50FD25",
+        "4TEHS030HE28FC24",
+        "4WPHS350PE44FD24",
+        "4WPHS050PE32FC13",
+        "4TEHS050PE32AC25",
+        "4WPHS150HE44FD46",
+        "4TEHS020PE25AB14",
+        "4WPHS400HE50FE24",
+        "4TEHS150HE44FD24",
+        "4WPHS050PE32FB23",
+        "4TEHS150HE44FC23",
+        "4WPHS350PE50AD15",
+        "4TEHS075PE36FC13",
+        "4WPHS150PE44AC25",
+        "4WPHS075PE36AC23",
+        "4WPHS500PE50FE15",
+        "4WPHS020PE25FB42",
+        "4WPHS200HE44FC24",
+        "4WPHS020HE25FB14",
+        "4WPHS060PE36AC15",
+        "4WPHS030HE28FB13",
+        "4WPHS040HE32FC15",
+        "4TEHS125PE40AC25",
+        "4WPHS300HE50FE24",
+        "4TEHS150HE44FD13",
+        "4TEHS350PE44AC24",
+        "4TEHS015PE25AC13",
+        "4WPHS075HE36FC23",
+        "4WPHS015PE25AB14",
+        "4TEHS030PE28FC42",
+        "4TEHS200PE44FD46",
+        "4WPHS300HE44FC25",
+        "4WPHS030PE28FB23",
+        "4WPHS100HE40FC14",
+        "4WPHS450HE50FE25",
+        "4WPHS450HE50FE13",
+        "4WPHS040HE32FC46",
+        "4WPHS200PE44FC46",
+        "4WPHS200PE44AC13",
+        "4TEHS200HE44FD46",
+        "4TEHS060PE36AC25",
+        "4TEHS150PE44AC24",
+        "4TEHS060PE36AC46",
+        "4TEHS030PE28FC14",
+        "4WPHS150PE44FD13",
+        "4WPHS500HE50FE46",
+        "4WPHS300PE50AE13",
+        "4TEHS200PE44AD42",
+        "4TEHS075PE36FC42",
+        "4WPHS100PE40AC23",
+        "4WPHS300PE50AE25",
+        "4TEHS300HE44FC15",
+        "4WPHS250PE44AC42",
+        "4TEHS010PE21AA42",
+        "4TEHS300PE44FC13",
+        "4TEHS075HE36FC13",
+        "4WPHS050PE32AC15",
+        "4WPHS015PE25AC13",
+        "4TEHS300HE44FD25",
+        "4WPHS025PE28FA15",
+        "4TEHS350PE44FD25",
+        "4TEHS020HE25FA15",
+        "4WPHS100HE40FC42",
+        "4TEHS200HE44FD13",
+        "4TEHS250HE44FC46",
+        "4WPHS030PE28AB13",
+        "4WPHS030HE28FC25",
+        "4TEHS075HE36FC23",
+        "4WPHS020PE25FC15",
+        "4WPHS300HE50FD23",
+        "4TEHS020PE25AA15",
+        "4WPHS040PE32AB14",
+        "4WPHS020PE25FB24",
+        "4WPHS025HE28FB14",
+        "4WPHS150PE44FC42",
+        "4TEHS015PE25FC14",
+        "4WPHS300HE44FC13",
+        "4TEHS100PE40AC13",
+        "4WPHS020PE25FC25",
+        "4TEHS125PE40AC13",
+        "4WPHS015PE25AA25",
+        "4TEHS025PE28AA14",
+        "4TEHS030HE28FA15",
+        "4WPHS030PE28FC23",
+        "4TEHS025PE28AA42",
+        "4TEHS020PE25FA23",
+        "4TEHS050PE32FC46",
+        "4TEHS300HE44FC46",
+        "4WPHS125PE40FC25",
+        "4WPHS025PE28AA24",
+        "4WPHS030PE28AA25",
+        "4WPHS450PE50AE25",
+        "4WPHS350HE44FC42",
+        "4TEHS030HE28FA25",
+        "4WPHS500PE50FD46",
+        "4TEHS025PE28AC42",
+        "4TEHS030PE28FB14",
+        "4TEHS025HE28FB24",
+        "4WPHS250PE44FC24",
+        "4WPHS125PE40AC25",
+        "4WPHS350PE50AE46",
+        "4WPHS025HE28FC23",
+        "4TEHS200PE44FC15",
+        "4WPHS250PE44FD25",
+        "4TEHS030HE28FA14",
+        "4WPHS500PE50FE24",
+        "4WPHS100HE40FC13",
+        "4WPHS100PE40FC25",
+        "4WPHS350PE50FE14",
+        "4WPHS040PE32AC23",
+        "4WPHS040PE32AC25",
+        "4TEHS025HE28FC15",
+        "4WPHS400HE50FD23",
+        "4TEHS100HE40FC14",
+        "4WPHS020PE25FB13",
+        "4TEHS015HE25FB23",
+        "4WPHS300PE50AE14",
+        "4WPHS020PE25AC24",
+        "4TEHS150HE44FC24",
+        "4TEHS250HE44FD13",
+        "4WPHS350PE44FD14",
+        "4TEHS050PE32AC46",
+        "4WPHS300PE44FC15",
+        "4WPHS100PE40FC24",
+        "4TEHS025PE28FB24",
+        "4TEHS030PE28AB24",
+        "4WPHS450PE50FE15",
+        "4WPHS100PE40AC14",
+        "4WPHS350HE50FD14",
+        "4WPHS060PE36FC42",
+        "4TEHS030PE28FC24",
+        "4WPHS300PE44AD46",
+        "4WPHS025HE28FB25",
+        "4WPHS350PE44FD42",
+        "4TEHS350PE44AD46",
+        "4WPHS300PE44FD23",
+        "4WPHS200HE44FD15",
+        "4TEHS250PE44FD42",
+        "4WPHS020PE25AC25",
+        "4WPHS200HE44FC15",
+        "4WPHS300PE44AC42",
+        "4WPHS060HE36FC42",
+        "4WPHS350PE50AE24",
+        "4WPHS020PE25FA42",
+        "4WPHS350PE50FD46",
+        "4WPHS060PE36AC24",
+        "4WPHS050PE32AC14",
+        "4WPHS100PE40FC13",
+        "4TEHS015PE25AC14",
+        "4TEHS030PE28AB13",
+        "4WPHS300HE50FD14",
+        "4WPHS020HE25FB13",
+        "4WPHS015PE25AC14",
+        "4WPHS060HE36FC23",
+        "4WPHS040PE32FC25",
+        "4WPHS450PE50FD46",
+        "4WPHS030PE28AC13",
+        "4TEHS350PE44AD13",
+        "4WPHS020HE25FA42",
+        "4TEHS250PE44AD23",
+        "4WPHS030HE28FA15",
+        "4WPHS300PE44AD24",
+        "4WPHS050PE32AC23",
+        "4TEHS7.5PE21AA14",
+        "4WPHS350HE50FD23",
+        "4WPHS450PE50FD24",
+        "4TEHS040PE32FC24",
+        "4WPHS020PE25FA24",
+        "4TEHS025PE28FB15",
+        "4WPHS400PE50FE42",
+        "4WPHS150PE44AC23",
+        "4TEHS050PE32FC15",
+        "4WPHS350PE50FE15",
+        "4WPHS150HE44FC13",
+        "4WPHS040PE32FC14",
+        "4TEHS150PE44FC15",
+        "4TEHS020PE25FB24",
+        "4WPHS020PE25FB14",
+        "4WPHS025PE28AB25",
+        "4WPHS020HE25FC25",
+        "4WPHS015PE25AA23",
+        "4WPHS025PE28AB13",
+        "4WPHS015PE25FB13",
+        "4WPHS020PE25AB15",
+        "4TEHS200PE44AC25",
+        "4WPHS020PE25FA14",
+        "4WPHS030PE28AB14",
+        "4WPHS400HE50FE23",
+        "4TEHS050PE32AC15",
+        "4WPHS075PE36FC23",
+        "4TEHS010PE21FA24",
+        "4WPHS040PE32AC46",
+        "4WPHS400PE50FD23",
+        "4TEHS250PE44AC46",
+        "4TEHS250PE44AD25",
+        "4WPHS150HE44FC24",
+        "4WPHS025HE28FC25",
+        "4TEHS015HE25FB13",
+        "4WPHS500HE50FD42",
+        "4WPHS150PE44AD23",
+        "4WPHS020PE25FA25",
+        "4WPHS400PE50FE15",
+        "4WPHS025HE28FB23",
+        "4WPHS030PE28FB24",
+        "4TEHS025PE28FA15",
+        "4TEHS025PE28AA24",
+        "4TEHS200HE44FC14",
+        "4WPHS250HE44FD13",
+        "4TEHS200PE44AC23",
+        "4TEHS075PE36FC46",
+        "4WPHS150PE44AC24",
+        "4WPHS200PE44AD46",
+        "4WPHS450PE50AE14",
+        "4TEHS020PE25FB42",
+        "4WPHS015PE25AA42",
+        "4WPHS060PE36FC15",
+        "4WPHS030PE28FC24",
+        "4WPHS250PE44AC14",
+        "4WPHS300PE44FD42",
+        "4WPHS150PE44AD24",
+        "4WPHS150HE44FD24",
+        "4TEHS200PE44FC46",
+        "4WPHS150HE44FD13",
+        "4TEHS200PE44FD14",
+        "4WPHS250PE44AD23",
+        "4TEHS030HE28FB13",
+        "4TEHS200PE44AC14",
+        "4WPHS250PE44AD24",
+        "4TEHS350HE44FC13",
+        "4WPHS100PE40AC15",
+        "4TEHS025PE28FB25",
+        "4TEHS040PE32AC46",
+        "4WPHS300PE50FE25",
+        "4WPHS025PE28AA15",
+        "4TEHS010HE21FA24",
+        "4WPHS250PE44FC15",
+        "4WPHS020PE25AA23",
+        "4TEHS300HE44FC13",
+        "4WPHS025PE28FB14",
+        "4WPHS020HE25FC15",
+        "4TEHS100PE40AC24",
+        "4TEHS020PE25AB24",
+        "4WPHS350PE44FD46",
+        "4TEHS100PE40AC14",
+        "4TEHS020PE25FA42",
+        "4TEHS020PE25FC14",
+        "4TEHS040HE32FC13",
+        "4TEHS025PE28FA13",
+        "4TEHS150HE44FD42",
+        "4WPHS500PE50AE46",
+        "4WPHS200HE44FD14",
+        "4TEHS010HE21FA13",
+        "4TEHS020HE25FA23",
+        "4WPHS060PE36AC23",
+        "4WPHS400HE50FD24",
+        "4WPHS350PE50AE13",
+        "4TEHS7.5PE21FA25",
+        "4WPHS060PE36FC24",
+        "4WPHS015HE25FB23",
+        "4WPHS350HE44FD24",
+        "4WPHS300PE44FD25",
+        "4WPHS300PE44FD15",
+        "4WPHS075PE36FC42",
+        "4TEHS7.5PE21FA23",
+        "4WPHS150PE44FC15",
+        "4TEHS300HE44FC23",
+        "4WPHS125HE40FC14",
+        "4TEHS030PE28AA42",
+        "4WPHS150PE44AC42",
+        "4WPHS250PE44FD46",
+        "4WPHS200PE44FD24",
+        "4TEHS030PE28AC42",
+        "4TEHS200PE44FC42",
+        "4TEHS300PE44FD46",
+        "4TEHS350HE44FD13",
+        "4TEHS125PE40FC46",
+        "4TEHS060PE36FC25",
+        "4WPHS300PE44FC25",
+        "4WPHS200PE44FC13",
+        "4TEHS100HE40FC42",
+        "4WPHS015HE25FC13",
+        "4WPHS015PE25FA42",
+        "4WPHS350PE44FC42",
+        "4WPHS300PE44FC46",
+        "4WPHS500PE50AE14",
+        "4WPHS350HE44FC13",
+        "4TEHS015PE25FC42",
+        "4WPHS040PE32AB46",
+        "4WPHS025HE28FA15",
+        "4WPHS100PE40AC25",
+        "4TEHS010PE21FA13",
+        "4WPHS150HE44FC23",
+        "4WPHS020PE25AC15",
+        "4WPHS025PE28FC14",
+        "4WPHS125PE40FC14",
+        "4WPHS350HE50FE46",
+        "4WPHS100PE40AC42",
+        "4WPHS300PE50FD42",
+        "4WPHS400PE50FD13",
+        "4WPHS250PE44AD42",
+        "4WPHS125PE40FC46",
+        "4WPHS015HE25FC23",
+        "4WPHS150HE44FD25",
+        "4WPHS250HE44FD42",
+        "4TEHS010PE21AA23",
+        "4TEHS030HE28FC25",
+        "4WPHS025PE28FC24",
+        "4WPHS025HE28FA42",
+        "4TEHS020PE25AB42",
+        "4WPHS050PE32FC24",
+        "4WPHS050PE32AC13",
+        "4TEHS020PE25FB15",
+        "4WPHS030HE28FB25",
+        "4WPHS040PE32AC42",
+        "4WPHS050PE32AC46",
+        "4TEHS100HE40FC13",
+        "4WPHS025PE28FB42",
+        "4TEHS015PE25AB13",
+        "4WPHS450PE50AE24",
+        "4WPHS020PE25AB23",
+        "4WPHS015HE25FA15",
+        "4WPHS020PE25AB14",
+        "4TEHS015HE25FC42",
+        "4TEHS350PE44AC14",
+        "4TEHS7.5HE21FA23",
+        "4TEHS100PE40FC13",
+        "4TEHS075PE36FC14",
+        "4WPHS015HE25FA13",
+        "4TEHS150PE44AD14",
+        "4WPHS015HE25FB25",
+        "4TEHS025HE28FA23",
+        "4TEHS300PE44AD23",
+        "4TEHS350PE44AD14",
+        "4TEHS300HE44FD42",
+        "4WPHS200PE44FD25",
+        "4TEHS300HE44FD24",
+        "4WPHS400PE50AE24",
+        "4WPHS200PE44FD42",
+        "4TEHS350PE44FD14",
+        "4WPHS040PE32FB25",
+        "4WPHS030HE28FB14",
+        "4TEHS250PE44FC25",
+        "4WPHS050HE32FB42",
+        "4TEHS075PE36AC13",
+        "4WPHS500PE50AE25",
+        "4TEHS300PE44FD24",
+        "4WPHS030HE28FB23",
+        "4TEHS020PE25FB13",
+        "4WPHS025PE28AA14",
+        "4TEHS350PE44AD25",
+        "4TEHS020PE25FA15",
+        "4WPHS350PE50FE42",
+        "4WPHS030PE28FA14",
+        "4TEHS020PE25AA14",
+        "4TEHS010PE21AA14",
+        "4TEHS200PE44AD25",
+        "4WPHS030PE28AB25",
+        "4WPHS200HE44FC25",
+        "4TEHS250PE44AC24",
+        "4WPHS100PE40AC24",
+        "4WPHS020HE25FA24",
+        "4WPHS020PE25FC42",
+        "4WPHS300HE50FE46",
+        "4WPHS125PE40FC13",
+        "4TEHS7.5HE21FA24",
+        "4WPHS030PE28AC15",
+        "4WPHS250PE44FC23",
+        "4TEHS015PE25FA14",
+        "4TEHS300PE44AC14",
+        "4TEHS015HE25FA25",
+        "4WPHS150PE44FC25",
+        "4TEHS020PE25FC24",
+        "4WPHS025HE28FB24",
+        "4TEHS150PE44AD15",
+        "4TEHS020PE25AA42",
+        "4WPHS075HE36FC14",
+        "4TEHS030HE28FA23",
+        "4WPHS040PE32AB13",
+        "4WPHS350HE50FE13",
+        "4WPHS025PE28FA25",
+        "4WPHS075PE36AC14",
+        "4TEHS060PE36FC24",
+        "4WPHS015PE25FB42",
+        "4TEHS015HE25FC23",
+        "4WPHS300PE50AE24",
+        "4WPHS150PE44FD14",
+        "4TEHS030HE28FA24",
+        "4WPHS060PE36FC46",
+        "4WPHS200PE44FC25",
+        "4TEHS010HE21FA42",
+        "4WPHS025HE28FC42",
+        "4TEHS200PE44FD25",
+        "4TEHS250HE44FD25",
+        "4TEHS250HE44FD14",
+        "4TEHS300PE44FC24",
+        "4TEHS125PE40FC42",
+        "4TEHS030HE28FC14",
+        "4WPHS450HE50FE23",
+        "4WPHS030PE28AC23",
+        "4WPHS300HE50FD13",
+        "4WPHS015HE25FA24",
+        "4WPHS050PE32AC25",
+        "4TEHS015PE25FB24",
+        "4TEHS040PE32FC15",
+        "4TEHS075PE36FC23",
+        "4WPHS450HE50FD15",
+        "4WPHS250HE44FD14",
+        "4TEHS150PE44AC14",
+        "4WPHS100HE40FC24",
+        "4WPHS030HE28FB15",
+        "4TEHS040HE32FC46",
+        "4WPHS200HE44FC13",
+        "4WPHS300HE44FD14",
+        "4WPHS350PE50AD24",
+        "4WPHS350HE44FC15",
+        "4TEHS125PE40AC42",
+        "4TEHS060HE36FC24",
+        "4WPHS250PE44FD42",
+        "4TEHS150HE44FD46",
+        "4TEHS020PE25AB25",
+        "4TEHS030HE28FA42",
+        "4WPHS050PE32FC15",
+        "4TEHS015PE25AC24",
+        "4TEHS250PE44AC25",
+        "4TEHS350HE44FC25",
+        "4TEHS100PE40FC14",
+        "4WPHS020HE25FC23",
+        "4WPHS020PE25FC14",
+        "4TEHS015HE25FC24",
+        "4TEHS250PE44AD46",
+        "4TEHS125PE40FC15",
+        "4TEHS100HE40FC25",
+        "4TEHS7.5HE21FA15",
+        "4TEHS050PE32AC23",
+        "4TEHS040PE32AC13",
+        "4TEHS030PE28FC23",
+        "4TEHS250PE44FC42",
+        "4WPHS020PE25FC23",
+        "4WPHS015PE25AB42",
+        "4TEHS025PE28AB13",
+        "4TEHS020PE25AB15",
+        "4WPHS125HE40FC13",
+        "4WPHS015PE25AA24",
+        "4TEHS010HE21FA23",
+        "4TEHS015PE25FA42",
+        "4TEHS060HE36FC42",
+        "4WPHS050HE32FC13",
+        "4TEHS350PE44AC15",
+        "4WPHS015PE25AA15",
+        "4TEHS015PE25AA25",
+        "4WPHS015PE25FC13",
+        "4WPHS060HE36FC15",
+        "4TEHS250PE44AC14",
+        "4WPHS050PE32AB24",
+        "4WPHS025PE28FB15",
+        "4TEHS250PE44AC15",
+        "4TEHS030HE28FB23",
+        "2WPHS125PE40AC46",
+        "4WPHS400HE50FD46",
+        "4WPHS125PE40AC15",
+        "4TEHS300PE44FC15",
+        "4TEHS075PE36AC15",
+        "4WPHS030HE28FA14",
+        "4WPHS050PE32FC14",
+        "4WPHS150PE44AD25",
+        "4TEHS300PE44FC23",
+        "4WPHS020HE25FC42",
+        "4TEHS200HE44FC24",
+        "4WPHS075HE36FC25",
+        "4WPHS500PE50FE46",
+        "4WPHS350PE50AD25",
+        "4WPHS350HE44FC14",
+        "4TEHS015PE25FC24",
+        "4TEHS025HE28FA24",
+        "4WPHS350PE44FC13",
+        "4TEHS300PE44AC23",
+        "4WPHS030HE28FC23",
+        "4TEHS075PE36AC25",
+        "4TEHS040PE32FC23",
+        "4WPHS040PE32FB14",
+        "4TEHS150PE44FC23",
+        "4TEHS015PE25AB42",
+        "4WPHS125PE40FC24",
+        "4WPHS075PE36FC13",
+        "4WPHS450PE50FD42",
+        "4WPHS500PE50AE15",
+        "4TEHS075PE36FC15",
+        "4WPHS300PE50FD14",
+        "4WPHS125PE40AC24",
+        "4WPHS500HE50FD25",
+        "4TEHS250PE44FD46",
+        "4WPHS300PE50AE23",
+        "4TEHS300HE44FD46",
+        "4TEHS200PE44FD13",
+        "4WPHS050PE32AC24",
+        "V58-0000-0001",
+        "4WPHS200HE44FC46",
+        "4TEHS030HE28FC15",
+        "4TEHS350HE44FC24",
+        "4TEHS150PE44FC46",
+        "4WPHS015HE25FC25",
+        "4TEHS015PE25AA24",
+        "4TEHS250PE44FC13",
+        "4WPHS200HE44FD46",
+        "4TEHS300HE44FD13",
+        "4WPHS025PE28FA23",
+        "4TEHS150HE44FD15",
+        "4WPHS050PE32AB42",
+        "4TEHS200PE44FC25",
+        "4WPHS300PE44FC14",
+        "4TEHS030HE28FC23",
+        "4WPHS250PE44FD24",
+        "4TEHS025HE28FC13",
+        "4WPHS025HE28FA13",
+        "4WPHS075PE36FC25",
+        "4TEHS030PE28AA23",
+        "4WPHS030PE28FB42",
+        "4WPHS020PE25AC23",
+        "4WPHS400PE50FE14",
+        "4WPHS150PE44FD25",
+        "4TEHS7.5PE21FA24",
+        "4TEHS015PE25FB13",
+        "4TEHS015HE25FA14",
+        "4TEHS300PE44AD14",
+        "4WPHS015PE25AC23",
+        "4WPHS075PE36AC25",
+        "4WPHS030PE28AA42",
+        "4WPHS450PE50AE23",
+        "4TEHS015PE25AA42",
+        "4TEHS020PE25FB23",
+        "4WPHS200PE44AC46",
+        "4WPHS400HE50FD25",
+        "4WPHS350PE44FC15",
+        "4WPHS100HE40FC25",
+        "4TEHS125PE40AC15",
+        "4WPHS450HE50FD14",
+        "4WPHS250PE44FD13",
+        "4WPHS450PE50FE24",
+        "4WPHS050PE32AB23",
+        "4TEHS060HE36FC14",
+        "4TEHS350PE44AC13",
+        "4TEHS300PE44FD15",
+        "4TEHS020PE25AC15",
+        "4TEHS015PE25AA14",
+        "4WPHS500HE50FE24",
+        "4WPHS450PE50AE13",
+        "4TEHS200PE44FC23",
+        "4TEHS350PE44FD24",
+        "4WPHS200PE44AC24",
+        "4TEHS200PE44AD13",
+        "4TEHS030HE28FB25",
+        "4TEHS020PE25AC14",
+        "4WPHS500HE50FD14",
+        "4TEHS150PE44AC46",
+        "4WPHS025HE28FB13",
+        "4TEHS020PE25FC23",
+        "4WPHS060HE36FC13",
+        "4TEHS300PE44AD42",
+        "4WPHS200PE44AD23",
+        "4WPHS300PE44AC23",
+        "4WPHS030PE28FB14",
+        "4WPHS300HE44FC15",
+        "4WPHS450HE50FD13",
+        "4TEHS350PE44FC25",
+        "4WPHS300PE44AC46",
+        "4TEHS125PE40AC46",
+        "4TEHS300PE44FC42",
+        "4WPHS015PE25FC15",
+        "4WPHS030PE28AC24",
+        "4WPHS015PE25FB23",
+        "4TEHS250PE44AC13",
+        "4TEHS075HE36FC15",
+        "4WPHS300PE44AC25",
+        "4TEHS015HE25FC14",
+        "4WPHS015PE25FA15",
+        "4TEHS300PE44FC46",
+        "4WPHS400PE50AE13",
+        "4TEHS030HE28FB24",
+        "4TEHS250HE44FD15",
+        "4WPHS060HE36FC46",
+        "4WPHS125HE40FC15",
+        "4WPHS250PE44AC46",
+        "4WPHS025PE28AC23",
+        "4TEHS015HE25FB25",
+        "4TEHS025PE28AC25",
+        "4TEHS7.5HE21FA13",
+        "4WPHS200HE44FD42",
+        "4WPHS030PE28AA15",
+        "4TEHS350HE44FC46",
+        "4WPHS200PE44AD15",
+        "4TEHS050HE32FC25",
+        "4WPHS300HE44FD24",
+        "4TEHS025HE28FB42",
+        "4WPHS200PE44AC25",
+        "4WPHS100PE40FC15",
+        "4TEHS030HE28FA13",
+        "4TEHS015PE25FC25",
+        "4WPHS015PE25FA23",
+        "4TEHS030PE28FA25",
+        "4WPHS020PE25AA25",
+        "4TEHS250PE44FD13",
+        "4WPHS060PE36AC25",
+        "4WPHS020HE25FB25",
+        "4TEHS030PE28AB14",
+        "4TEHS025PE28FA25",
+        "4TEHS040HE32FC15",
+        "4TEHS200HE44FD24",
+        "4TEHS250PE44AD14",
+        "4TEHS020HE25FB23",
+        "4WPHS015PE25FA13",
+        "4TEHS060HE36FC13",
+        "4TEHS030PE28FA13",
+        "4TEHS025HE28FB23",
+        "4WPHS300HE44FD13",
+        "4WPHS040PE32AC24",
+        "4TEHS200PE44AC15",
+        "4WPHS500PE50FE13",
+        "4WPHS050HE32FB15",
+        "4WPHS075PE36FC24",
+        "4TEHS350PE44FC42",
+        "4WPHS400HE50FE46",
+        "4WPHS300PE44AC15",
+        "4WPHS050HE32FC23",
+        "4WPHS040PE32AC13",
+        "4TEHS7.5HE21FA42",
+        "4WPHS150HE44FC25",
+        "4TEHS040PE32AC25",
+        "4TEHS040HE32FC14",
+        "4TEHS030PE28FB15",
+        "4TEHS030PE28FA23",
+        "4WPHS150PE44AD13",
+        "4TEHS025PE28AB24",
+        "4TEHS050PE32AC13",
+        "4TEHS030PE28AB42",
+        "4TEHS300HE44FC25",
+        "4WPHS450PE50FD23",
+        "4WPHS350HE50FD46",
+        "4WPHS025PE28FA42",
+        "4WPHS075PE36FC46",
+        "4WPHS500PE50FD24",
+        "4WPHS500HE50FE42",
+        "4TEHS030PE28AA13",
+        "4TEHS010HE21FA14",
+        "4WPHS040PE32FC13",
+        "4WPHS100HE40FC46",
+        "4WPHS050PE32FC25",
+        "4WPHS015PE25FA14",
+        "4WPHS050HE32FC15",
+        "4TEHS125PE40FC24",
+        "4WPHS200HE44FC14",
+        "4TEHS050HE32FC14",
+        "4WPHS040PE32FC24",
+        "4TEHS020PE25FB25",
+        "4WPHS025PE28AA42",
+        "4WPHS350HE44FC24",
+        "4WPHS250PE44AC25",
+        "4WPHS300HE50FD24",
+        "4TEHS100HE40FC23",
+        "4TEHS250HE44FC15",
+        "4WPHS040PE32FB23",
+        "4WPHS025PE28AC24",
+        "4TEHS350PE44FC23",
+        "4TEHS075PE36AC46",
+        "4TEHS150HE44FD23",
+        "4WPHS025HE28FC15",
+        "4WPHS300PE50FE24",
+        "4WPHS500PE50FD15",
+        "4WPHS025PE28AC14",
+        "4TEHS020HE25FA24",
+        "4WPHS150HE44FC42",
+        "4TEHS125HE40FC42",
+        "4WPHS300PE50FD24",
+        "4TEHS7.5PE21AA42",
+        "4TEHS025PE28FB13",
+        "4TEHS025HE28FA25",
+        "4WPHS020PE25AA42",
+        "2WPHS075PE36AC46",
+        "4WPHS150PE44AC46",
+        "4WPHS020PE25AA13",
+        "4TEHS020PE25FA14",
+        "4TEHS015PE25AA15",
+        "4TEHS300PE44AD46",
+        "4WPHS030PE28FC14",
+        "4WPHS030PE28FB13",
+        "4WPHS450HE50FE24",
+        "4WPHS350HE44FD23",
+        "4WPHS025HE28FC13",
+        "4WPHS040HE32FC14",
+        "4WPHS050HE32FB14",
+        "4TEHS075HE36FC24",
+        "4WPHS250HE44FC24",
+        "4WPHS300PE50FE23",
+        "4TEHS150PE44AC15",
+        "4WPHS450PE50FE25",
+        "4WPHS350PE50FE13",
+        "4TEHS020HE25FC23",
+        "4WPHS030PE28AA24",
+        "4WPHS300PE44AC24",
+        "4WPHS050HE32FC24",
+        "4WPHS050PE32FB15",
+        "4TEHS015PE25AC25",
+        "4WPHS400PE50FD24",
+        "4WPHS125HE40FC46",
+        "4WPHS030HE28FB24",
+        "4TEHS125PE40AC23",
+        "4WPHS020PE25FB25",
+        "4WPHS060PE36AC14",
+        "4WPHS350PE50FE46",
+        "4TEHS015PE25AB14",
+        "4WPHS015HE25FC15",
+        "4TEHS200PE44FC14",
+        "4TEHS025HE28FC23",
+        "4WPHS200PE44FD13",
+        "4WPHS030HE28FA23",
+        "4WPHS200PE44AD25",
+        "4TEHS025HE28FA15",
+        "4WPHS125HE40FC25",
+        "4WPHS100PE40FC14",
+        "4TEHS015PE25FB25",
+        "4WPHS150PE44FC46",
+        "4WPHS015PE25FB25",
+        "4TEHS350PE44FC13",
+        "4WPHS400PE50AE25",
+        "4TEHS020PE25FA13",
+        "4TEHS300PE44AC24",
+        "4WPHS500PE50AE13",
+        "4TEHS200PE44FC13",
+        "4WPHS100HE40FC23",
+        "4TEHS020HE25FA13",
+        "4TEHS040PE32FC13",
+        "4TEHS030PE28FA24",
+        "4WPHS250PE44AD46",
+        "4WPHS100PE40FC46",
+        "4WPHS350PE50AD13",
+        "4TEHS025PE28AC13",
+        "4TEHS300PE44AC15",
+        "4TEHS200PE44AC13",
+        "4WPHS300PE50AD13",
+        "4TEHS250HE44FC24",
+        "4TEHS025PE28FA24",
+        "4WPHS250PE44AC13",
+        "4WPHS300PE44AD15",
+        "4TEHS030PE28AC13",
+        "4WPHS040PE32AC14",
+        "4TEHS020PE25FC15",
+        "4WPHS050PE32FC46",
+        "4WPHS350HE44FC23",
+        "4WPHS125HE40FC42",
+        "4TEHS300PE44FC25",
+        "4WPHS150HE44FC14",
+        "4TEHS030PE28AB15",
+        "4WPHS015PE25AB23",
+        "4WPHS200PE44FC14",
+        "4WPHS350PE50AE14",
+        "4TEHS050HE32FC13",
+        "4TEHS010PE21FA25",
+        "4WPHS300PE44FD14",
+        "4WPHS450PE50FE23",
+        "4WPHS025PE28FC42",
+        "4WPHS300PE44FD24",
+        "4WPHS075HE36FC15",
+        "4TEHS300PE44AC13",
+        "4TEHS200HE44FD23",
+        "4TEHS250PE44AD24",
+        "4WPHS050PE32FC23",
+        "4TEHS300HE44FC42",
+        "4WPHS015HE25FB15",
+        "4WPHS350HE44FD15",
+        "4TEHS010HE21FA15",
+        "4TEHS350HE44FD46",
+        "4TEHS150PE44FC25",
+        "4WPHS500HE50FE15",
+        "4WPHS125PE40AC13",
+        "4WPHS500HE50FD23",
+        "4WPHS075PE36AC46",
+        "4TEHS050PE32AC42",
+        "4WPHS125HE40FC24",
+        "4WPHS350PE50FD25",
+        "4TEHS050HE32FC23",
+        "4WPHS015HE25FA25",
+        "4WPHS300PE44AD14",
+        "4WPHS075PE36AC24",
+        "4WPHS300PE50AD15",
+        "4TEHS030HE28FB14",
+        "4TEHS200HE44FC46",
+        "4WPHS015PE25AA14",
+        "4WPHS400PE50AE46",
+        "4WPHS300PE50FE15",
+        "4WPHS050HE32FB46",
+        "4WPHS200PE44AC15",
+        "4TEHS040PE32AC15",
+        "4WPHS040PE32FC23",
+        "4TEHS020PE25FA24",
+        "4TEHS020PE25AC24",
+        "4WPHS040HE32FC42",
+        "4TEHS020PE25FA25",
+        "4WPHS400PE50FE46",
+        "4TEHS025PE28AC24",
+        "4TEHS150PE44FD13",
+        "4TEHS025PE28AB14",
+        "4WPHS450PE50AE46",
+        "4WPHS300HE50FE13",
+        "4WPHS200PE44AC14",
+        "4WPHS030PE28FC15",
+        "4TEHS150PE44AD13",
+        "4WPHS300HE50FD42",
+        "4WPHS015PE25AC15",
+        "4TEHS150PE44FD24",
+        "4TEHS300HE44FC14",
+        "4WPHS400PE50FD46",
+        "4TEHS125HE40FC15",
+        "4TEHS200PE44FD15",
+        "4WPHS250PE44FD15",
+        "4TEHS040HE32FC24",
+        "4TEHS020HE25FA14",
+        "4TEHS300HE44FD14",
+        "4WPHS025HE28FB15",
+        "4TEHS030PE28AB25",
+        "4TEHS015PE25AB24",
+        "4TEHS300PE44AC25",
+        "4WPHS030PE28AB15",
+        "4TEHS7.5HE21FA25",
+        "4WPHS450HE50FE46",
+        "4WPHS350HE50FE42",
+        "4TEHS040PE32FC25",
+        "4WPHS400PE50FE24",
+        "4WPHS500PE50FD23",
+        "4WPHS200PE44AD14",
+        "4TEHS350PE44AD23",
+        "4TEHS030PE28AB23",
+        "4WPHS015PE25FB14",
+        "4TEHS200PE44AD23",
+        "4WPHS200PE44AC42",
+        "4WPHS450PE50FD15",
+        "4WPHS015PE25FA24",
+        "4TEHS040PE32AC14",
+        "4TEHS020HE25FC42",
+        "4TEHS100HE40FC46",
+        "4WPHS020PE25FC24",
+        "4WPHS150PE44AD42",
+        "4WPHS350PE44FC46",
+        "4WPHS150HE44FD14",
+        "4WPHS350HE50FE23",
+        "4WPHS125PE40FC42",
+        "4TEHS7.5PE21FA13",
+        "4WPHS350PE50FE23",
+        "4TEHS060PE36AC15",
+        "4TEHS025HE28FA13",
+        "4WPHS060PE36AC13",
+        "4WPHS025PE28FA13",
+        "4TEHS150PE44AC25",
+        "4WPHS025PE28AC25",
+        "4TEHS250PE44FD24",
+        "4WPHS400HE50FE14",
+        "4TEHS060HE36FC46",
+        "4TEHS020PE25AA24",
+        "4TEHS015HE25FA23",
+        "4WPHS350PE50FD15",
+        "4TEHS010PE21FA23",
+        "4WPHS300PE50AD25",
+        "4TEHS200HE44FD42",
+        "4TEHS020HE25FA42",
+        "4TEHS150HE44FC14",
+        "4WPHS125PE40FC15",
+        "4WPHS350PE44FD13",
+        "4TEHS010PE21FA14",
+        "4TEHS020HE25FB42",
+        "4TEHS060PE36AC42",
+        "4TEHS250HE44FC13",
+        "4WPHS150PE44FC13",
+        "4WPHS450HE50FE15",
+        "4TEHS015HE25FA13",
+        "4WPHS250HE44FC15",
+        "4WPHS040PE32AC15",
+        "4WPHS350HE44FD46",
+        "4TEHS050PE32AC14",
+        "4WPHS030HE28FC15",
+        "4WPHS030PE28AC14",
+        "4WPHS020HE25FC24",
+        "4WPHS040HE32FB25",
+        "4WPHS030PE28AB24",
+        "4WPHS040PE32FB42",
+        "4WPHS040PE32FB13",
+        "4TEHS300PE44AD15",
+        "4WPHS500PE50FE23",
+        "4WPHS300HE50FD25",
+        "4TEHS200HE44FC42",
+        "4WPHS400PE50AE14",
+        "4TEHS020PE25AB13",
+        "4WPHS400PE50FE25",
+        "4WPHS400PE50AE15",
+        "4WPHS030PE28AA23",
+        "4WPHS500HE50FE14",
+        "4WPHS300PE50FE13",
+        "4WPHS400PE50FD25",
+        "4TEHS020HE25FB24",
+        "4TEHS030PE28AC15",
+        "4WPHS040HE32FC24",
+        "4WPHS030PE28FB25",
+        "4WPHS150PE44FC23",
+        "4TEHS200HE44FD15",
+        "4TEHS300PE44FD13",
+        "4WPHS015PE25AC25",
+        "4TEHS150HE44FC46",
+        "4WPHS030PE28AA14",
+        "4TEHS125PE40AC24",
+        "4TEHS075PE36AC24",
+        "4TEHS030PE28FC13",
+        "4WPHS500PE50FE25",
+        "4WPHS040PE32FC46",
+        "4WPHS300PE50FD13",
+        "4WPHS300PE50FD46",
+        "4WPHS025PE28AB23",
+        "4TEHS350HE44FC14",
+        "4TEHS010PE21AA25",
+        "4TEHS200PE44AD46",
+        "4WPHS050PE32FC42",
+        "4TEHS7.5PE21AA13",
+        "4WPHS030HE28FA24",
+        "4WPHS300HE44FD23",
+        "4TEHS150PE44FD42",
+        "4WPHS500HE50FD24",
+        "4WPHS400HE50FD15",
+        "4TEHS250PE44FC24",
+        "4WPHS350PE50FE24",
+        "4WPHS450PE50FE42",
+        "4WPHS020PE25AB13",
+        "4WPHS015HE25FC14",
+        "4WPHS015PE25FC42",
+        "4TEHS150PE44FD14",
+        "4WPHS040HE32FB14",
+        "4WPHS350PE44FD23",
+        "4TEHS015HE25FC25",
+        "4TEHS050PE32FC13",
+        "4WPHS400HE50FE15",
+        "4WPHS200PE44FC42",
+        "4WPHS350HE44FC25",
+        "4TEHS125HE40FC24",
+        "4WPHS015PE25FA25",
+        "4WPHS250PE44AC15",
+        "4WPHS200HE44FC23",
+        "4TEHS100PE40AC46",
+        "4TEHS150PE44AD23",
+        "4WPHS250HE44FD25",
+        "4WPHS400PE50FD42",
+        "4TEHS015PE25AC23",
+        "4WPHS030HE28FC42",
+        "4WPHS020PE25AC42",
+        "4TEHS030PE28FA14",
+        "4WPHS025HE28FA23",
+        "4TEHS025HE28FC24",
+        "4WPHS400HE50FD14",
+        "4WPHS030PE28AC25",
+        "4WP1HS250HP-F",
+        "4TEHS040PE32AC42",
+        "4TEHS350HE44FD25",
+        "4TEHS350PE44FD23",
+        "4TEHS020PE25AC23",
+        "4TEHS050PE32FC23",
+        "4WPHS350HE50FE15",
+        "4WPHS250PE44AD14",
+        "4TEHS300PE44AC46",
+        "4TEHS050PE32FC24",
+        "4TEHS200PE44AC42",
+        "4TEHS025PE28FB23",
+        "4TEHS200HE44FC13",
+        "4WPHS500PE50FE14",
+        "4WPHS030PE28FA42",
+        "4TEHS075HE36FC42",
+        "4WPHS350HE50FE24",
+        "4WPHS040PE32AB24",
+        "4TEHS250PE44FC15",
+        "4WPHS400HE50FE13",
+        "4WPHS300PE50AD14",
+        "4WPHS450HE50FD25",
+        "4TEHS125PE40FC13",
+        "4WPHS025PE28AB15",
+        "4TEHS350PE44AC23",
+        "4WPHS350HE50FE14",
+        "4TEHS015PE25AC15",
+        "4WPHS015PE25AC24",
+        "4TEHS250PE44AD42",
+        "4WPHS350PE50FD13",
+        "4WPHS020HE25FB42",
+        "4WPHS050PE32FB25",
+        "4WPHS450PE50FE46",
+        "4WPHS350HE50FE25",
+        "4WPHS300HE50FD46",
+        "4WPHS020HE25FA15",
+        "4TEHS200PE44FD23",
+        "4WPHS250HE44FC13",
+        "4WPHS050PE32AC42",
+        "4WPHS075HE36FC13",
+        "4WPHS030PE28FC13",
+        "4TEHS020HE25FA25",
+        "4TEHS015PE25AC42",
+        "2WPHS050PE32AC46",
+        "4TEHS150PE44FC13",
+        "4TEHS020HE25FC13",
+        "4WPHS150HE44FD23",
+        "4WPHS100PE40FC23",
+        "4WPHS030PE28AB23",
+        "4WPHS300HE44FD42",
+        "4WPHS015HE25FA14",
+        "4TEHS125PE40FC25",
+        "4TEHS025PE28FC24",
+        "4TEHS350PE44FD42",
+        "4TEHS030PE28FC15",
+        "4TEHS075HE36FC14",
+        "4WPHS350HE44FD42",
+        "4WPHS150PE44AC13",
+        "4TEHS250HE44FC23",
+        "4WPHS200PE44AC23",
+        "4WPHS050PE32AB14",
+        "4TEHS020HE25FB15",
+        "4WPHS500HE50FE13",
+        "4WPHS200PE44FD15",
+        "4WPHS250PE44FD14",
+        "4WPHS025PE28FC23",
+        "4WPHS025PE28FB25",
+        "4WPHS025PE28AB14",
+        "4WPHS015HE25FC42",
+        "4WPHS015HE25FB42",
+        "4WPHS020PE25FA15",
+        "4WPHS250PE44AD13",
+        "4WPHS030HE28FA25",
+        "4TEHS025PE28AB23",
+        "4WPHS025PE28AC15",
+        "4WPHS025PE28FB24",
+        "4TEHS015PE25AB25",
+        "4TEHS060PE36FC42",
+        "4WPHS020PE25AB24",
+        "4WPHS350HE44FD13",
+        "4WPHS350PE50FD14",
+        "4WPHS015PE25AB15",
+        "4WPHS125HE40FC23",
+        "4WPHS350PE50AD46",
+        "4WPHS025PE28AA23",
+        "4WPHS300PE50FE14",
+        "4TEHS015PE25AA23",
+        "4WPHS350HE44FD25",
+        "4TEHS075HE36FC46",
+        "4TEHS200HE44FD14",
+        "4WPHS040HE32FB24",
+        "4TEHS025PE28FA42",
+        "4TEHS050PE32FC25",
+        "4TEHS040PE32AC23",
+        "4TEHS025HE28FB13",
+        "4WPHS300HE50FE15",
+        "4WPHS200HE44FD13",
+        "4WPHS025PE28AB42",
+        "4WPHS060PE36FC13",
+        "4TEHS010PE21AA24",
+        "4TEHS020HE25FB13",
+        "4WPHS250PE44FC46",
+        "4TEHS150PE44FC42",
+        "4TEHS250PE44FD25",
+        "4WPHS350PE50AE25",
+        "4WPHS300PE44FC23",
+        "4WPHS060PE36AC42",
+        "4WPHS150HE44FD15",
+        "4WPHS400PE50FE23",
+        "4TEHS250PE44AC23",
+        "4TEHS050PE32FC14",
+        "4WPHS050HE32FB24",
+        "4TEHS250PE44FD14",
+        "4WPHS030PE28AC42",
+        "4WPHS200PE44FD23",
+        "4WPHS250HE44FC14",
+        "4WPHS300HE44FC14",
+        "4TEHS030PE28FB25",
+        "4WPHS300PE50AD46",
+        "4TEHS300PE44AD24",
+        "4WPHS060HE36FC25",
+        "4WPHS250PE44FC13",
+        "4WPHS150HE44FD42",
+        "4WPHS015PE25FB24",
+        "4WPHS400PE50FE13",
+        "4WPHS020PE25AC14",
+        "4TEHS030PE28FB42",
+        "4WPHS250PE44AC24",
+        "4TEHS020PE25FC25",
+        "4TEHS200HE44FC15",
+        "4WPHS015PE25FC14",
+        "4TEHS025HE28FB15",
+        "4TEHS040HE32FC42",
+        "4TEHS350PE44FC24",
+        "4WPHS100PE40AC13",
+        "4WPHS200PE44AD42",
+        "4TEHS150PE44AD42",
+        "4WPHS030HE28FC24",
+        "4WPHS025HE28FA24",
+        "4WPHS200HE44FD24",
+        "4TEHS025PE28AA25",
+        "4TEHS050PE32FC42",
+        "4WPHS040PE32FC42",
+        "4TEHS060PE36FC46",
+        "4WPHS030PE28FA25",
+        "4WPHS020HE25FA25",
+        "4WPHS250PE44FC25",
+        "4WPHS030PE28FA15",
+        "4WPHS150PE44FD24",
+        "4TEHS100HE40FC24",
+        "4TEHS150PE44FD15",
+        "4WPHS400PE50FD15",
+        "4TEHS030PE28AA25",
+        "4TEHS025PE28FA14",
+        "4TEHS350PE44FD46",
+        "4TEHS025PE28AC23",
+        "4TEHS200PE44AD15",
+        "4TEHS030PE28AC24",
+        "4TEHS7.5PE21AA15",
+        "4WPHS050PE32FB24",
+        "4TEHS200PE44AD14",
+        "4TEHS030HE28FC42",
+        "4TEHS350HE44FD15",
+        "4WPHS150PE44AC14",
+        "4TEHS300HE44FC24",
+        "4WPHS300PE44FD13",
+        "4TEHS025PE28FB42",
+        "4TEHS125HE40FC13",
+        "4WPHS050HE32FB23",
+        "4WPHS350PE50FD42",
+        "4TEHS350PE44AD24",
+        "4WPHS300HE44FD46",
+        "4WPHS125PE40AC14",
+        "4WPHS500HE50FD46",
+        "4TEHS025HE28FC42",
+        "4WPHS015PE25FC25",
+        "4TEHS100PE40AC25",
+        "4TEHS125PE40FC23",
+        "4TEHS025PE28AA23",
+        "4WPHS025PE28AC13",
+        "4WPHS020PE25FA13",
+        "4WPHS040HE32FB15",
+        "4TEHS050HE32FC15",
+        "4WPHS400HE50FD13",
+        "4TEHS050HE32FC46",
+        "4WPHS450HE50FD23",
+        "4WPHS040HE32FC13",
+        "4TEHS150PE44FD25",
+        "4WPHS040HE32FC23",
+        "4WPHS025PE28AA13",
+        "4TEHS020HE25FC25",
+        "4TEHS015HE25FB24",
+        "4TEHS030PE28FB13",
+        "4TEHS7.5PE21FA42",
+        "4WPHS030HE28FA42",
+        "4WPHS350PE50AD23",
+        "4WPHS050PE32AB25",
+        "4TEHS100PE40FC42",
+        "4WPHS025PE28AC42",
+        "4TEHS020HE25FB25",
+        "4WPHS060HE36FC14",
+        "4TEHS010PE21FA42",
+        "4TEHS025PE28AA15",
+        "4WPHS030PE28FA24",
+        "4TEHS040PE32FC14",
+        "4TEHS015PE25AA13",
+        "4WPHS025HE28FC14",
+        "4TEHS7.5PE21AA23",
+        "4TEHS350HE44FD14",
+        "4WPHS020PE25AA14",
+        "4TEHS050HE32FC42",
+        "4WPHS150PE44FC24",
+        "4WPHS300HE50FE23",
+        "4TEHS025HE28FC25",
+        "4TEHS020HE25FC14",
+        "4WPHS075PE36FC15",
+        "4TEHS020PE25AA25",
+        "4TEHS150PE44AD46",
+        "4WPHS050PE32FB14",
+        "4WPHS400HE50FE42",
+        "4TEHS025PE28FA23",
+        "4WPHS075HE36FC46",
+        "4TEHS200PE44AD24",
+        "4TEHS015PE25FB14",
+        "4WPHS300PE44AD23",
+        "4WPHS350PE50AE23",
+        "4WPHS150HE44FC46",
+        "4TEHS200HE44FD25",
+        "4WPHS025PE28AB24",
+        "4WPHS500HE50FD15",
+        "4WPHS250PE44FC42",
+        "4WPHS450PE50FD13",
+        "4WPHS250PE44AC23",
+        "4WPHS300PE50AD24",
+        "4TEHS060PE36AC14",
+        "4WPHS075PE36FC14",
+        "4WPHS300PE50AE46",
+        "4TEHS300PE44AD25",
+        "4WPHS030PE28AB42",
+        "4WPHS040PE32AB15",
+        "4WPHS100PE40FC42",
+        "4WPHS500HE50FE23",
+        "4TEHS150HE44FC42",
+        "4WPHS500HE50FE25",
+        "4WPHS500PE50FD14",
+        "4WPHS150PE44FC14",
+        "4WPHS300PE50AD23",
+        "4WPHS200PE44FC24",
+        "4WPHS025HE28FA25",
+        "4TEHS100PE40AC23",
+        "4TEHS040PE32FC46",
+        "4TEHS150PE44AC13",
+        "4TEHS075PE36AC23",
+        "4TEHS300PE44FD14",
+        "4TEHS100PE40FC25",
+        "4WPHS350PE50AE15",
+        "4WPHS030PE28FA23",
+        "4WPHS450HE50FD24",
+        "4TEHS125PE40FC14",
+        "4WPHS030PE28FA13",
+        "4WPHS400HE50FE25",
+        "4WPHS060PE36FC23",
+        "4WPHS020HE25FC14",
+        "4WPHS350HE50FD15",
+        "4WPHS500PE50AE24",
+        "4WPHS350PE50AD14",
+        "4TEHS350PE44FC14",
+        "4WPHS350PE44FC25",
+        "4WPHS200PE44FC15",
+        "4WPHS250HE44FC23",
+        "4TEHS030PE28AC23"
+    ]
+}
