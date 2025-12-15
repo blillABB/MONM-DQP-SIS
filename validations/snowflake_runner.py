@@ -128,18 +128,44 @@ def _parse_sql_results(
     Parse Snowflake query results into GX-compatible format.
 
     Args:
-        df: DataFrame containing full-width validation rows (source columns + flags)
+        df: DataFrame containing all validation rows from Snowflake
         suite_config: Original suite configuration
 
     Returns:
-        Dictionary with 'results' and 'validated_materials' keys
+        Dictionary with keys:
+        - 'results': list of regular expectation results
+        - 'derived_status_results': list of derived status results (aggregated expectations)
+        - 'validated_materials': list of all validated material numbers (for backward compat)
+        - 'all_validated_materials': list of all validated material numbers (for derived lists)
+        - 'total_validated_count': total count of validated materials
+        - 'full_results_df': DataFrame from Snowflake (all rows)
     """
     if df.empty:
-        return {"results": [], "validated_materials": []}
+        return {
+            "results": [],
+            "derived_status_results": [],
+            "validated_materials": [],
+            "all_validated_materials": [],
+            "total_validated_count": 0,
+            "full_results_df": df,
+        }
 
     # Normalize column names to lowercase for easier access
     df = df.copy()
     df.columns = df.columns.str.lower()
+
+    # Get index column for metadata calculation
+    index_column = (
+        suite_config.get("metadata", {}).get("index_column", "MATERIAL_NUMBER").lower()
+    )
+
+    # Calculate metadata from DataFrame (much faster than SQL ARRAY_AGG)
+    total_validated = 0
+    all_validated_materials = []
+    if index_column in df.columns and not df.empty:
+        # Get all unique materials from DataFrame
+        all_validated_materials = df[index_column].dropna().unique().tolist()
+        total_validated = len(all_validated_materials)
 
     validations = suite_config.get("validations", [])
     derived_statuses = suite_config.get("derived_statuses", [])
@@ -262,29 +288,30 @@ def _parse_sql_results(
     index_column = (
         suite_config.get("metadata", {}).get("index_column", "material_number")
     )
-    validated_materials = []
-    if index_column.lower() in df.columns:
-        validated_materials = (
-            df[index_column.lower()].dropna().unique().tolist()
-        )
 
-    # Build derived status results using the resolver
+    # validated_materials is same as all_validated_materials since we return all rows
+    # Kept for backward compatibility with existing code
+    validated_materials = all_validated_materials
+
+    # Build derived status results using the resolver (kept separate from regular results)
+    derived_status_results = []
     if derived_statuses:
-        results.extend(
-            _build_derived_status_results(
-                resolver,
-                counts_map,
-                failure_rows_map,
-                expectation_context_map,
-                include_failure_details,
-                element_count,
-                index_column,
-            )
+        derived_status_results = _build_derived_status_results(
+            resolver,
+            counts_map,
+            failure_rows_map,
+            expectation_context_map,
+            include_failure_details,
+            element_count,
+            index_column,
         )
 
     return {
         "results": results,
-        "validated_materials": validated_materials,
+        "derived_status_results": derived_status_results,
+        "validated_materials": validated_materials,  # All validated materials (for backward compat)
+        "all_validated_materials": all_validated_materials,  # All validated materials (for derived lists)
+        "total_validated_count": total_validated,  # Count of all validated materials
         "full_results_df": df,
     }
 
