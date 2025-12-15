@@ -75,6 +75,9 @@ class ValidationSQLGenerator:
         )
         select_keyword = "SELECT DISTINCT" if self._use_distinct() else "SELECT"
 
+        # Get index column for metadata calculation
+        index_column = self.index_column or "MATERIAL_NUMBER"
+
         # Assemble complete query with derived group CTEs if needed
         cte_prefix = derived_group_ctes + ",\n" if derived_group_ctes else ""
 
@@ -114,7 +117,11 @@ FROM base_data
         for column, condition in filters.items():
             # Handle different condition formats
             if isinstance(condition, str):
-                if condition.startswith(("LIKE", "IN", "=", "<", ">", "!=")):
+                # Check for relative date expressions (e.g., "> -3 years", ">= -6 months")
+                parsed_date_condition = self._parse_date_filter(column, condition)
+                if parsed_date_condition:
+                    conditions.append(parsed_date_condition)
+                elif condition.startswith(("LIKE", "IN", "=", "<", ">", "!=", "<=", ">=")):
                     # Already has operator
                     conditions.append(f"{column} {condition}")
                 else:
@@ -124,10 +131,55 @@ FROM base_data
                 # List implies IN clause
                 values = ', '.join(f"'{v}'" for v in condition)
                 conditions.append(f"{column} IN ({values})")
+            elif isinstance(condition, dict):
+                # Dictionary format for complex filters
+                operator = condition.get("operator", "=")
+                value = condition.get("value")
+                if value is not None:
+                    parsed_date_condition = self._parse_date_filter(column, f"{operator} {value}")
+                    if parsed_date_condition:
+                        conditions.append(parsed_date_condition)
+                    else:
+                        conditions.append(f"{column} {operator} '{value}'")
 
         if conditions:
             return "WHERE " + " AND ".join(conditions)
         return ""
+
+    def _parse_date_filter(self, column: str, condition: str) -> str:
+        """
+        Parse relative date filter expressions into Snowflake SQL.
+
+        Supports formats like:
+        - "> -3 years" -> column > DATEADD(year, -3, CURRENT_DATE())
+        - ">= -6 months" -> column >= DATEADD(month, -6, CURRENT_DATE())
+        - "< -1 day" -> column < DATEADD(day, -1, CURRENT_DATE())
+
+        Args:
+            column: Column name
+            condition: Filter condition string
+
+        Returns:
+            Snowflake SQL condition string, or None if not a date filter
+        """
+        import re
+
+        # Pattern: operator followed by optional whitespace, then number with optional sign, then time unit
+        # Examples: "> -3 years", ">= 6 months", "< -1 day"
+        pattern = r'^(>=?|<=?|=|!=)\s*(-?\d+)\s+(year|month|day|week|quarter)s?$'
+        match = re.match(pattern, condition.strip(), re.IGNORECASE)
+
+        if not match:
+            return None
+
+        operator, amount, unit = match.groups()
+
+        # Normalize unit (remove trailing 's' if present, convert to singular)
+        unit = unit.lower().rstrip('s')
+
+        # Build Snowflake DATEADD expression
+        # DATEADD(unit, amount, CURRENT_DATE())
+        return f"{column} {operator} DATEADD({unit}, {amount}, CURRENT_DATE())"
 
     def _get_referenced_derived_groups(self) -> Dict[str, Dict[str, Any]]:
         """

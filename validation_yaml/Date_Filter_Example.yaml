@@ -1,0 +1,49 @@
+metadata:
+  suite_name: date_filter_example
+  index_column: MATERIAL_NUMBER
+  description: Example showing date filtering with relative dates
+
+# Example 1: Using data_source filters with relative dates
+data_source:
+  table: PROD_MO_MONM.REPORTING."vw_ProductDataAll"
+  filters:
+    PRODUCT_HIERARCHY: LIKE '5%'
+    OMS_FLAG: = 'Y'
+    # Filter for materials with last sales date in the last 3 years
+    LAST_SALES_DATE: "> -3 years"
+  distinct: false
+
+validations:
+  - type: expect_column_values_to_not_be_null
+    columns:
+      - MATERIAL_NUMBER
+      - LAST_SALES_DATE
+
+# ================================================================
+# Date Filter Format Reference
+# ================================================================
+#
+# Supported formats:
+#   "> -3 years"     -> Date greater than 3 years ago
+#   ">= -6 months"   -> Date greater than or equal to 6 months ago
+#   "< -1 day"       -> Date less than 1 day ago
+#   "<= -2 weeks"    -> Date less than or equal to 2 weeks ago
+#   "= -1 year"      -> Date exactly 1 year ago
+#
+# Supported time units:
+#   - year/years
+#   - month/months
+#   - week/weeks
+#   - day/days
+#   - quarter/quarters
+#
+# How it works:
+#   "> -3 years" gets translated to:
+#   LAST_SALES_DATE > DATEADD(year, -3, CURRENT_DATE())
+#
+# Alternative dictionary format:
+# data_source:
+#   filters:
+#     LAST_SALES_DATE:
+#       operator: ">"
+#       value: "-3 years"

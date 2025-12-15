@@ -112,6 +112,7 @@ def get_cached_results(suite_name: str) -> Optional[dict]:
         print(f"✅ Using cached results for {suite_name} (cached at {cache_data.get('cached_at', 'unknown')})")
         return {
             "results": cache_data.get("results", []),
+            "derived_status_results": cache_data.get("derived_status_results", []),
             "validated_materials": cache_data.get("validated_materials", [])
         }
 
@@ -145,7 +146,7 @@ def get_cached_failures_csv(suite_name: str) -> Optional[str]:
         return f.read()
 
 
-def save_cached_results(suite_name: str, results: list, validated_materials: list = None) -> None:
+def save_cached_results(suite_name: str, results: list, validated_materials: list = None, derived_status_results: list = None) -> None:
     """
     Save validation results to cache.
 
@@ -157,6 +158,8 @@ def save_cached_results(suite_name: str, results: list, validated_materials: lis
         Validation results from run_validation_suite()
     validated_materials : list, optional
         List of all material numbers that were validated
+    derived_status_results : list, optional
+        Derived status results (aggregated expectations)
     """
     _ensure_cache_dir()
     cache_path = _get_cache_path(suite_name)
@@ -165,6 +168,7 @@ def save_cached_results(suite_name: str, results: list, validated_materials: lis
         "cached_at": datetime.now().isoformat(),
         "data_date": _get_today_date_str(),
         "results": results,
+        "derived_status_results": derived_status_results or [],
         "validated_materials": validated_materials or []
     }
 
@@ -193,6 +197,7 @@ def save_daily_suite_artifacts(
     validated_materials: list,
     raw_results_df,
     data_date: Optional[str] = None,
+    derived_status_results: list = None,
 ) -> None:
     """Persist the day's JSON and raw CSV results to the suite's validation_results folder once per day."""
 
@@ -216,6 +221,7 @@ def save_daily_suite_artifacts(
         "cached_at": datetime.now().isoformat(),
         "data_date": target_date,
         "results": results or [],
+        "derived_status_results": derived_status_results or [],
         "validated_materials": validated_materials or [],
     }
 
