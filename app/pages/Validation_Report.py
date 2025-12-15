@@ -128,11 +128,18 @@ def load_or_run_validation(suite_config):
     cached = get_cached_results(suite_key)
     print(f"📦 DEBUG: get_cached_results returned: {cached is not None}", flush=True)
     if cached:
-        print(f"✅ Using file cache for {suite_key}", flush=True)
-        st.session_state[session_key] = cached["results"]
-        st.session_state[session_derived_key] = cached.get("derived_status_results", [])
-        st.session_state[session_materials_key] = cached.get("validated_materials", [])
-        st.session_state[session_date_key] = today
+        with st.spinner("Loading cached results..."):
+            print(f"✅ Using file cache for {suite_key}", flush=True)
+            st.session_state[session_key] = cached["results"]
+            st.session_state[session_derived_key] = cached.get("derived_status_results", [])
+            st.session_state[session_materials_key] = cached.get("validated_materials", [])
+            st.session_state[session_date_key] = today
+
+            # Also load the failures CSV from file cache if available
+            file_cached_csv = get_cached_failures_csv(suite_key)
+            if file_cached_csv:
+                st.session_state[session_failures_csv_key] = file_cached_csv
+                print(f"✅ Loaded failures CSV from file cache for {suite_key}", flush=True)
         return cached
 
     # No cache - run validation from YAML
