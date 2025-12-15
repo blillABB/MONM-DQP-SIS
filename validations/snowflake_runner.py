@@ -128,27 +128,38 @@ def _parse_sql_results(
     Parse Snowflake query results into GX-compatible format.
 
     Args:
-        df: DataFrame containing full-width validation rows (source columns + flags)
+        df: DataFrame containing validation failure rows with metadata
+            (Note: SQL filters to only rows with failures for efficiency)
         suite_config: Original suite configuration
 
     Returns:
         Dictionary with keys:
         - 'results': list of regular expectation results
         - 'derived_status_results': list of derived status results (aggregated expectations)
-        - 'validated_materials': list of unique material numbers validated
-        - 'full_results_df': original DataFrame from Snowflake
+        - 'validated_materials': list of unique failed material numbers
+        - 'total_validated_count': int, total materials validated (from SQL metadata)
+        - 'full_results_df': DataFrame from Snowflake (failures only)
     """
     if df.empty:
         return {
             "results": [],
             "derived_status_results": [],
             "validated_materials": [],
+            "total_validated_count": 0,
             "full_results_df": df,
         }
 
     # Normalize column names to lowercase for easier access
     df = df.copy()
     df.columns = df.columns.str.lower()
+
+    # Extract metadata total (all rows have same value, so take first)
+    total_validated = 0
+    if "_total_validated_materials" in df.columns:
+        if not df.empty:
+            total_validated = int(df["_total_validated_materials"].iloc[0])
+        # Drop metadata column as it's not part of actual data
+        df = df.drop(columns=["_total_validated_materials"])
 
     validations = suite_config.get("validations", [])
     derived_statuses = suite_config.get("derived_statuses", [])
@@ -271,6 +282,10 @@ def _parse_sql_results(
     index_column = (
         suite_config.get("metadata", {}).get("index_column", "material_number")
     )
+
+    # Generate validated_materials list for backward compatibility
+    # Note: With SQL filtering, df now only contains failed rows, so this list
+    # only includes failed materials. Use total_validated_count for actual total.
     validated_materials = []
     if index_column.lower() in df.columns:
         validated_materials = (
@@ -294,6 +309,7 @@ def _parse_sql_results(
         "results": results,
         "derived_status_results": derived_status_results,
         "validated_materials": validated_materials,
+        "total_validated_count": total_validated,  # Actual total from SQL metadata
         "full_results_df": df,
     }
 

@@ -75,6 +75,9 @@ class ValidationSQLGenerator:
         )
         select_keyword = "SELECT DISTINCT" if self._use_distinct() else "SELECT"
 
+        # Get index column for metadata calculation
+        index_column = self.index_column or "MATERIAL_NUMBER"
+
         # Assemble complete query with derived group CTEs if needed
         cte_prefix = derived_group_ctes + ",\n" if derived_group_ctes else ""
 
@@ -85,9 +88,15 @@ WITH {cte_prefix}base_data AS (
   FROM {table_name}
   {where_clause}
   {f'LIMIT {limit}' if limit else ''}
+),
+metadata AS (
+  SELECT COUNT(DISTINCT {index_column}) as _total_validated_materials
+  FROM base_data
 )
-SELECT *
-FROM base_data
+SELECT bd.*, m._total_validated_materials
+FROM base_data bd
+CROSS JOIN metadata m
+WHERE ARRAY_SIZE(bd.validation_results) > 0
 """
         return query.strip()
 
