@@ -162,6 +162,7 @@ def load_or_run_validation(suite_config):
             results = payload.get("results", []) if isinstance(payload, dict) else payload
             derived_status_results = payload.get("derived_status_results", []) if isinstance(payload, dict) else []
             validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
+            all_validated_materials = payload.get("all_validated_materials", []) if isinstance(payload, dict) else []
             total_validated_count = payload.get("total_validated_count", 0) if isinstance(payload, dict) else 0
             full_results_df = payload.get("full_results_df") if isinstance(payload, dict) else None
 
@@ -181,7 +182,14 @@ def load_or_run_validation(suite_config):
                 st.session_state[session_df_key] = full_results_df
                 st.session_state[session_date_key] = today
                 print(f"📦 DEBUG: Calling save_cached_results for suite_key={suite_key}", flush=True)
-                save_cached_results(suite_key, results, validated_materials, derived_status_results)
+                save_cached_results(
+                    suite_key,
+                    results,
+                    validated_materials,
+                    derived_status_results,
+                    all_validated_materials,
+                    total_validated_count
+                )
                 if suite_key == "abb_shop_abp_data_presence":
                     save_daily_suite_artifacts(
                         suite_key,
@@ -190,6 +198,8 @@ def load_or_run_validation(suite_config):
                         full_results_df,
                         today,
                         derived_status_results,
+                        all_validated_materials,
+                        total_validated_count,
                     )
                 print(f"✅ Fresh validation completed and cached for {suite_key}", flush=True)
             else:
