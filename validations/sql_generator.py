@@ -90,10 +90,12 @@ WITH {cte_prefix}base_data AS (
   {f'LIMIT {limit}' if limit else ''}
 ),
 metadata AS (
-  SELECT COUNT(DISTINCT {index_column}) as _total_validated_materials
+  SELECT
+    COUNT(DISTINCT {index_column}) as _total_validated_materials,
+    ARRAY_AGG(DISTINCT {index_column}) as _all_validated_materials
   FROM base_data
 )
-SELECT bd.*, m._total_validated_materials
+SELECT bd.*, m._total_validated_materials, m._all_validated_materials
 FROM base_data bd
 CROSS JOIN metadata m
 WHERE ARRAY_SIZE(bd.validation_results) > 0

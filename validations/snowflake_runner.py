@@ -136,8 +136,9 @@ def _parse_sql_results(
         Dictionary with keys:
         - 'results': list of regular expectation results
         - 'derived_status_results': list of derived status results (aggregated expectations)
-        - 'validated_materials': list of unique failed material numbers
-        - 'total_validated_count': int, total materials validated (from SQL metadata)
+        - 'validated_materials': list of unique failed material numbers (for backward compat)
+        - 'all_validated_materials': list of ALL validated material numbers (from SQL metadata)
+        - 'total_validated_count': int, total materials validated count (from SQL metadata)
         - 'full_results_df': DataFrame from Snowflake (failures only)
     """
     if df.empty:
@@ -145,6 +146,7 @@ def _parse_sql_results(
             "results": [],
             "derived_status_results": [],
             "validated_materials": [],
+            "all_validated_materials": [],
             "total_validated_count": 0,
             "full_results_df": df,
         }
@@ -153,13 +155,22 @@ def _parse_sql_results(
     df = df.copy()
     df.columns = df.columns.str.lower()
 
-    # Extract metadata total (all rows have same value, so take first)
+    # Extract metadata (all rows have same value, so take first)
     total_validated = 0
+    all_validated_materials = []
     if "_total_validated_materials" in df.columns:
         if not df.empty:
             total_validated = int(df["_total_validated_materials"].iloc[0])
-        # Drop metadata column as it's not part of actual data
-        df = df.drop(columns=["_total_validated_materials"])
+            # Extract the array of all validated materials
+            if "_all_validated_materials" in df.columns:
+                # Snowflake returns array as JSON string, parse it
+                import json
+                all_materials_json = df["_all_validated_materials"].iloc[0]
+                if all_materials_json:
+                    all_validated_materials = json.loads(all_materials_json) if isinstance(all_materials_json, str) else all_materials_json
+        # Drop metadata columns as they're not part of actual data
+        df = df.drop(columns=["_total_validated_materials"], errors='ignore')
+        df = df.drop(columns=["_all_validated_materials"], errors='ignore')
 
     validations = suite_config.get("validations", [])
     derived_statuses = suite_config.get("derived_statuses", [])
@@ -308,8 +319,9 @@ def _parse_sql_results(
     return {
         "results": results,
         "derived_status_results": derived_status_results,
-        "validated_materials": validated_materials,
-        "total_validated_count": total_validated,  # Actual total from SQL metadata
+        "validated_materials": validated_materials,  # Failed materials only (for backward compat)
+        "all_validated_materials": all_validated_materials,  # Full list from SQL metadata
+        "total_validated_count": total_validated,  # Count from SQL metadata
         "full_results_df": df,
     }
 
