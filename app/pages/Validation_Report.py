@@ -155,11 +155,15 @@ def load_or_run_validation(suite_config):
             results = payload.get("results", []) if isinstance(payload, dict) else payload
             derived_status_results = payload.get("derived_status_results", []) if isinstance(payload, dict) else []
             validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
+            total_validated_count = payload.get("total_validated_count", 0) if isinstance(payload, dict) else 0
             full_results_df = payload.get("full_results_df") if isinstance(payload, dict) else None
+
+            # Use total_validated_count if available (more accurate), otherwise fall back to list length
+            actual_total = total_validated_count if total_validated_count > 0 else len(validated_materials)
 
             print(f"📦 DEBUG: Validation returned {len(results) if results else 0} results", flush=True)
             print(f"📦 DEBUG: Validation returned {len(derived_status_results) if derived_status_results else 0} derived status results", flush=True)
-            print(f"📦 DEBUG: Validation processed {len(validated_materials)} materials", flush=True)
+            print(f"📦 DEBUG: Validation processed {actual_total} materials", flush=True)
 
             if results is not None:
                 # Save to both session state and file cache
@@ -226,17 +230,22 @@ if isinstance(payload, dict):
     results = payload.get("results", [])
     derived_status_results = payload.get("derived_status_results", [])
     validated_materials = payload.get("validated_materials", [])
+    total_validated_count = payload.get("total_validated_count", 0)
     full_results_df = payload.get("full_results_df")
 else:
     results = payload
     derived_status_results = []
     validated_materials = []
+    total_validated_count = 0
     full_results_df = None
+
+# Use total_validated_count if available (more accurate), otherwise fall back to list length
+actual_total = total_validated_count if total_validated_count > 0 else len(validated_materials)
 
 # DEBUG: Log what we extracted
 print(f"📊 DEBUG: Extracted results type={type(results)}, len={len(results) if results else 0}", flush=True)
 print(f"📊 DEBUG: Extracted derived_status_results len={len(derived_status_results)}", flush=True)
-print(f"📊 DEBUG: Extracted validated_materials len={len(validated_materials)}", flush=True)
+print(f"📊 DEBUG: Extracted validated_materials len={len(validated_materials)}, actual_total={actual_total}", flush=True)
 
 # ----------------------------------------------------------
 # Handle validation failure
@@ -376,7 +385,7 @@ def calc_column_fail_counts(df):
 if view == "Overview":
     st.subheader("Validation Summary")
 
-    total, passed, failed, pass_rate, fail_rate = calc_overall_kpis(df, len(validated_materials))
+    total, passed, failed, pass_rate, fail_rate = calc_overall_kpis(df, actual_total)
 
     # =====================================================
     # METRICS ROW - Enhanced with color coding
