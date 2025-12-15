@@ -104,6 +104,16 @@ class DerivedStatusResolver:
                         "discriminator": column,
                     })
 
+            elif val_type == "expect_column_values_to_match_regex":
+                for column in validation.get("columns", []):
+                    catalog.append({
+                        "scoped_id": build_scoped_expectation_id(validation, column),
+                        "base_id": base_id,
+                        "type": val_type,
+                        "targets": [column],
+                        "discriminator": column,
+                    })
+
             elif val_type in {
                 "expect_column_pair_values_to_be_equal",
                 "expect_column_pair_values_a_to_be_greater_than_b",
@@ -125,28 +135,6 @@ class DerivedStatusResolver:
                         "targets": [col_a, col_b],
                         "discriminator": discriminator,
                     })
-
-            elif isinstance(validation.get("columns"), list) and validation["columns"]:
-                # Generic handler for single-column list expectations (regex, lengths, ranges, uniqueness, etc.)
-                for column in validation["columns"]:
-                    catalog.append({
-                        "scoped_id": build_scoped_expectation_id(validation, column),
-                        "base_id": base_id,
-                        "type": val_type,
-                        "targets": [column],
-                        "discriminator": column,
-                    })
-
-            elif isinstance(validation.get("column_list"), list) and validation["column_list"]:
-                # Compound unique checks target a set of columns together
-                discriminator = "|".join(validation["column_list"])
-                catalog.append({
-                    "scoped_id": build_scoped_expectation_id(validation, discriminator),
-                    "base_id": base_id,
-                    "type": val_type,
-                    "targets": validation["column_list"],
-                    "discriminator": discriminator,
-                })
 
             else:
                 # Unknown validation types get a catalog entry with base_id only
