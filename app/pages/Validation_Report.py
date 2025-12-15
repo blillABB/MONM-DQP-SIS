@@ -94,6 +94,7 @@ def load_or_run_validation(suite_config):
     session_failures_csv_key = f"{suite_key}_failures_df"
     session_raw_results_key = f"{suite_key}_raw_results_csv"
     session_date_key = f"{suite_key}_data_date"
+    session_derived_key = f"{suite_key}_derived_status_results"
     today = date.today().isoformat()
 
     print(f"📦 DEBUG: load_or_run_validation called for suite_key={suite_key}", flush=True)
@@ -106,6 +107,7 @@ def load_or_run_validation(suite_config):
             print(f"✅ Using session state results for {suite_key} (from today)", flush=True)
             return {
                 "results": st.session_state[session_key],
+                "derived_status_results": st.session_state.get(session_derived_key, []),
                 "validated_materials": st.session_state.get(session_materials_key, []),
                 "full_results_df": st.session_state.get(session_df_key),
             }
@@ -117,6 +119,7 @@ def load_or_run_validation(suite_config):
             st.session_state.pop(session_failures_csv_key, None)
             st.session_state.pop(session_raw_results_key, None)
             st.session_state.pop(session_date_key, None)
+            st.session_state.pop(session_derived_key, None)
     else:
         print(f"📦 DEBUG: No session state found for {session_key}", flush=True)
 
@@ -127,6 +130,7 @@ def load_or_run_validation(suite_config):
     if cached:
         print(f"✅ Using file cache for {suite_key}", flush=True)
         st.session_state[session_key] = cached["results"]
+        st.session_state[session_derived_key] = cached.get("derived_status_results", [])
         st.session_state[session_materials_key] = cached.get("validated_materials", [])
         st.session_state[session_date_key] = today
         return cached
@@ -149,21 +153,24 @@ def load_or_run_validation(suite_config):
                 include_failure_details=True
             )
             results = payload.get("results", []) if isinstance(payload, dict) else payload
+            derived_status_results = payload.get("derived_status_results", []) if isinstance(payload, dict) else []
             validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
             full_results_df = payload.get("full_results_df") if isinstance(payload, dict) else None
 
             print(f"📦 DEBUG: Validation returned {len(results) if results else 0} results", flush=True)
+            print(f"📦 DEBUG: Validation returned {len(derived_status_results) if derived_status_results else 0} derived status results", flush=True)
             print(f"📦 DEBUG: Validation processed {len(validated_materials)} materials", flush=True)
 
             if results is not None:
                 # Save to both session state and file cache
                 print(f"📦 DEBUG: Saving to session state key={session_key}", flush=True)
                 st.session_state[session_key] = results
+                st.session_state[session_derived_key] = derived_status_results
                 st.session_state[session_materials_key] = validated_materials
                 st.session_state[session_df_key] = full_results_df
                 st.session_state[session_date_key] = today
                 print(f"📦 DEBUG: Calling save_cached_results for suite_key={suite_key}", flush=True)
-                save_cached_results(suite_key, results, validated_materials)
+                save_cached_results(suite_key, results, validated_materials, derived_status_results)
                 if suite_key == "abb_shop_abp_data_presence":
                     save_daily_suite_artifacts(
                         suite_key,
@@ -171,12 +178,18 @@ def load_or_run_validation(suite_config):
                         validated_materials,
                         full_results_df,
                         today,
+                        derived_status_results,
                     )
                 print(f"✅ Fresh validation completed and cached for {suite_key}", flush=True)
             else:
                 print(f"⚠️ Validation returned None for {suite_key}", flush=True)
     placeholder.empty()
-    return {"results": results, "validated_materials": validated_materials, "full_results_df": full_results_df}
+    return {
+        "results": results,
+        "derived_status_results": derived_status_results,
+        "validated_materials": validated_materials,
+        "full_results_df": full_results_df
+    }
 
 
 # Handle cache clear request
@@ -184,6 +197,7 @@ with st.sidebar:
     if st.button("🔄 Re-run Validation Suite", key=f"{suite_config['suite_key']}_clear_cache"):
         clear_cache(suite_config["suite_key"])
         st.session_state.pop(f"{suite_config['suite_key']}_results", None)
+        st.session_state.pop(f"{suite_config['suite_key']}_derived_status_results", None)
         st.session_state.pop(f"{suite_config['suite_key']}_validated_materials", None)
         st.session_state.pop(f"{suite_config['suite_key']}_full_results_df", None)
         st.session_state.pop(f"{suite_config['suite_key']}_failures_df", None)
@@ -210,15 +224,18 @@ except Exception as e:
 # Extract results and metadata
 if isinstance(payload, dict):
     results = payload.get("results", [])
+    derived_status_results = payload.get("derived_status_results", [])
     validated_materials = payload.get("validated_materials", [])
     full_results_df = payload.get("full_results_df")
 else:
     results = payload
+    derived_status_results = []
     validated_materials = []
     full_results_df = None
 
 # DEBUG: Log what we extracted
 print(f"📊 DEBUG: Extracted results type={type(results)}, len={len(results) if results else 0}", flush=True)
+print(f"📊 DEBUG: Extracted derived_status_results len={len(derived_status_results)}", flush=True)
 print(f"📊 DEBUG: Extracted validated_materials len={len(validated_materials)}", flush=True)
 
 # ----------------------------------------------------------
@@ -406,7 +423,7 @@ if view == "Overview":
     # DERIVED STATUS SUMMARY
     # =====================================================
     derived_status_rows = []
-    for result in results or []:
+    for result in derived_status_results or []:
         status_label = result.get("status_label")
         if not status_label:
             continue
@@ -448,7 +465,7 @@ if view == "Overview":
             st.divider()
             st.caption("**Detailed Failure Breakdown**")
 
-            for result in results or []:
+            for result in derived_status_results or []:
                 status_label = result.get("status_label")
                 if not status_label:
                     continue

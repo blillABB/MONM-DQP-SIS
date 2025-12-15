@@ -132,10 +132,19 @@ def _parse_sql_results(
         suite_config: Original suite configuration
 
     Returns:
-        Dictionary with 'results' and 'validated_materials' keys
+        Dictionary with keys:
+        - 'results': list of regular expectation results
+        - 'derived_status_results': list of derived status results (aggregated expectations)
+        - 'validated_materials': list of unique material numbers validated
+        - 'full_results_df': original DataFrame from Snowflake
     """
     if df.empty:
-        return {"results": [], "validated_materials": []}
+        return {
+            "results": [],
+            "derived_status_results": [],
+            "validated_materials": [],
+            "full_results_df": df,
+        }
 
     # Normalize column names to lowercase for easier access
     df = df.copy()
@@ -268,22 +277,22 @@ def _parse_sql_results(
             df[index_column.lower()].dropna().unique().tolist()
         )
 
-    # Build derived status results using the resolver
+    # Build derived status results using the resolver (kept separate from regular results)
+    derived_status_results = []
     if derived_statuses:
-        results.extend(
-            _build_derived_status_results(
-                resolver,
-                counts_map,
-                failure_rows_map,
-                expectation_context_map,
-                include_failure_details,
-                element_count,
-                index_column,
-            )
+        derived_status_results = _build_derived_status_results(
+            resolver,
+            counts_map,
+            failure_rows_map,
+            expectation_context_map,
+            include_failure_details,
+            element_count,
+            index_column,
         )
 
     return {
         "results": results,
+        "derived_status_results": derived_status_results,
         "validated_materials": validated_materials,
         "full_results_df": df,
     }
