@@ -94,6 +94,7 @@ def load_or_run_validation(suite_config):
     session_failures_csv_key = f"{suite_key}_failures_df"
     session_raw_results_key = f"{suite_key}_raw_results_csv"
     session_date_key = f"{suite_key}_data_date"
+    session_derived_key = f"{suite_key}_derived_status_results"
     today = date.today().isoformat()
 
     print(f"📦 DEBUG: load_or_run_validation called for suite_key={suite_key}", flush=True)
@@ -106,6 +107,7 @@ def load_or_run_validation(suite_config):
             print(f"✅ Using session state results for {suite_key} (from today)", flush=True)
             return {
                 "results": st.session_state[session_key],
+                "derived_status_results": st.session_state.get(session_derived_key, []),
                 "validated_materials": st.session_state.get(session_materials_key, []),
                 "full_results_df": st.session_state.get(session_df_key),
             }
@@ -117,6 +119,7 @@ def load_or_run_validation(suite_config):
             st.session_state.pop(session_failures_csv_key, None)
             st.session_state.pop(session_raw_results_key, None)
             st.session_state.pop(session_date_key, None)
+            st.session_state.pop(session_derived_key, None)
     else:
         print(f"📦 DEBUG: No session state found for {session_key}", flush=True)
 
@@ -125,10 +128,18 @@ def load_or_run_validation(suite_config):
     cached = get_cached_results(suite_key)
     print(f"📦 DEBUG: get_cached_results returned: {cached is not None}", flush=True)
     if cached:
-        print(f"✅ Using file cache for {suite_key}", flush=True)
-        st.session_state[session_key] = cached["results"]
-        st.session_state[session_materials_key] = cached.get("validated_materials", [])
-        st.session_state[session_date_key] = today
+        with st.spinner("Loading cached results..."):
+            print(f"✅ Using file cache for {suite_key}", flush=True)
+            st.session_state[session_key] = cached["results"]
+            st.session_state[session_derived_key] = cached.get("derived_status_results", [])
+            st.session_state[session_materials_key] = cached.get("validated_materials", [])
+            st.session_state[session_date_key] = today
+
+            # Also load the failures CSV from file cache if available
+            file_cached_csv = get_cached_failures_csv(suite_key)
+            if file_cached_csv:
+                st.session_state[session_failures_csv_key] = file_cached_csv
+                print(f"✅ Loaded failures CSV from file cache for {suite_key}", flush=True)
         return cached
 
     # No cache - run validation from YAML
@@ -149,21 +160,28 @@ def load_or_run_validation(suite_config):
                 include_failure_details=True
             )
             results = payload.get("results", []) if isinstance(payload, dict) else payload
+            derived_status_results = payload.get("derived_status_results", []) if isinstance(payload, dict) else []
             validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
+            total_validated_count = payload.get("total_validated_count", 0) if isinstance(payload, dict) else 0
             full_results_df = payload.get("full_results_df") if isinstance(payload, dict) else None
 
+            # Use total_validated_count if available (more accurate), otherwise fall back to list length
+            actual_total = total_validated_count if total_validated_count > 0 else len(validated_materials)
+
             print(f"📦 DEBUG: Validation returned {len(results) if results else 0} results", flush=True)
-            print(f"📦 DEBUG: Validation processed {len(validated_materials)} materials", flush=True)
+            print(f"📦 DEBUG: Validation returned {len(derived_status_results) if derived_status_results else 0} derived status results", flush=True)
+            print(f"📦 DEBUG: Validation processed {actual_total} materials", flush=True)
 
             if results is not None:
                 # Save to both session state and file cache
                 print(f"📦 DEBUG: Saving to session state key={session_key}", flush=True)
                 st.session_state[session_key] = results
+                st.session_state[session_derived_key] = derived_status_results
                 st.session_state[session_materials_key] = validated_materials
                 st.session_state[session_df_key] = full_results_df
                 st.session_state[session_date_key] = today
                 print(f"📦 DEBUG: Calling save_cached_results for suite_key={suite_key}", flush=True)
-                save_cached_results(suite_key, results, validated_materials)
+                save_cached_results(suite_key, results, validated_materials, derived_status_results)
                 if suite_key == "abb_shop_abp_data_presence":
                     save_daily_suite_artifacts(
                         suite_key,
@@ -171,12 +189,18 @@ def load_or_run_validation(suite_config):
                         validated_materials,
                         full_results_df,
                         today,
+                        derived_status_results,
                     )
                 print(f"✅ Fresh validation completed and cached for {suite_key}", flush=True)
             else:
                 print(f"⚠️ Validation returned None for {suite_key}", flush=True)
     placeholder.empty()
-    return {"results": results, "validated_materials": validated_materials, "full_results_df": full_results_df}
+    return {
+        "results": results,
+        "derived_status_results": derived_status_results,
+        "validated_materials": validated_materials,
+        "full_results_df": full_results_df
+    }
 
 
 # Handle cache clear request
@@ -184,6 +208,7 @@ with st.sidebar:
     if st.button("🔄 Re-run Validation Suite", key=f"{suite_config['suite_key']}_clear_cache"):
         clear_cache(suite_config["suite_key"])
         st.session_state.pop(f"{suite_config['suite_key']}_results", None)
+        st.session_state.pop(f"{suite_config['suite_key']}_derived_status_results", None)
         st.session_state.pop(f"{suite_config['suite_key']}_validated_materials", None)
         st.session_state.pop(f"{suite_config['suite_key']}_full_results_df", None)
         st.session_state.pop(f"{suite_config['suite_key']}_failures_df", None)
@@ -210,16 +235,24 @@ except Exception as e:
 # Extract results and metadata
 if isinstance(payload, dict):
     results = payload.get("results", [])
+    derived_status_results = payload.get("derived_status_results", [])
     validated_materials = payload.get("validated_materials", [])
+    total_validated_count = payload.get("total_validated_count", 0)
     full_results_df = payload.get("full_results_df")
 else:
     results = payload
+    derived_status_results = []
     validated_materials = []
+    total_validated_count = 0
     full_results_df = None
+
+# Use total_validated_count if available (more accurate), otherwise fall back to list length
+actual_total = total_validated_count if total_validated_count > 0 else len(validated_materials)
 
 # DEBUG: Log what we extracted
 print(f"📊 DEBUG: Extracted results type={type(results)}, len={len(results) if results else 0}", flush=True)
-print(f"📊 DEBUG: Extracted validated_materials len={len(validated_materials)}", flush=True)
+print(f"📊 DEBUG: Extracted derived_status_results len={len(derived_status_results)}", flush=True)
+print(f"📊 DEBUG: Extracted validated_materials len={len(validated_materials)}, actual_total={actual_total}", flush=True)
 
 # ----------------------------------------------------------
 # Handle validation failure
@@ -359,7 +392,7 @@ def calc_column_fail_counts(df):
 if view == "Overview":
     st.subheader("Validation Summary")
 
-    total, passed, failed, pass_rate, fail_rate = calc_overall_kpis(df, len(validated_materials))
+    total, passed, failed, pass_rate, fail_rate = calc_overall_kpis(df, actual_total)
 
     # =====================================================
     # METRICS ROW - Enhanced with color coding
@@ -406,7 +439,7 @@ if view == "Overview":
     # DERIVED STATUS SUMMARY
     # =====================================================
     derived_status_rows = []
-    for result in results or []:
+    for result in derived_status_results or []:
         status_label = result.get("status_label")
         if not status_label:
             continue
@@ -448,7 +481,7 @@ if view == "Overview":
             st.divider()
             st.caption("**Detailed Failure Breakdown**")
 
-            for result in results or []:
+            for result in derived_status_results or []:
                 status_label = result.get("status_label")
                 if not status_label:
                     continue
@@ -503,6 +536,103 @@ if view == "Overview":
 
         else:
             st.info("No derived statuses were triggered for this validation run.")
+
+    # =====================================================
+    # DERIVED LISTS - Materials filtered by status exclusion
+    # =====================================================
+    # Load YAML to get derived_lists configuration
+    import yaml
+    with open(suite_config["yaml_path"], 'r') as f:
+        yaml_config = yaml.safe_load(f)
+
+    derived_lists_config = yaml_config.get("derived_lists", [])
+
+    if derived_lists_config:
+        st.divider()
+        with st.expander("Derived Lists", expanded=False):
+            st.caption(
+                "Derived lists identify materials based on derived status membership. "
+                "These lists can be downloaded for further processing."
+            )
+
+            # Build a map of status_label -> failed materials for quick lookup
+            status_to_materials = {}
+            for result in derived_status_results or []:
+                status_label = result.get("status_label")
+                if not status_label:
+                    continue
+
+                # Collect all failed material numbers from this status
+                failed_materials = result.get("failed_materials", [])
+                material_numbers = set()
+                for fm in failed_materials:
+                    # Get material number from context columns
+                    mat_num = fm.get("MATERIAL_NUMBER") or fm.get("Material Number") or fm.get("material_number")
+                    if mat_num:
+                        material_numbers.add(str(mat_num))
+
+                status_to_materials[status_label] = material_numbers
+
+            # Calculate and display each derived list
+            for derived_list in derived_lists_config:
+                list_name = derived_list.get("name", "Unnamed List")
+                description = derived_list.get("description", "")
+                exclude_statuses = derived_list.get("exclude_statuses", [])
+
+                # Calculate materials in this list (all materials minus excluded)
+                # Use validated_materials (contains all materials since we return all rows)
+                all_materials_list = payload.get("validated_materials", []) if isinstance(payload, dict) else []
+                all_material_numbers = set(str(m) for m in all_materials_list) if all_materials_list else set()
+
+                # If we don't have the materials list, we can't calculate derived lists
+                if len(all_material_numbers) == 0:
+                    st.warning(f"⚠️ Cannot calculate '{list_name}' - material list unavailable")
+                    continue
+
+                # Collect all materials to exclude
+                excluded_materials = set()
+                for status_label in exclude_statuses:
+                    if status_label in status_to_materials:
+                        excluded_materials.update(status_to_materials[status_label])
+
+                # Materials in this list = all materials - excluded materials
+                list_materials = all_material_numbers - excluded_materials
+
+                # Display the list
+                st.write(f"**{list_name}**")
+                if description:
+                    st.caption(description)
+
+                col1, col2 = st.columns([2, 1])
+                with col1:
+                    st.metric(
+                        "Materials in List",
+                        f"{len(list_materials):,}",
+                        delta=f"{len(list_materials) / actual_total * 100:.1f}% of total" if actual_total > 0 else None
+                    )
+
+                with col2:
+                    if list_materials:
+                        # Generate CSV with just material numbers
+                        csv_content = "MATERIAL_NUMBER\n" + "\n".join(sorted(list_materials))
+                        st.download_button(
+                            label=f"⬇️ Download CSV ({len(list_materials):,} materials)",
+                            data=csv_content,
+                            file_name=f"{list_name.replace(' ', '_').lower()}.csv",
+                            mime="text/csv",
+                            key=f"download_list_{list_name.replace(' ', '_')}"
+                        )
+                    else:
+                        st.info("No materials in this list")
+
+                # Show which statuses were excluded
+                if exclude_statuses:
+                    with st.expander(f"Excluded Statuses ({len(exclude_statuses)})", expanded=False):
+                        for status in exclude_statuses:
+                            excluded_count = len(status_to_materials.get(status, []))
+                            st.write(f"- {status}: {excluded_count:,} materials")
+
+                st.divider()
 
     # =====================================================
     # CHARTS ROW - Plotly visualizations

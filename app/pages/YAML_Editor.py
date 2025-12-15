@@ -171,6 +171,7 @@ def save_yaml_suite(
     validations: list,
     data_source: dict | None = None,
     derived_statuses: list | None = None,
+    derived_lists: list | None = None,
 ) -> bool:
     """
     Save YAML validation suite file.
@@ -191,6 +192,7 @@ def save_yaml_suite(
         "data_source": data_source or {},
         "validations": validations,
         "derived_statuses": derived_statuses or [],
+        "derived_lists": derived_lists or [],
     }
 
     # Save YAML file
@@ -238,6 +240,9 @@ if "validations" not in st.session_state:
 if "derived_statuses" not in st.session_state:
     st.session_state.derived_statuses = []
 
+if "derived_lists" not in st.session_state:
+    st.session_state.derived_lists = []
+
 if "data_source" not in st.session_state:
     st.session_state.data_source = {
         "table": DEFAULT_TABLE,
@@ -253,6 +258,9 @@ if "editing_index" not in st.session_state:
 
 if "editing_derived_index" not in st.session_state:
     st.session_state.editing_derived_index = None  # None or index of derived group being edited
+
+if "editing_derived_list_index" not in st.session_state:
+    st.session_state.editing_derived_list_index = None  # None or index of derived list being edited
 
 # ----------------------------------------------------
 # Section 1: Mode Selection
@@ -298,6 +306,7 @@ if st.session_state.current_mode == "edit":
                 st.session_state.suite_metadata = data.get("metadata", {})
                 st.session_state.validations = data.get("validations", []) or []
                 st.session_state.derived_statuses = data.get("derived_statuses", []) or []
+                st.session_state.derived_lists = data.get("derived_lists", []) or []
                 loaded_data_source = data.get("data_source")
                 if not isinstance(loaded_data_source, dict):
                     loaded_data_source = {"table": DEFAULT_TABLE, "filters": {}, "distinct": False}
@@ -305,6 +314,7 @@ if st.session_state.current_mode == "edit":
                     loaded_data_source.setdefault("distinct", False)
                 st.session_state.data_source = loaded_data_source
                 st.session_state.editing_derived_index = None
+                st.session_state.editing_derived_list_index = None
 
                 st.success(f"✅ Loaded suite: {selected_file_name}")
                 st.rerun()
@@ -455,6 +465,7 @@ else:
                     }
                     st.session_state.validations = []
                     st.session_state.derived_statuses = []
+                    st.session_state.derived_lists = []
                     st.session_state.data_source = {
                         "table": DEFAULT_TABLE,
                         "filters": {},
@@ -463,6 +474,7 @@ else:
                     st.session_state.current_mode = "new"
                     st.session_state.confirm_delete = False
                     st.session_state.editing_derived_index = None
+                    st.session_state.editing_derived_list_index = None
                     st.rerun()
                 else:
                     st.error(f"❌ File not found: {yaml_file}")
@@ -519,7 +531,7 @@ with st.form("add_filter_form", enter_to_submit=False):
     )
     filter_type = col2.selectbox(
         "Filter Type",
-        options=["Equals", "One of (IN)", "LIKE pattern"],
+        options=["Equals", "One of (IN)", "LIKE pattern", "Date Comparison"],
         help="How should the filter be applied?",
     )
 
@@ -557,6 +569,35 @@ with st.form("add_filter_form", enter_to_submit=False):
             placeholder="LIKE ABC%",
             help="Use SQL LIKE syntax (e.g., ABC%, %XYZ)",
         )
+    elif filter_type == "Date Comparison":
+        st.markdown("**Relative Date Filter** (e.g., 'last 3 years', 'last 6 months')")
+
+        col_a, col_b, col_c = st.columns([1, 1, 1])
+        with col_a:
+            date_operator = st.selectbox(
+                "Operator",
+                options=[">", ">=", "<", "<=", "=", "!="],
+                help="Comparison operator"
+            )
+        with col_b:
+            date_amount = st.number_input(
+                "Amount",
+                min_value=-1000,
+                max_value=0,
+                value=-3,
+                step=1,
+                help="Negative number for past dates (e.g., -3 for '3 years ago')"
+            )
+        with col_c:
+            date_unit = st.selectbox(
+                "Unit",
+                options=["years", "months", "weeks", "days", "quarters"],
+                help="Time unit"
+            )
+
+        # Build the filter value
+        filter_value = f"{date_operator} {date_amount} {date_unit}"
+        st.caption(f"Will generate: `{selected_field} {filter_value}`")
 
     submitted = st.form_submit_button("Add / Update Filter", type="primary")
     if submitted:
@@ -582,6 +623,12 @@ with st.form("add_filter_form", enter_to_submit=False):
                 selected_field
             ] = like_value
             st.success(f"Added filter: {selected_field} {like_value}")
+            st.rerun()
+        elif filter_type == "Date Comparison" and filter_value:
+            st.session_state.data_source.setdefault("filters", {})[
+                selected_field
+            ] = filter_value
+            st.success(f"Added date filter: {selected_field} {filter_value}")
             st.rerun()
         else:
             st.error("Please provide a filter value.")
@@ -1527,9 +1574,134 @@ else:
     st.info("No derived status groups defined. Use the form above to add groups.")
 
 # ----------------------------------------------------
-# Section 8: YAML Preview & Save
+# Section 8: Derived Lists
 # ----------------------------------------------------
-st.header("8. YAML Preview & Save")
+st.header("8. Derived Lists")
+
+st.markdown("""
+**Derived Lists** allow you to define material sets based on exclusion criteria from derived statuses.
+For example, you can create a "Ready for ABP Load" list that includes materials NOT in "ENG DATA INCOMPLETE" AND NOT in "Z01 DATA INCOMPLETE".
+""")
+
+is_editing_list = st.session_state.editing_derived_list_index is not None
+
+# Get available derived status labels for the multiselect
+available_statuses = [ds.get("status") for ds in st.session_state.derived_statuses if ds.get("status")]
+
+if not available_statuses:
+    st.warning("⚠️ No derived status groups configured. Please add derived status groups in Section 7 before creating derived lists.")
+else:
+    # Form for creating/editing derived lists
+    form_suffix_list = "edit_list" if is_editing_list else "new_list"
+
+    # Pre-populate if editing
+    default_list_name = ""
+    default_list_description = ""
+    default_exclude_statuses = []
+
+    if is_editing_list:
+        editing_list = st.session_state.derived_lists[st.session_state.editing_derived_list_index]
+        default_list_name = editing_list.get("name", "")
+        default_list_description = editing_list.get("description", "")
+        default_exclude_statuses = editing_list.get("exclude_statuses", [])
+
+    with st.form(f"derived_list_form_{form_suffix_list}", enter_to_submit=False):
+        st.subheader("Add/Edit Derived List")
+
+        list_name = st.text_input(
+            "List Name",
+            value=default_list_name,
+            help="A descriptive name for this material list (e.g., 'Ready for ABP Load')",
+            key=f"list_name_{form_suffix_list}",
+        )
+
+        list_description = st.text_area(
+            "Description (optional)",
+            value=default_list_description,
+            help="Describe what this list represents",
+            key=f"list_description_{form_suffix_list}",
+        )
+
+        exclude_statuses = st.multiselect(
+            "Exclude Statuses",
+            options=available_statuses,
+            default=default_exclude_statuses,
+            help="Materials with ANY of these statuses will be excluded from the list",
+            key=f"exclude_statuses_{form_suffix_list}",
+        )
+
+        submit_label = "Update Derived List" if is_editing_list else "Add Derived List"
+        submitted = st.form_submit_button(submit_label, type="primary")
+
+        if submitted:
+            if not list_name:
+                st.error("Please provide a list name")
+            elif not exclude_statuses:
+                st.error("Please select at least one status to exclude")
+            else:
+                list_entry = {
+                    "name": list_name,
+                    "exclude_statuses": exclude_statuses,
+                }
+
+                if list_description:
+                    list_entry["description"] = list_description
+
+                if is_editing_list:
+                    st.session_state.derived_lists[st.session_state.editing_derived_list_index] = list_entry
+                    st.session_state.editing_derived_list_index = None
+                    st.success("✅ Updated derived list")
+                else:
+                    st.session_state.derived_lists.append(list_entry)
+                    st.success("✅ Added derived list")
+
+                st.rerun()
+
+st.divider()
+
+if st.session_state.derived_lists:
+    st.success(f"📋 {len(st.session_state.derived_lists)} derived list(s) configured")
+
+    for idx, derived_list in enumerate(st.session_state.derived_lists):
+        list_name = derived_list.get("name", f"List {idx + 1}")
+        with st.expander(f"Derived List {idx + 1}: {list_name}", expanded=False):
+            description = derived_list.get("description", "")
+            exclude_statuses = derived_list.get("exclude_statuses", [])
+
+            if description:
+                st.markdown(f"**Description:** {description}")
+
+            st.markdown(f"**Excludes materials with statuses:** {', '.join(exclude_statuses)}")
+            st.json(derived_list)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"✏️ Edit List {idx + 1}", key=f"edit_list_{idx}"):
+                    st.session_state.editing_derived_list_index = idx
+                    st.rerun()
+            with col2:
+                if st.button(f"🗑️ Remove List {idx + 1}", key=f"remove_list_{idx}"):
+                    st.session_state.derived_lists.pop(idx)
+                    if st.session_state.editing_derived_list_index == idx:
+                        st.session_state.editing_derived_list_index = None
+                    elif (
+                        st.session_state.editing_derived_list_index is not None
+                        and st.session_state.editing_derived_list_index > idx
+                    ):
+                        st.session_state.editing_derived_list_index -= 1
+                    st.rerun()
+
+    if st.button("🗑️ Clear All Derived Lists", key="clear_all_lists"):
+        st.session_state.derived_lists = []
+        st.session_state.editing_derived_list_index = None
+        st.rerun()
+else:
+    st.info("No derived lists defined. Use the form above to add lists.")
+
+# ----------------------------------------------------
+# Section 9: YAML Preview & Save
+# ----------------------------------------------------
+st.header("9. YAML Preview & Save")
 
 if st.session_state.suite_metadata["suite_name"]:
     # Generate YAML preview
@@ -1538,6 +1710,7 @@ if st.session_state.suite_metadata["suite_name"]:
         "data_source": st.session_state.data_source,
         "validations": st.session_state.validations,
         "derived_statuses": st.session_state.derived_statuses,
+        "derived_lists": st.session_state.derived_lists,
     }, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
     st.code(yaml_content, language="yaml")
@@ -1552,6 +1725,7 @@ if st.session_state.suite_metadata["suite_name"]:
                 st.session_state.validations,
                 st.session_state.data_source,
                 st.session_state.derived_statuses,
+                st.session_state.derived_lists,
             ):
                 st.balloons()
                 st.info("🎉 Suite saved successfully! You can now use it in validations.")
@@ -1566,12 +1740,14 @@ if st.session_state.suite_metadata["suite_name"]:
             }
             st.session_state.validations = []
             st.session_state.derived_statuses = []
+            st.session_state.derived_lists = []
             st.session_state.data_source = {
                 "table": DEFAULT_TABLE,
                 "filters": {},
                 "distinct": False
             }
             st.session_state.editing_derived_index = None
+            st.session_state.editing_derived_list_index = None
             st.rerun()
 
 else:
