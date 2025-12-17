@@ -378,6 +378,9 @@ def calc_overall_kpis(df, validated_materials_count=0):
 
 def calc_column_fail_counts(df):
     """Calculate failure counts per column."""
+    if df.empty or "Column" not in df.columns:
+        return pd.DataFrame(columns=["Column", "Failed Materials"])
+
     return (
         df.groupby("Column")["Material Number"]
         .nunique()
