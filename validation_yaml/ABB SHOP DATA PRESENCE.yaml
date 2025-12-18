@@ -8,8 +8,8 @@ data_source:
   filters:
     PRODUCT_HIERARCHY: LIKE '5%'
     OMS_FLAG: Y
-    LAST_SALES_DATE: '> -3 years'
-  distinct: true
+    CATALOG_501: X
+  distinct: false
 validations:
 - type: expect_column_values_to_not_be_null
   columns:
@@ -20,7 +20,6 @@ validations:
   - ABP_NUMBEROFPHASES
   - ABP_NUMBEROFPOLES
   - ABP_SERVICEFACTOR
-  - ABP_DUTYTIME
   - ABP_ENCLOSURETYPE
   - ABP_FRAMESIZE
   - ABP_MOTORBASETYPE
@@ -63,13 +62,13 @@ validations:
   - ENG_MOUNTING_ORIENTATION
   - ENG_BRAKE_CODE
   - ENG_AGENCY_LOGOS_READABLE
-  expectation_id: exp_expect_column_values_to_not_be_null_cols_4255ad2d
+  - ABP_TYPEOFDUTY
+  expectation_id: exp_expect_column_values_to_not_be_null_cols_cda4e89d
 derived_statuses:
 - status: ABP DATA INCOMPLETE
   columns:
   - ABP_BRAKEPRESENT
   - ABP_CERTIFICATIONAGENCY
-  - ABP_DUTYTIME
   - ABP_EFFICIENCYLEVEL
   - ABP_ELECTRICALDATA1
   - ABP_ENCLOSURETYPE
@@ -81,6 +80,7 @@ derived_statuses:
   - ABP_NUMBEROFPHASES
   - ABP_NUMBEROFPOLES
   - ABP_SERVICEFACTOR
+  - ABP_TYPEOFDUTY
   expectation_type: expect_column_values_to_not_be_null
 - status: Z01 DATA INCOMPLETE
   columns:
