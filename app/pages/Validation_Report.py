@@ -111,6 +111,18 @@ def _adapt_simple_to_legacy_format(simple_payload, yaml_path):
     # Get index column from suite config
     index_column = suite_config.get("metadata", {}).get("index_column", "material_number").lower()
 
+    # Load YAML to get expected values for each validation
+    import yaml
+    with open(yaml_path, 'r') as f:
+        yaml_config = yaml.safe_load(f)
+
+    # Build a lookup of expectation_id -> validation config
+    validation_lookup = {}
+    for validation in yaml_config.get('validations', []):
+        # This will be populated by sql_generator with expectation_id
+        # For now, we'll need to match by type and column
+        validation_lookup[validation.get('type', '')] = validation
+
     # Build legacy results list
     results = []
     for exp_col in exp_columns:
@@ -130,6 +142,38 @@ def _adapt_simple_to_legacy_format(simple_payload, yaml_path):
             expectation_type = exp_col
             column = exp_col
 
+        # Get expected values from YAML validation config
+        expected = None
+        validation_config = validation_lookup.get(expectation_type)
+        if validation_config:
+            # Extract expected values based on validation type
+            if expectation_type == 'expect_column_values_to_be_in_set':
+                # For be_in_set, expected is in rules[column]
+                rules = validation_config.get('rules', {})
+                expected = rules.get(column, rules.get(column.upper()))
+            elif 'value_set' in validation_config:
+                expected = validation_config.get('value_set')
+            elif 'expected_value' in validation_config:
+                expected = validation_config.get('expected_value')
+
+        # Build failed_materials list by extracting actual unexpected values
+        # from the source column being validated
+        failed_materials = []
+        source_column = column.lower()  # Column being validated
+
+        for _, row in failed_df.iterrows():
+            material_number = row.get(index_column, "")
+
+            # Extract the unexpected value from the source column
+            # Try both lowercase and uppercase versions
+            unexpected_value = row.get(source_column, row.get(source_column.upper(), ""))
+
+            failed_materials.append({
+                "material_number": material_number,
+                "MATERIAL_NUMBER": str(material_number).upper() if material_number else "",
+                "Unexpected Value": unexpected_value,
+            })
+
         results.append({
             "expectation_id": exp_col,
             "expectation_type": expectation_type,
@@ -139,10 +183,16 @@ def _adapt_simple_to_legacy_format(simple_payload, yaml_path):
             "unexpected_percent": 100 - exp_metrics.get("pass_rate", 100),
             "table_grain": suite_config.get("metadata", {}).get("table_grain", "MATERIAL"),
             "unique_by": suite_config.get("metadata", {}).get("unique_by", ["MATERIAL_NUMBER"]),
+            "failed_materials": failed_materials,
+            "expected": expected,  # Now included!
         })
 
     # Build legacy derived_status_results list
     derived_status_results = []
+
+    # Get derived status definitions from YAML to know which expectations they aggregate
+    derived_statuses_config = yaml_config.get("derived_statuses", [])
+
     for derived_col in derived_columns:
         derived_metrics = metrics["derived_metrics"].get(derived_col, {})
 
@@ -152,14 +202,40 @@ def _adapt_simple_to_legacy_format(simple_payload, yaml_path):
         # Extract status label (remove "derived_" prefix)
         status_label = derived_col.replace("derived_", "").replace("_", " ").title()
 
-        # Build failed materials list
+        # Find the corresponding derived status config to get constituent expectations
+        derived_config = None
+        for ds_config in derived_statuses_config:
+            if ds_config.get("name", "").lower().replace(" ", "_") == derived_col.replace("derived_", ""):
+                derived_config = ds_config
+                break
+
+        # Get list of constituent expectation IDs from config
+        constituent_exp_ids = derived_config.get("expectation_ids", []) if derived_config else []
+
+        # Build failed materials list with detailed failure information
         failed_materials = []
         for _, row in failed_df.iterrows():
+            material_number = row.get(index_column, "")
+
+            # Analyze which constituent expectations failed for this material
+            failed_expectations = []
+            failed_columns = set()
+
+            for exp_id in constituent_exp_ids:
+                # Check if this expectation column exists and failed for this material
+                if exp_id in row.index and row[exp_id] == 'FAIL':
+                    failed_expectations.append(exp_id)
+
+                    # Look up which column this expectation validates
+                    exp_metadata = lookup_expectation_metadata(exp_id, yaml_path)
+                    if exp_metadata:
+                        failed_columns.add(exp_metadata.get("column", ""))
+
             failed_materials.append({
-                "MATERIAL_NUMBER": row.get(index_column.upper(), row.get(index_column, "")),
-                "failed_columns": [],  # Will be populated by analyzing the row
-                "failure_count": 0,  # Will be calculated
-                "failed_expectations": []
+                "MATERIAL_NUMBER": str(material_number).upper() if material_number else "",
+                "failed_columns": list(failed_columns),
+                "failure_count": len(failed_expectations),
+                "failed_expectations": failed_expectations
             })
 
         derived_status_results.append({
