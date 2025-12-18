@@ -12,9 +12,11 @@ import plotly.express as px
 from pathlib import Path
 from datetime import date
 
-from validations.snowflake_runner import run_validation_from_yaml_snowflake
+from validations.snowflake_runner import run_validation_from_yaml_snowflake, run_validation_simple
 from core.cache_manager import get_cached_results, save_cached_results, clear_cache, get_cached_failures_csv, save_cached_failures_csv, save_daily_suite_artifacts
 from core.config import ensure_snowflake_config, snowflake_config_summary
+from core.validation_metrics import calculate_validation_metrics, get_failed_materials, get_summary_table
+from core.expectation_metadata import lookup_expectation_metadata
 from validations.base_validation import BaseValidationSuite
 from app.components.drill_down import render_expectation_drill_down
 from app.suite_discovery import discover_suites, get_suite_by_name
@@ -81,6 +83,108 @@ try:
 except RuntimeError as e:
     st.error(str(e))
     st.stop()
+
+# ----------------------------------------------------------
+# Adapter function for backward compatibility
+# ----------------------------------------------------------
+def _adapt_simple_to_legacy_format(simple_payload, yaml_path):
+    """
+    Convert simplified validation payload to legacy format for UI compatibility.
+
+    This adapter allows us to use run_validation_simple() while maintaining
+    compatibility with existing UI components that expect the old format.
+
+    Args:
+        simple_payload: Output from run_validation_simple()
+        yaml_path: Path to YAML file for metadata lookup
+
+    TODO: Progressively remove this adapter as UI components are updated.
+    """
+    df = simple_payload["df"]
+    metrics = simple_payload["metrics"]
+    suite_config = simple_payload["suite_config"]
+
+    # Extract expectation and derived columns
+    exp_columns = [col for col in df.columns if col.startswith("exp_")]
+    derived_columns = [col for col in df.columns if col.startswith("derived_")]
+
+    # Get index column from suite config
+    index_column = suite_config.get("metadata", {}).get("index_column", "material_number").lower()
+
+    # Build legacy results list
+    results = []
+    for exp_col in exp_columns:
+        exp_metrics = metrics["expectation_metrics"].get(exp_col, {})
+
+        # Get failed materials for this expectation
+        failed_df = get_failed_materials(df, exp_id=exp_col, index_column=index_column)
+
+        # Look up expectation metadata from YAML
+        metadata = lookup_expectation_metadata(exp_col, yaml_path)
+
+        if metadata:
+            expectation_type = metadata.get("expectation_type", exp_col)
+            column = metadata.get("column", exp_col)
+        else:
+            # Fallback if lookup fails
+            expectation_type = exp_col
+            column = exp_col
+
+        results.append({
+            "expectation_id": exp_col,
+            "expectation_type": expectation_type,
+            "column": column,
+            "element_count": exp_metrics.get("total", 0),
+            "unexpected_count": exp_metrics.get("failures", 0),
+            "unexpected_percent": 100 - exp_metrics.get("pass_rate", 100),
+            "table_grain": suite_config.get("metadata", {}).get("table_grain", "MATERIAL"),
+            "unique_by": suite_config.get("metadata", {}).get("unique_by", ["MATERIAL_NUMBER"]),
+        })
+
+    # Build legacy derived_status_results list
+    derived_status_results = []
+    for derived_col in derived_columns:
+        derived_metrics = metrics["derived_metrics"].get(derived_col, {})
+
+        # Get failed materials for this derived status
+        failed_df = get_failed_materials(df, derived_id=derived_col, index_column=index_column)
+
+        # Extract status label (remove "derived_" prefix)
+        status_label = derived_col.replace("derived_", "").replace("_", " ").title()
+
+        # Build failed materials list
+        failed_materials = []
+        for _, row in failed_df.iterrows():
+            failed_materials.append({
+                "MATERIAL_NUMBER": row.get(index_column.upper(), row.get(index_column, "")),
+                "failed_columns": [],  # Will be populated by analyzing the row
+                "failure_count": 0,  # Will be calculated
+                "failed_expectations": []
+            })
+
+        derived_status_results.append({
+            "status_label": status_label,
+            "expectation_id": derived_col,
+            "expectation_type": "Derived Status",
+            "unexpected_count": derived_metrics.get("failures", 0),
+            "unexpected_percent": 100 - derived_metrics.get("pass_rate", 100),
+            "context_columns": [index_column.upper()],
+            "failed_materials": failed_materials,
+        })
+
+    # Get list of validated materials
+    if index_column in df.columns:
+        validated_materials = df[index_column].unique().tolist()
+    else:
+        validated_materials = []
+
+    return {
+        "results": results,
+        "derived_status_results": derived_status_results,
+        "validated_materials": validated_materials,
+        "total_validated_count": metrics.get("total_materials", len(validated_materials)),
+        "full_results_df": df,
+    }
 
 # ----------------------------------------------------------
 # Load or run validation
@@ -155,10 +259,14 @@ def load_or_run_validation(suite_config):
             unsafe_allow_html=True,
         )
         with st.spinner(f"Running {suite_config['suite_name']} validation..."):
-            payload = run_validation_from_yaml_snowflake(
-                suite_config["yaml_path"],
-                include_failure_details=True
+            # Use simplified validation approach
+            simple_payload = run_validation_simple(
+                suite_config["yaml_path"]
             )
+
+            # Convert to legacy format for UI compatibility
+            payload = _adapt_simple_to_legacy_format(simple_payload, suite_config["yaml_path"])
+
             results = payload.get("results", []) if isinstance(payload, dict) else payload
             derived_status_results = payload.get("derived_status_results", []) if isinstance(payload, dict) else []
             validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
