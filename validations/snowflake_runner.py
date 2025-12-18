@@ -24,6 +24,90 @@ from core.grain_mapping import (
     get_context_columns_for_columns,
     get_grain_for_column,
 )
+from core.validation_metrics import calculate_validation_metrics
+
+
+def run_validation_simple(
+    yaml_path: Union[str, Path],
+    limit: int = None,
+) -> Dict[str, Any]:
+    """
+    Run validation and return simple DataFrame + metrics (no complex parsing).
+
+    This is the simplified approach that returns raw Snowflake results
+    with lightweight metrics calculated on top.
+
+    Args:
+        yaml_path: Path to YAML validation configuration file
+        limit: Optional row limit for testing
+
+    Returns:
+        Dictionary with:
+        {
+            "df": pd.DataFrame,  # Raw columnar results from Snowflake
+            "metrics": dict,      # Summary statistics
+            "suite_name": str,
+            "suite_config": dict  # For metadata lookups if needed
+        }
+
+    Example:
+        >>> result = run_validation_simple("suite.yaml", limit=100)
+        >>> df = result["df"]
+        >>> metrics = result["metrics"]
+        >>>
+        >>> # Filter failures directly
+        >>> failures = df[df["exp_a3f_841e"] == "FAIL"]
+        >>>
+        >>> # Get metrics
+        >>> print(f"Overall pass rate: {metrics['overall_pass_rate']}%")
+    """
+    print(f"▶ Running simple validation from: {yaml_path}")
+
+    # Load YAML configuration
+    with open(yaml_path, 'r') as f:
+        suite_config = yaml.safe_load(f)
+
+    suite_name = suite_config.get("metadata", {}).get("suite_name", "Unknown")
+    print(f"▶ Suite: {suite_name}")
+
+    # Attach stable expectation IDs
+    suite_config["validations"] = _annotate_expectation_ids(
+        suite_config.get("validations", []), suite_name
+    )
+
+    # Generate columnar SQL
+    start_time = time.time()
+    generator = ValidationSQLGenerator(suite_config, columnar_format=True)
+    sql = generator.generate_sql(limit=limit)
+
+    print(f"▶ Generated SQL query ({len(sql)} chars)")
+    print(f"▶ Executing in Snowflake...")
+
+    # Execute query
+    try:
+        df = _normalize_dataframe_columns(run_query(sql))
+        execution_time = time.time() - start_time
+        print(f"✅ Query executed in {execution_time:.2f} seconds")
+    except RuntimeError:
+        raise
+    except Exception as e:
+        print(f"❌ Query execution failed: {e}")
+        raise RuntimeError(f"❌ Query execution failed: {e}") from e
+
+    # Calculate simple metrics
+    metrics = calculate_validation_metrics(df, suite_config=suite_config)
+
+    print(f"✅ Validation complete")
+    print(f"   - Total rows: {metrics['total_rows']}")
+    print(f"   - Total materials: {metrics['total_materials']}")
+    print(f"   - Overall pass rate: {metrics['overall_pass_rate']}%")
+
+    return {
+        "df": df,
+        "metrics": metrics,
+        "suite_name": suite_name,
+        "suite_config": suite_config,
+    }
 
 
 def run_validation_from_yaml_snowflake(
