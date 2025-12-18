@@ -24,7 +24,7 @@ class ValidationSQLGenerator:
     SQL query that performs all validations in a single execution.
     """
 
-    def __init__(self, suite_config: Dict[str, Any]):
+    def __init__(self, suite_config: Dict[str, Any], columnar_format: bool = True):
         """
         Initialize generator with suite configuration.
 
@@ -33,6 +33,8 @@ class ValidationSQLGenerator:
                 - metadata: suite_name, description, index_column
                 - data_source: table, filters
                 - validations: list of validation rules
+            columnar_format: If True, generate one column per expectation (PASS/FAIL).
+                           If False, generate JSON array format (legacy).
         """
         self.suite_config = suite_config
         self.metadata = suite_config.get("metadata", {})
@@ -41,6 +43,7 @@ class ValidationSQLGenerator:
             suite_config.get("validations", []), self.metadata.get("suite_name", "")
         )
         self.index_column = self.metadata.get("index_column", "MATERIAL_NUMBER")
+        self.columnar_format = columnar_format
         # Deprecated: failure arrays are no longer constructed in-SQL since we now
         # return full-width validation rows. Kept for backward compatibility with
         # legacy YAMLs but ignored by the generator.
@@ -69,10 +72,20 @@ class ValidationSQLGenerator:
         # Build derived group CTEs for conditional validations
         derived_group_ctes = self._build_derived_group_ctes(table_name, where_clause)
 
-        validation_results_clause = self._build_validation_results_clause()
-        select_columns = self._build_select_clause(
-            validated_columns, context_columns, extra_columns=[validation_results_clause]
-        )
+        # Build validation columns based on format
+        if self.columnar_format:
+            # New format: one column per expectation
+            validation_columns = self._build_columnar_validation_columns()
+            select_columns = self._build_select_clause(
+                validated_columns, context_columns, extra_columns=validation_columns
+            )
+        else:
+            # Legacy format: JSON array
+            validation_results_clause = self._build_validation_results_clause()
+            select_columns = self._build_select_clause(
+                validated_columns, context_columns, extra_columns=[validation_results_clause]
+            )
+
         select_keyword = "SELECT DISTINCT" if self._use_distinct() else "SELECT"
 
         # Get index column for metadata calculation
@@ -377,6 +390,215 @@ FROM base_data
         operator = "NOT IN" if membership == "exclude" else "IN"
 
         return f"{self.index_column} {operator} (SELECT {self.index_column} FROM {cte_name})"
+
+    def _build_columnar_validation_columns(self) -> List[str]:
+        """
+        Build list of CASE statements for columnar validation format.
+
+        Returns one CASE statement per expectation in format:
+        CASE WHEN {failure_condition} THEN 'FAIL' ELSE 'PASS' END AS {exp_id}
+
+        Example:
+            CASE WHEN ORG_LEVEL IS NULL THEN 'FAIL' ELSE 'PASS' END AS exp_c49b5f_841e
+        """
+        validation_columns: List[str] = []
+
+        for validation in self.validations:
+            val_type = validation.get("type", "")
+
+            if val_type == "expect_column_values_to_not_be_null":
+                validation_columns.extend(self._build_columnar_not_null(validation))
+            elif val_type == "expect_column_values_to_be_in_set":
+                validation_columns.extend(self._build_columnar_value_in_set(validation))
+            elif val_type == "expect_column_values_to_not_be_in_set":
+                validation_columns.extend(self._build_columnar_value_not_in_set(validation))
+            elif val_type == "expect_column_values_to_match_regex":
+                validation_columns.extend(self._build_columnar_regex(validation))
+            elif val_type == "expect_column_pair_values_to_be_equal":
+                validation_columns.extend(self._build_columnar_column_pair_equal(validation))
+            elif val_type == "expect_column_pair_values_a_to_be_greater_than_b":
+                validation_columns.extend(self._build_columnar_column_pair_greater(validation))
+            elif val_type == "custom:conditional_required":
+                validation_columns.extend(self._build_columnar_conditional_required(validation))
+            elif val_type == "custom:conditional_value_in_set":
+                validation_columns.extend(self._build_columnar_conditional_value_in_set(validation))
+
+        return validation_columns
+
+    def _build_columnar_not_null(self, validation: Dict) -> List[str]:
+        """Build columnar CASE statements for not-null validations."""
+        columns = validation.get("columns", [])
+        case_statements: List[str] = []
+
+        conditional_check = self._get_conditional_check(validation)
+
+        for col in columns:
+            col_upper = col.upper()
+            expectation_id = build_scoped_expectation_id(validation, col)
+
+            # Build WHEN condition
+            when_condition = f"{col_upper} IS NULL"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
+            case_stmt = f"CASE WHEN {when_condition} THEN 'FAIL' ELSE 'PASS' END AS {expectation_id}"
+            case_statements.append(case_stmt)
+
+        return case_statements
+
+    def _build_columnar_value_in_set(self, validation: Dict) -> List[str]:
+        """Build columnar CASE statements for value-in-set validations."""
+        rules = validation.get("rules", {})
+        case_statements: List[str] = []
+
+        conditional_check = self._get_conditional_check(validation)
+
+        for column, allowed_values in rules.items():
+            col_upper = column.upper()
+            expectation_id = build_scoped_expectation_id(validation, column)
+
+            # Format value set for SQL
+            if isinstance(allowed_values, list):
+                value_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
+                                     for v in allowed_values)
+            else:
+                value_set = f"'{allowed_values}'"
+
+            # Build WHEN condition
+            when_condition = f"{col_upper} NOT IN ({value_set})"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
+            case_stmt = f"CASE WHEN {when_condition} THEN 'FAIL' ELSE 'PASS' END AS {expectation_id}"
+            case_statements.append(case_stmt)
+
+        return case_statements
+
+    def _build_columnar_value_not_in_set(self, validation: Dict) -> List[str]:
+        """Build columnar CASE statements for value-not-in-set validations."""
+        column = validation.get("column")
+        forbidden_values = validation.get("value_set", [])
+
+        if not column:
+            return []
+
+        col_upper = column.upper()
+        expectation_id = build_scoped_expectation_id(validation, column)
+
+        conditional_check = self._get_conditional_check(validation)
+
+        # Format value set for SQL
+        value_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
+                             for v in forbidden_values)
+
+        # Build WHEN condition
+        when_condition = f"{col_upper} IN ({value_set})"
+        if conditional_check:
+            when_condition = f"({conditional_check}) AND {when_condition}"
+
+        case_stmt = f"CASE WHEN {when_condition} THEN 'FAIL' ELSE 'PASS' END AS {expectation_id}"
+        return [case_stmt]
+
+    def _build_columnar_regex(self, validation: Dict) -> List[str]:
+        """Build columnar CASE statements for regex validations."""
+        columns = validation.get("columns", [])
+        regex_pattern = validation.get("regex", "")
+        case_statements: List[str] = []
+
+        conditional_check = self._get_conditional_check(validation)
+
+        for column in columns:
+            col_upper = column.upper()
+            expectation_id = build_scoped_expectation_id(validation, column)
+
+            # Escape single quotes in regex pattern
+            escaped_pattern = regex_pattern.replace("'", "''")
+
+            # Build WHEN condition
+            when_condition = f"NOT RLIKE({col_upper}, '{escaped_pattern}')"
+            if conditional_check:
+                when_condition = f"({conditional_check}) AND {when_condition}"
+
+            case_stmt = f"CASE WHEN {when_condition} THEN 'FAIL' ELSE 'PASS' END AS {expectation_id}"
+            case_statements.append(case_stmt)
+
+        return case_statements
+
+    def _build_columnar_column_pair_equal(self, validation: Dict) -> List[str]:
+        """Build columnar CASE statement for column pair equality validation."""
+        col_a = validation.get("column_a")
+        col_b = validation.get("column_b")
+
+        col_a_upper = col_a.upper()
+        col_b_upper = col_b.upper()
+        expectation_id = build_scoped_expectation_id(validation, f"{col_a}|{col_b}")
+
+        when_condition = (
+            f"{col_a_upper} != {col_b_upper} OR "
+            f"({col_a_upper} IS NULL AND {col_b_upper} IS NOT NULL) OR "
+            f"({col_a_upper} IS NOT NULL AND {col_b_upper} IS NULL)"
+        )
+
+        case_stmt = f"CASE WHEN {when_condition} THEN 'FAIL' ELSE 'PASS' END AS {expectation_id}"
+        return [case_stmt]
+
+    def _build_columnar_column_pair_greater(self, validation: Dict) -> List[str]:
+        """Build columnar CASE statement for column pair greater-than validation."""
+        col_a = validation.get("column_a")
+        col_b = validation.get("column_b")
+        or_equal = validation.get("or_equal", False)
+
+        col_a_upper = col_a.upper()
+        col_b_upper = col_b.upper()
+        expectation_id = build_scoped_expectation_id(validation, f"{col_a}|{col_b}")
+
+        # Determine comparison operator
+        if or_equal:
+            when_condition = f"{col_a_upper} < {col_b_upper} OR {col_a_upper} IS NULL OR {col_b_upper} IS NULL"
+        else:
+            when_condition = f"{col_a_upper} <= {col_b_upper} OR {col_a_upper} IS NULL OR {col_b_upper} IS NULL"
+
+        case_stmt = f"CASE WHEN {when_condition} THEN 'FAIL' ELSE 'PASS' END AS {expectation_id}"
+        return [case_stmt]
+
+    def _build_columnar_conditional_required(self, validation: Dict) -> List[str]:
+        """Build columnar CASE statement for conditional required validation."""
+        condition_col = validation.get("condition_column")
+        condition_values = validation.get("condition_values", [])
+        required_col = validation.get("required_column")
+
+        condition_upper = condition_col.upper()
+        required_upper = required_col.upper()
+        expectation_id = build_scoped_expectation_id(validation, f"{condition_col}|{required_col}")
+
+        # Format condition values
+        value_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
+                             for v in condition_values)
+
+        when_condition = f"{condition_upper} IN ({value_set}) AND {required_upper} IS NULL"
+        case_stmt = f"CASE WHEN {when_condition} THEN 'FAIL' ELSE 'PASS' END AS {expectation_id}"
+        return [case_stmt]
+
+    def _build_columnar_conditional_value_in_set(self, validation: Dict) -> List[str]:
+        """Build columnar CASE statement for conditional value in set validation."""
+        condition_col = validation.get("condition_column")
+        condition_values = validation.get("condition_values", [])
+        target_col = validation.get("target_column")
+        allowed_values = validation.get("allowed_values", [])
+
+        condition_upper = condition_col.upper()
+        target_upper = target_col.upper()
+        expectation_id = build_scoped_expectation_id(validation, f"{condition_col}|{target_col}")
+
+        # Format value sets
+        condition_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
+                                 for v in condition_values)
+        allowed_set = ', '.join(f"'{v}'" if isinstance(v, str) else str(v)
+                               for v in allowed_values)
+
+        when_condition = f"{condition_upper} IN ({condition_set}) AND {target_upper} NOT IN ({allowed_set})"
+        case_stmt = f"CASE WHEN {when_condition} THEN 'FAIL' ELSE 'PASS' END AS {expectation_id}"
+        return [case_stmt]
 
     def _build_validation_results_clause(self) -> str:
         """Build ARRAY_CONSTRUCT of validation failure objects."""
@@ -737,7 +959,13 @@ FROM base_data
 
 
 def _annotate_expectation_ids(validations: List[Dict[str, Any]], suite_name: str) -> List[Dict[str, Any]]:
-    """Attach deterministic expectation IDs so SQL and parser stay aligned."""
+    """Attach deterministic expectation IDs so SQL and parser stay aligned.
+
+    ID format: exp_{6_hex_chars} (e.g., 'exp_a3f4b2')
+
+    IDs are stable across YAML changes - removing index from hash ensures
+    same expectation type always produces same base ID regardless of position.
+    """
 
     annotated = []
     for idx, validation in enumerate(validations):
@@ -752,8 +980,9 @@ def _annotate_expectation_ids(validations: List[Dict[str, Any]], suite_name: str
             annotated.append(val_copy)
             continue
 
-        raw_id = f"{suite_name}|{idx}|{validation.get('type', '')}"
-        expectation_id = hashlib.md5(raw_id.encode()).hexdigest()[:12]
+        # Stable hash: suite + type only (no index for stability)
+        raw_id = f"{suite_name}|{validation.get('type', '')}"
+        expectation_id = hashlib.md5(raw_id.encode()).hexdigest()[:6]  # Shorter: 6 chars
         val_copy["expectation_id"] = f"exp_{expectation_id}"
         annotated.append(val_copy)
 
@@ -761,9 +990,15 @@ def _annotate_expectation_ids(validations: List[Dict[str, Any]], suite_name: str
 
 
 def build_scoped_expectation_id(validation: Dict[str, Any], discriminator: str) -> str:
-    """Create a stable expectation id for a specific validation target."""
+    """Create a stable expectation id for a specific validation target.
+
+    Scoped ID format: exp_{6_hex}_{4_hex} (e.g., 'exp_a3f4b2_c7d8')
+
+    The discriminator is typically the column name for multi-column validations,
+    or a compound key like "col_a|col_b" for column pair validations.
+    """
 
     base_id = validation.get("expectation_id", "")
     raw_scope = f"{base_id}|{discriminator}"
-    scoped_hash = hashlib.md5(raw_scope.encode()).hexdigest()[:8]
+    scoped_hash = hashlib.md5(raw_scope.encode()).hexdigest()[:4]  # Shorter: 4 chars
     return f"{base_id}_{scoped_hash}"
