@@ -30,6 +30,7 @@ def run_validation_from_yaml_snowflake(
     yaml_path: Union[str, Path],
     limit: int = None,
     include_failure_details: bool = False,
+    columnar_format: bool = True,
 ) -> Dict[str, Any]:
     """
     Run validation using Snowflake-native SQL generated from YAML configuration.
@@ -41,6 +42,9 @@ def run_validation_from_yaml_snowflake(
     Args:
         yaml_path: Path to YAML validation configuration file
         limit: Optional row limit for testing
+        include_failure_details: Include detailed failure information
+        columnar_format: If True, use columnar format (one column per expectation).
+                        If False, use legacy JSON array format.
 
     Returns:
         Dictionary with structure:
@@ -83,10 +87,11 @@ def run_validation_from_yaml_snowflake(
 
     # Generate SQL
     start_time = time.time()
-    generator = ValidationSQLGenerator(suite_config)
+    generator = ValidationSQLGenerator(suite_config, columnar_format=columnar_format)
     sql = generator.generate_sql(limit=limit)
 
     print(f"▶ Generated SQL query ({len(sql)} chars)")
+    print(f"▶ Format: {'Columnar' if columnar_format else 'Legacy JSON'}")
     print(f"▶ Executing in Snowflake...")
 
     # Execute query
@@ -103,8 +108,11 @@ def run_validation_from_yaml_snowflake(
         print(f"❌ Query execution failed: {e}")
         raise RuntimeError(f"❌ Query execution failed: {e}") from e
 
-    # Parse results
-    results = _parse_sql_results(df, suite_config, include_failure_details)
+    # Parse results based on format
+    if columnar_format:
+        results = _parse_columnar_results(df, suite_config, include_failure_details)
+    else:
+        results = _parse_sql_results(df, suite_config, include_failure_details)
 
     print(f"✅ Validation complete: {len(results['results'])} rules checked")
 
@@ -117,6 +125,237 @@ def _normalize_dataframe_columns(df: pd.DataFrame) -> pd.DataFrame:
     normalized = df.copy()
     normalized.columns = [str(col).lower() for col in normalized.columns]
     return normalized
+
+
+def _parse_columnar_results(
+    df: pd.DataFrame,
+    suite_config: Dict[str, Any],
+    include_failure_details: bool = False,
+) -> Dict[str, Any]:
+    """
+    Parse columnar format results where each expectation is a separate column.
+
+    In columnar format, expectation columns are named like:
+    - exp_c49b5f_841e = 'PASS' or 'FAIL'
+    - derived_abp_data_incomplete = 'PASS' or 'FAIL'
+
+    Args:
+        df: DataFrame with one column per expectation
+        suite_config: Original suite configuration
+        include_failure_details: Include detailed failure information
+
+    Returns:
+        Dictionary with same structure as legacy format for backward compatibility
+    """
+    from core.expectation_metadata import build_expectation_catalog
+
+    if df.empty:
+        return {
+            "results": [],
+            "derived_status_results": [],
+            "validated_materials": [],
+            "all_validated_materials": [],
+            "total_validated_count": 0,
+            "full_results_df": df,
+        }
+
+    # Get index column
+    index_column = (
+        suite_config.get("metadata", {}).get("index_column", "material_number").lower()
+    )
+
+    # Calculate metadata from DataFrame
+    total_validated = 0
+    all_validated_materials = []
+    if index_column in df.columns and not df.empty:
+        all_validated_materials = df[index_column].dropna().unique().tolist()
+        total_validated = len(all_validated_materials)
+
+    element_count = len(df)
+
+    # Build expectation catalog from YAML to map IDs to metadata
+    # We'll construct a temporary YAML path if needed, or use suite_config directly
+    suite_name = suite_config.get("metadata", {}).get("suite_name", "")
+    validations = suite_config.get("validations", [])
+
+    # Build catalog mapping exp_id -> {type, column}
+    catalog = {}
+    for validation in validations:
+        val_type = validation.get("type")
+        base_id = validation.get("expectation_id")
+
+        # Extract targets
+        targets = _extract_validation_targets_from_config(validation)
+
+        for target in targets:
+            scoped_id = build_scoped_expectation_id(validation, target)
+            catalog[scoped_id] = {
+                "expectation_type": val_type,
+                "column": target,
+                "base_id": base_id,
+            }
+
+    # Identify expectation columns in DataFrame
+    exp_columns = [col for col in df.columns if col.startswith("exp_")]
+
+    # Build results for each expectation
+    results = []
+    for exp_id in exp_columns:
+        if exp_id not in catalog:
+            print(f"Warning: Expectation ID {exp_id} not found in catalog")
+            continue
+
+        metadata = catalog[exp_id]
+
+        # Count failures
+        unexpected_count = (df[exp_id] == 'FAIL').sum()
+        unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+
+        table_grain, unique_by = get_grain_for_column(metadata["column"])
+
+        result = {
+            "expectation_type": metadata["expectation_type"],
+            "column": metadata["column"],
+            "expectation_id": exp_id,
+            "success": unexpected_count == 0,
+            "element_count": element_count,
+            "unexpected_count": unexpected_count,
+            "unexpected_percent": round(unexpected_percent, 2),
+            "table_grain": table_grain,
+            "unique_by": unique_by,
+            "flag_column": exp_id,  # The column itself is the flag
+            "context_columns": get_context_columns_for_columns([metadata["column"]]),
+        }
+
+        # Add failure details if requested
+        if include_failure_details and unexpected_count > 0:
+            failed_rows = df[df[exp_id] == 'FAIL']
+            result["failed_materials"] = _build_columnar_failure_records(
+                failed_rows,
+                result["context_columns"],
+                metadata["column"],
+                index_column,
+            )
+
+        results.append(result)
+
+    # Handle derived statuses
+    derived_status_results = []
+    derived_columns = [col for col in df.columns if col.startswith("derived_")]
+
+    for derived_col in derived_columns:
+        # Extract status label from column name
+        status_label = derived_col.replace("derived_", "").replace("_", " ").title()
+
+        # Count failures
+        unexpected_count = (df[derived_col] == 'FAIL').sum()
+        unexpected_percent = (unexpected_count / element_count * 100) if element_count > 0 else 0.0
+
+        # Get context columns from the first related expectation (approximation)
+        context_columns = []
+        if results:
+            context_columns = results[0].get("context_columns", [])
+
+        result = {
+            "expectation_type": "custom:derived_status",
+            "column": status_label,
+            "status_label": status_label,
+            "expectation_id": derived_col,
+            "success": unexpected_count == 0,
+            "element_count": element_count,
+            "unexpected_count": unexpected_count,
+            "unexpected_percent": round(unexpected_percent, 2),
+            "table_grain": None,
+            "unique_by": [],
+            "flag_column": derived_col,
+            "context_columns": context_columns,
+        }
+
+        if include_failure_details and unexpected_count > 0:
+            failed_rows = df[df[derived_col] == 'FAIL']
+            result["failed_materials"] = _build_columnar_failure_records(
+                failed_rows,
+                context_columns,
+                status_label,
+                index_column,
+            )
+
+        derived_status_results.append(result)
+
+    return {
+        "results": results,
+        "derived_status_results": derived_status_results,
+        "validated_materials": all_validated_materials,
+        "all_validated_materials": all_validated_materials,
+        "total_validated_count": total_validated,
+        "full_results_df": df,
+    }
+
+
+def _extract_validation_targets_from_config(validation: Dict[str, Any]) -> List[str]:
+    """Extract target columns from a validation definition."""
+    val_type = validation.get("type", "")
+
+    # Single column
+    if "column" in validation:
+        return [validation["column"]]
+
+    # Multiple columns
+    if "columns" in validation:
+        return validation["columns"]
+
+    # Column pair
+    if val_type.startswith("expect_column_pair"):
+        col_a = validation.get("column_a")
+        col_b = validation.get("column_b")
+        if col_a and col_b:
+            return [f"{col_a}|{col_b}"]
+
+    # Rules-based (value_in_set)
+    if val_type == "expect_column_values_to_be_in_set":
+        rules = validation.get("rules", {})
+        return list(rules.keys())
+
+    # Conditional
+    if "condition_column" in validation and "required_column" in validation:
+        return [f"{validation['condition_column']}|{validation['required_column']}"]
+
+    if "condition_column" in validation and "target_column" in validation:
+        return [f"{validation['condition_column']}|{validation['target_column']}"]
+
+    return []
+
+
+def _build_columnar_failure_records(
+    failed_rows: pd.DataFrame,
+    context_columns: List[str],
+    column_name: str,
+    index_column: str,
+) -> List[Dict[str, Any]]:
+    """Build failure detail records from columnar format."""
+    failures = []
+
+    for _, row in failed_rows.iterrows():
+        record = {}
+
+        # Add context columns
+        for col in context_columns:
+            col_lower = col.lower()
+            if col_lower in row.index:
+                record[col] = row[col_lower]
+
+        # Add material number
+        if index_column in row.index:
+            record["material_number"] = row[index_column]
+
+        # Add unexpected value (the actual column value)
+        col_lower = column_name.lower()
+        if col_lower in row.index:
+            record["Unexpected Value"] = row[col_lower]
+
+        failures.append(record)
+
+    return failures
 
 
 def _parse_sql_results(

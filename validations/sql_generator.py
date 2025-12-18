@@ -76,8 +76,13 @@ class ValidationSQLGenerator:
         if self.columnar_format:
             # New format: one column per expectation
             validation_columns = self._build_columnar_validation_columns()
+
+            # Add derived status columns (computed from expectation columns)
+            derived_status_columns = self._build_columnar_derived_status_columns()
+
+            all_extra_columns = validation_columns + derived_status_columns
             select_columns = self._build_select_clause(
-                validated_columns, context_columns, extra_columns=validation_columns
+                validated_columns, context_columns, extra_columns=all_extra_columns
             )
         else:
             # Legacy format: JSON array
@@ -599,6 +604,52 @@ FROM base_data
         when_condition = f"{condition_upper} IN ({condition_set}) AND {target_upper} NOT IN ({allowed_set})"
         case_stmt = f"CASE WHEN {when_condition} THEN 'FAIL' ELSE 'PASS' END AS {expectation_id}"
         return [case_stmt]
+
+    def _build_columnar_derived_status_columns(self) -> List[str]:
+        """
+        Build derived status columns as SQL CASE expressions.
+
+        Each derived status is a logical OR of its constituent expectation failures.
+
+        Example:
+            CASE
+              WHEN exp_a3f = 'FAIL' OR exp_b2e = 'FAIL' OR exp_c7d = 'FAIL'
+              THEN 'FAIL'
+              ELSE 'PASS'
+            END AS derived_abp_data_incomplete
+
+        Returns:
+            List of CASE statements for derived statuses
+        """
+        from validations.derived_status_resolver import DerivedStatusResolver
+
+        derived_statuses = self.suite_config.get("derived_statuses", [])
+        if not derived_statuses:
+            return []
+
+        # Initialize resolver to get scoped IDs
+        resolver = DerivedStatusResolver(self.validations, derived_statuses)
+
+        case_statements: List[str] = []
+
+        for resolved_status in resolver.get_all_resolved_derived_statuses():
+            status_label = resolved_status.get("status") or resolved_status.get("status_label")
+            resolved_ids = resolved_status.get("resolved_scoped_ids", [])
+
+            if not resolved_ids or not status_label:
+                continue
+
+            # Build column name from status label (sanitize for SQL)
+            column_name = "derived_" + status_label.lower().replace(" ", "_").replace("-", "_")
+
+            # Build OR condition: fails if ANY constituent expectation fails
+            fail_conditions = [f"{exp_id} = 'FAIL'" for exp_id in resolved_ids]
+            when_condition = " OR ".join(fail_conditions)
+
+            case_stmt = f"CASE WHEN {when_condition} THEN 'FAIL' ELSE 'PASS' END AS {column_name}"
+            case_statements.append(case_stmt)
+
+        return case_statements
 
     def _build_validation_results_clause(self) -> str:
         """Build ARRAY_CONSTRUCT of validation failure objects."""
