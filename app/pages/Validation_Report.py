@@ -12,13 +12,12 @@ import plotly.express as px
 from pathlib import Path
 from datetime import date
 
-from validations.snowflake_runner import run_validation_from_yaml_snowflake, run_validation_simple
+from validations.snowflake_runner import run_validation_simple
 from core.cache_manager import get_cached_results, save_cached_results, clear_cache, get_cached_failures_csv, save_cached_failures_csv, save_daily_suite_artifacts
 from core.config import ensure_snowflake_config, snowflake_config_summary
 from core.validation_metrics import calculate_validation_metrics, get_failed_materials, get_summary_table
 from core.expectation_metadata import lookup_expectation_metadata
-from validations.base_validation import BaseValidationSuite
-from app.components.drill_down import render_expectation_drill_down
+from app.components.columnar_drill_down import render_columnar_drill_down, render_derived_status_drill_down
 from app.suite_discovery import discover_suites, get_suite_by_name
 from io import StringIO
 
@@ -85,184 +84,6 @@ except RuntimeError as e:
     st.stop()
 
 # ----------------------------------------------------------
-# Adapter function for backward compatibility
-# ----------------------------------------------------------
-def _adapt_simple_to_legacy_format(simple_payload, yaml_path):
-    """
-    Convert simplified validation payload to legacy format for UI compatibility.
-
-    This adapter allows us to use run_validation_simple() while maintaining
-    compatibility with existing UI components that expect the old format.
-
-    Args:
-        simple_payload: Output from run_validation_simple()
-        yaml_path: Path to YAML file for metadata lookup
-
-    TODO: Progressively remove this adapter as UI components are updated.
-    """
-    df = simple_payload["df"]
-    metrics = simple_payload["metrics"]
-    suite_config = simple_payload["suite_config"]
-
-    # Extract expectation and derived columns
-    exp_columns = [col for col in df.columns if col.startswith("exp_")]
-    derived_columns = [col for col in df.columns if col.startswith("derived_")]
-
-    # Get index column from suite config
-    index_column = suite_config.get("metadata", {}).get("index_column", "material_number").lower()
-
-    # Load YAML to get expected values for each validation
-    import yaml
-    with open(yaml_path, 'r') as f:
-        yaml_config = yaml.safe_load(f)
-
-    # Build a lookup of expectation_id -> validation config
-    validation_lookup = {}
-    for validation in yaml_config.get('validations', []):
-        # This will be populated by sql_generator with expectation_id
-        # For now, we'll need to match by type and column
-        validation_lookup[validation.get('type', '')] = validation
-
-    # Build legacy results list
-    results = []
-    for exp_col in exp_columns:
-        exp_metrics = metrics["expectation_metrics"].get(exp_col, {})
-
-        # Get failed materials for this expectation
-        failed_df = get_failed_materials(df, exp_id=exp_col, index_column=index_column)
-
-        # Look up expectation metadata from YAML
-        metadata = lookup_expectation_metadata(exp_col, yaml_path)
-
-        if metadata:
-            expectation_type = metadata.get("expectation_type", exp_col)
-            column = metadata.get("column", exp_col)
-        else:
-            # Fallback if lookup fails
-            expectation_type = exp_col
-            column = exp_col
-
-        # Get expected values from YAML validation config
-        expected = None
-        validation_config = validation_lookup.get(expectation_type)
-        if validation_config:
-            # Extract expected values based on validation type
-            if expectation_type == 'expect_column_values_to_be_in_set':
-                # For be_in_set, expected is in rules[column]
-                rules = validation_config.get('rules', {})
-                expected = rules.get(column, rules.get(column.upper()))
-            elif 'value_set' in validation_config:
-                expected = validation_config.get('value_set')
-            elif 'expected_value' in validation_config:
-                expected = validation_config.get('expected_value')
-
-        # Build failed_materials list by extracting actual unexpected values
-        # from the source column being validated
-        failed_materials = []
-        source_column = column.lower()  # Column being validated
-
-        for _, row in failed_df.iterrows():
-            material_number = row.get(index_column, "")
-
-            # Extract the unexpected value from the source column
-            # Try both lowercase and uppercase versions
-            unexpected_value = row.get(source_column, row.get(source_column.upper(), ""))
-
-            failed_materials.append({
-                "material_number": material_number,
-                "MATERIAL_NUMBER": str(material_number).upper() if material_number else "",
-                "Unexpected Value": unexpected_value,
-            })
-
-        results.append({
-            "expectation_id": exp_col,
-            "expectation_type": expectation_type,
-            "column": column,
-            "element_count": exp_metrics.get("total", 0),
-            "unexpected_count": exp_metrics.get("failures", 0),
-            "unexpected_percent": 100 - exp_metrics.get("pass_rate", 100),
-            "table_grain": suite_config.get("metadata", {}).get("table_grain", "MATERIAL"),
-            "unique_by": suite_config.get("metadata", {}).get("unique_by", ["MATERIAL_NUMBER"]),
-            "failed_materials": failed_materials,
-            "expected": expected,  # Now included!
-        })
-
-    # Build legacy derived_status_results list
-    derived_status_results = []
-
-    # Get derived status definitions from YAML to know which expectations they aggregate
-    derived_statuses_config = yaml_config.get("derived_statuses", [])
-
-    for derived_col in derived_columns:
-        derived_metrics = metrics["derived_metrics"].get(derived_col, {})
-
-        # Get failed materials for this derived status
-        failed_df = get_failed_materials(df, derived_id=derived_col, index_column=index_column)
-
-        # Extract status label (remove "derived_" prefix)
-        status_label = derived_col.replace("derived_", "").replace("_", " ").title()
-
-        # Find the corresponding derived status config to get constituent expectations
-        derived_config = None
-        for ds_config in derived_statuses_config:
-            if ds_config.get("name", "").lower().replace(" ", "_") == derived_col.replace("derived_", ""):
-                derived_config = ds_config
-                break
-
-        # Get list of constituent expectation IDs from config
-        constituent_exp_ids = derived_config.get("expectation_ids", []) if derived_config else []
-
-        # Build failed materials list with detailed failure information
-        failed_materials = []
-        for _, row in failed_df.iterrows():
-            material_number = row.get(index_column, "")
-
-            # Analyze which constituent expectations failed for this material
-            failed_expectations = []
-            failed_columns = set()
-
-            for exp_id in constituent_exp_ids:
-                # Check if this expectation column exists and failed for this material
-                if exp_id in row.index and row[exp_id] == 'FAIL':
-                    failed_expectations.append(exp_id)
-
-                    # Look up which column this expectation validates
-                    exp_metadata = lookup_expectation_metadata(exp_id, yaml_path)
-                    if exp_metadata:
-                        failed_columns.add(exp_metadata.get("column", ""))
-
-            failed_materials.append({
-                "MATERIAL_NUMBER": str(material_number).upper() if material_number else "",
-                "failed_columns": list(failed_columns),
-                "failure_count": len(failed_expectations),
-                "failed_expectations": failed_expectations
-            })
-
-        derived_status_results.append({
-            "status_label": status_label,
-            "expectation_id": derived_col,
-            "expectation_type": "Derived Status",
-            "unexpected_count": derived_metrics.get("failures", 0),
-            "unexpected_percent": 100 - derived_metrics.get("pass_rate", 100),
-            "context_columns": [index_column.upper()],
-            "failed_materials": failed_materials,
-        })
-
-    # Get list of validated materials
-    if index_column in df.columns:
-        validated_materials = df[index_column].unique().tolist()
-    else:
-        validated_materials = []
-
-    return {
-        "results": results,
-        "derived_status_results": derived_status_results,
-        "validated_materials": validated_materials,
-        "total_validated_count": metrics.get("total_materials", len(validated_materials)),
-        "full_results_df": df,
-    }
-
-# ----------------------------------------------------------
 # Load or run validation
 # ----------------------------------------------------------
 def load_or_run_validation(suite_config):
@@ -285,42 +106,16 @@ def load_or_run_validation(suite_config):
         print(f"📦 DEBUG: Found session state, cached_date={cached_date}, today={today}", flush=True)
         if cached_date == today:
             print(f"✅ Using session state results for {suite_key} (from today)", flush=True)
-            return {
-                "results": st.session_state[session_key],
-                "derived_status_results": st.session_state.get(session_derived_key, []),
-                "validated_materials": st.session_state.get(session_materials_key, []),
-                "full_results_df": st.session_state.get(session_df_key),
-            }
+            return st.session_state[session_key]
         else:
             print(f"⚠️ Session state for {suite_key} is stale (from {cached_date}), clearing...", flush=True)
             st.session_state.pop(session_key, None)
-            st.session_state.pop(session_materials_key, None)
-            st.session_state.pop(session_df_key, None)
-            st.session_state.pop(session_failures_csv_key, None)
-            st.session_state.pop(session_raw_results_key, None)
             st.session_state.pop(session_date_key, None)
-            st.session_state.pop(session_derived_key, None)
     else:
         print(f"📦 DEBUG: No session state found for {session_key}", flush=True)
 
-    # Check daily file cache
-    print(f"📦 DEBUG: Checking file cache for suite_key={suite_key}", flush=True)
-    cached = get_cached_results(suite_key)
-    print(f"📦 DEBUG: get_cached_results returned: {cached is not None}", flush=True)
-    if cached:
-        with st.spinner("Loading cached results..."):
-            print(f"✅ Using file cache for {suite_key}", flush=True)
-            st.session_state[session_key] = cached["results"]
-            st.session_state[session_derived_key] = cached.get("derived_status_results", [])
-            st.session_state[session_materials_key] = cached.get("validated_materials", [])
-            st.session_state[session_date_key] = today
-
-            # Also load the failures CSV from file cache if available
-            file_cached_csv = get_cached_failures_csv(suite_key)
-            if file_cached_csv:
-                st.session_state[session_failures_csv_key] = file_cached_csv
-                print(f"✅ Loaded failures CSV from file cache for {suite_key}", flush=True)
-        return cached
+    # File caching temporarily disabled - will be updated to support columnar format
+    # TODO: Update file cache to store simple payload format
 
     # No cache - run validation from YAML
     print(f"📦 DEBUG: No valid cache found for {suite_key}, running fresh validation...")
@@ -335,56 +130,37 @@ def load_or_run_validation(suite_config):
             unsafe_allow_html=True,
         )
         with st.spinner(f"Running {suite_config['suite_name']} validation..."):
-            # Use simplified validation approach
-            simple_payload = run_validation_simple(
+            # Run simplified validation
+            payload = run_validation_simple(
                 suite_config["yaml_path"]
             )
 
-            # Convert to legacy format for UI compatibility
-            payload = _adapt_simple_to_legacy_format(simple_payload, suite_config["yaml_path"])
+            # Extract components from simple payload
+            df = payload.get("df")
+            metrics = payload.get("metrics", {})
+            suite_name = payload.get("suite_name", "")
 
-            results = payload.get("results", []) if isinstance(payload, dict) else payload
-            derived_status_results = payload.get("derived_status_results", []) if isinstance(payload, dict) else []
-            validated_materials = payload.get("validated_materials", []) if isinstance(payload, dict) else []
-            total_validated_count = payload.get("total_validated_count", 0) if isinstance(payload, dict) else 0
-            full_results_df = payload.get("full_results_df") if isinstance(payload, dict) else None
+            # Get index column
+            index_column = payload.get("suite_config", {}).get("metadata", {}).get("index_column", "material_number").lower()
 
-            # Use total_validated_count if available (more accurate), otherwise fall back to list length
-            actual_total = total_validated_count if total_validated_count > 0 else len(validated_materials)
+            # Get validated materials count
+            total_validated_count = metrics.get("total_materials", 0)
+            actual_total = total_validated_count
 
-            print(f"📦 DEBUG: Validation returned {len(results) if results else 0} results", flush=True)
-            print(f"📦 DEBUG: Validation returned {len(derived_status_results) if derived_status_results else 0} derived status results", flush=True)
+            print(f"📦 DEBUG: Validation completed with {df.shape[0] if df is not None else 0} rows", flush=True)
             print(f"📦 DEBUG: Validation processed {actual_total} materials", flush=True)
 
-            if results is not None:
+            if df is not None:
                 # Save to both session state and file cache
                 print(f"📦 DEBUG: Saving to session state key={session_key}", flush=True)
-                st.session_state[session_key] = results
-                st.session_state[session_derived_key] = derived_status_results
-                st.session_state[session_materials_key] = validated_materials
-                st.session_state[session_df_key] = full_results_df
+                st.session_state[session_key] = payload
                 st.session_state[session_date_key] = today
-                print(f"📦 DEBUG: Calling save_cached_results for suite_key={suite_key}", flush=True)
-                save_cached_results(suite_key, results, validated_materials, derived_status_results)
-                if suite_key == "abb_shop_abp_data_presence":
-                    save_daily_suite_artifacts(
-                        suite_key,
-                        results,
-                        validated_materials,
-                        full_results_df,
-                        today,
-                        derived_status_results,
-                    )
+                # Note: File caching not yet updated for simple format
                 print(f"✅ Fresh validation completed and cached for {suite_key}", flush=True)
             else:
                 print(f"⚠️ Validation returned None for {suite_key}", flush=True)
     placeholder.empty()
-    return {
-        "results": results,
-        "derived_status_results": derived_status_results,
-        "validated_materials": validated_materials,
-        "full_results_df": full_results_df
-    }
+    return payload
 
 
 # Handle cache clear request
@@ -392,11 +168,6 @@ with st.sidebar:
     if st.button("🔄 Re-run Validation Suite", key=f"{suite_config['suite_key']}_clear_cache"):
         clear_cache(suite_config["suite_key"])
         st.session_state.pop(f"{suite_config['suite_key']}_results", None)
-        st.session_state.pop(f"{suite_config['suite_key']}_derived_status_results", None)
-        st.session_state.pop(f"{suite_config['suite_key']}_validated_materials", None)
-        st.session_state.pop(f"{suite_config['suite_key']}_full_results_df", None)
-        st.session_state.pop(f"{suite_config['suite_key']}_failures_df", None)
-        st.session_state.pop(f"{suite_config['suite_key']}_raw_results_csv", None)
         st.session_state.pop(f"{suite_config['suite_key']}_data_date", None)
         print(f"🗑️ Cleared all caches for {suite_config['suite_key']}")
         st.rerun()
@@ -416,32 +187,24 @@ except Exception as e:
     st.error(f"❌ Validation failed: {e}")
     st.stop()
 
-# Extract results and metadata
-if isinstance(payload, dict):
-    results = payload.get("results", [])
-    derived_status_results = payload.get("derived_status_results", [])
-    validated_materials = payload.get("validated_materials", [])
-    total_validated_count = payload.get("total_validated_count", 0)
-    full_results_df = payload.get("full_results_df")
-else:
-    results = payload
-    derived_status_results = []
-    validated_materials = []
-    total_validated_count = 0
-    full_results_df = None
+# Extract components from simple payload
+df = payload.get("df")
+metrics = payload.get("metrics", {})
+suite_name = payload.get("suite_name", "")
+yaml_path = suite_config["yaml_path"]
 
-# Use total_validated_count if available (more accurate), otherwise fall back to list length
-actual_total = total_validated_count if total_validated_count > 0 else len(validated_materials)
+# Get total materials count
+actual_total = metrics.get("total_materials", 0)
 
 # DEBUG: Log what we extracted
-print(f"📊 DEBUG: Extracted results type={type(results)}, len={len(results) if results else 0}", flush=True)
-print(f"📊 DEBUG: Extracted derived_status_results len={len(derived_status_results)}", flush=True)
-print(f"📊 DEBUG: Extracted validated_materials len={len(validated_materials)}, actual_total={actual_total}", flush=True)
+print(f"📊 DEBUG: Extracted DataFrame shape={df.shape if df is not None else 'None'}", flush=True)
+print(f"📊 DEBUG: Total materials={actual_total}", flush=True)
+print(f"📊 DEBUG: Overall pass rate={metrics.get('overall_pass_rate', 0)}%", flush=True)
 
 # ----------------------------------------------------------
 # Handle validation failure
 # ----------------------------------------------------------
-if results is None:
+if df is None or df.empty:
     st.error("❌ Validation failed or returned no results.")
     st.info("This usually means:")
     st.markdown("""
@@ -453,65 +216,7 @@ if results is None:
     """)
     st.stop()
 
-# ----------------------------------------------------------
-# Build or reuse DataFrame of failures (cached raw Snowflake results as CSV)
-# ----------------------------------------------------------
-suite_key = suite_config["suite_key"]
-session_failures_csv_key = f"{suite_key}_failures_df"
-session_raw_results_key = f"{suite_key}_raw_results_csv"
-session_date_key = f"{suite_key}_data_date"
-today = date.today().isoformat()
-
-cached_raw_csv = st.session_state.get(session_raw_results_key)
-cached_failures_csv = st.session_state.get(session_failures_csv_key)
-cached_date = st.session_state.get(session_date_key)
-
-raw_results_df = None
-df = None
-
-if cached_raw_csv and cached_date == today:
-    print(
-        f"📊 DEBUG: Using cached raw Snowflake results for {suite_key} from session state",
-        flush=True,
-    )
-    raw_results_df = pd.read_csv(StringIO(cached_raw_csv))
-elif cached_date == today:
-    file_cached_raw = get_cached_failures_csv(suite_key)
-    if file_cached_raw:
-        print(
-            f"📊 DEBUG: Hydrating raw Snowflake results for {suite_key} from file cache",
-            flush=True,
-        )
-        raw_results_df = pd.read_csv(StringIO(file_cached_raw))
-        st.session_state[session_raw_results_key] = file_cached_raw
-
-if raw_results_df is None and isinstance(full_results_df, pd.DataFrame):
-    raw_results_df = full_results_df
-
-if raw_results_df is not None:
-    csv_payload = raw_results_df.to_csv(index=False)
-    st.session_state[session_raw_results_key] = csv_payload
-    st.session_state[session_date_key] = today
-    save_cached_failures_csv(suite_key, raw_results_df)
-else:
-    print("⚠️ No raw Snowflake results available to cache", flush=True)
-
-if cached_failures_csv and cached_date == today:
-    print(
-        f"📊 DEBUG: Using cached failures DataFrame for {suite_key} from session state",
-        flush=True,
-    )
-    df = pd.read_csv(StringIO(cached_failures_csv))
-
-if df is None:
-    print(f"📊 DEBUG: Calling results_to_dataframe with {len(results)} results", flush=True)
-    df = BaseValidationSuite.results_to_dataframe(results, raw_results_df)
-    print(f"📊 DEBUG: DataFrame created with {len(df)} rows", flush=True)
-    failures_csv_payload = df.to_csv(index=False)
-    st.session_state[session_failures_csv_key] = failures_csv_payload
-
-if not df.empty:
-    print(f"📊 DEBUG: DataFrame columns: {list(df.columns)}", flush=True)
+print(f"📊 DEBUG: DataFrame columns: {list(df.columns)}", flush=True)
 
 # ----------------------------------------------------------
 # View Selection (persists across reruns via key)
@@ -529,45 +234,51 @@ st.divider()
 # ----------------------------------------------------------
 # Helper functions for overview metrics
 # ----------------------------------------------------------
-def calc_overall_kpis(df, validated_materials_count=0):
-    """
-    Calculate overall pass/fail metrics.
+def calc_overall_kpis_from_metrics(metrics):
+    """Calculate overall pass/fail metrics from metrics dict."""
+    total = metrics.get("total_materials", 0)
+    overall_pass_rate = metrics.get("overall_pass_rate", 100)
+    pass_rate = overall_pass_rate
+    fail_rate = 100 - pass_rate
 
-    IMPORTANT: Always use validated_materials_count (unique materials) as the total,
-    NOT element_count (total rows). Many datasets have multiple rows per material
-    (e.g., different plants, storage locations), so element_count inflates metrics.
-    """
-    # Prefer validated_materials_count (unique materials validated)
-    total = validated_materials_count
+    # Calculate passed/failed from pass rate
+    failed = int(total * (fail_rate / 100))
+    passed = total - failed
 
-    # Fall back to element_count only if validated_materials_count is unavailable
-    # (backward compatibility with older cached results)
-    if total == 0 and not df.empty and "Element Count" in df.columns:
-        max_count = df["Element Count"].max()
-        total = int(max_count) if pd.notna(max_count) else 0
-        # Warn that metrics may be inaccurate due to mixing rows and unique materials
-        if total > 0:
-            print(
-                "⚠️ WARNING: Using element_count for total (rows, not unique materials). "
-                "Metrics may be inflated. Clear cache and re-run validation for accurate metrics.",
-                flush=True
-            )
-
-    failed = df["Material Number"].dropna().nunique() if not df.empty else 0
-    passed = max(total - failed, 0)
-    fail_rate = (failed / total * 100) if total > 0 else 0
-    pass_rate = 100 - fail_rate
     return total, passed, failed, pass_rate, fail_rate
 
 
-def calc_column_fail_counts(df):
-    """Calculate failure counts per column."""
-    return (
-        df.groupby("Column")["Material Number"]
-        .nunique()
-        .reset_index(name="Failed Materials")
-        .sort_values("Failed Materials", ascending=False)
-    )
+def calc_column_fail_counts_from_metrics(metrics, yaml_path):
+    """Calculate failure counts per column from metrics dict."""
+    rows = []
+
+    for exp_id, exp_metrics in metrics.get("expectation_metrics", {}).items():
+        failures = exp_metrics.get("failures", 0)
+
+        if failures > 0:
+            # Look up which column this expectation validates
+            metadata = lookup_expectation_metadata(exp_id, yaml_path)
+            if metadata:
+                column = metadata.get("column", exp_id)
+            else:
+                column = exp_id
+
+            rows.append({
+                "Column": column,
+                "Failed Materials": failures
+            })
+
+    if rows:
+        result_df = pd.DataFrame(rows)
+        # Group by column in case multiple expectations validate the same column
+        return (
+            result_df.groupby("Column")["Failed Materials"]
+            .sum()
+            .reset_index()
+            .sort_values("Failed Materials", ascending=False)
+        )
+    else:
+        return pd.DataFrame(columns=["Column", "Failed Materials"])
 
 
 # =====================================================
@@ -576,7 +287,7 @@ def calc_column_fail_counts(df):
 if view == "Overview":
     st.subheader("Validation Summary")
 
-    total, passed, failed, pass_rate, fail_rate = calc_overall_kpis(df, actual_total)
+    total, passed, failed, pass_rate, fail_rate = calc_overall_kpis_from_metrics(metrics)
 
     # =====================================================
     # METRICS ROW - Enhanced with color coding
@@ -622,111 +333,84 @@ if view == "Overview":
     # =====================================================
     # DERIVED STATUS SUMMARY
     # =====================================================
-    derived_status_rows = []
-    for result in derived_status_results or []:
-        status_label = result.get("status_label")
-        if not status_label:
-            continue
+    # Extract derived status columns from DataFrame
+    derived_columns = [col for col in df.columns if col.startswith("derived_")]
 
-        derived_status_rows.append({
-            "Status": status_label,
-            "Expectation ID": result.get("expectation_id") or status_label,
-            "Expectation Type": result.get("expectation_type") or "Derived Status",
-            "Failed Materials": result.get("unexpected_count", 0),
-            "Failure %": result.get("unexpected_percent", 0.0),
-            "Context": ", ".join(result.get("context_columns") or []),
-        })
-
-    st.divider()
-    with st.expander("Derived Statuses", expanded=False):
-        st.caption(
-            "Derived statuses synthesize multiple expectations into a single flag. "
-            "This view shows any derived groups that triggered during the run."
-        )
-
-        if derived_status_rows:
-            derived_df = pd.DataFrame(derived_status_rows)
-            derived_df = derived_df[[
-                "Status",
-                "Expectation ID",
-                "Expectation Type",
-                "Failed Materials",
-                "Failure %",
-                "Context",
-            ]]
-
-            st.dataframe(
-                derived_df,
-                hide_index=True,
-                use_container_width=True,
+    if derived_columns:
+        st.divider()
+        with st.expander("Derived Statuses", expanded=False):
+            st.caption(
+                "Derived statuses synthesize multiple expectations into a single flag. "
+                "This view shows any derived groups that triggered during the run."
             )
 
-            # Show detailed failure breakdown for each derived status
-            st.divider()
-            st.caption("**Detailed Failure Breakdown**")
+            # Build summary table from metrics
+            derived_status_rows = []
+            for derived_col in derived_columns:
+                derived_metrics_data = metrics["derived_metrics"].get(derived_col, {})
+                status_label = derived_col.replace("derived_", "").replace("_", " ").title()
 
-            for result in derived_status_results or []:
-                status_label = result.get("status_label")
-                if not status_label:
-                    continue
+                derived_status_rows.append({
+                    "Status": status_label,
+                    "Derived ID": derived_col,
+                    "Failed Materials": derived_metrics_data.get("failures", 0),
+                    "Pass Rate": f"{derived_metrics_data.get('pass_rate', 0)}%",
+                })
 
-                failed_materials = result.get("failed_materials", [])
-                if not failed_materials:
-                    continue
+            if derived_status_rows:
+                derived_summary_df = pd.DataFrame(derived_status_rows)
+                st.dataframe(
+                    derived_summary_df,
+                    hide_index=True,
+                    use_container_width=True,
+                )
 
-                with st.expander(f"📋 {status_label} - {len(failed_materials)} materials", expanded=False):
-                    st.caption(
-                        f"Materials that failed at least one expectation in the '{status_label}' group. "
-                        "Sorted by number of failures (most issues first)."
-                    )
+                # Show detailed failure breakdown
+                st.divider()
+                st.caption("**Detailed Failure Breakdown**")
 
-                    # Build a cleaner display dataframe
-                    detail_rows = []
-                    for failed_material in failed_materials:
-                        # Extract context columns (material number, etc.)
-                        context_cols = result.get("context_columns", [])
-                        row_data = {}
+                index_column = payload.get("suite_config", {}).get("metadata", {}).get("index_column", "material_number").lower()
 
-                        for col in context_cols:
-                            row_data[col] = failed_material.get(col, "")
+                for derived_col in derived_columns:
+                    status_label = derived_col.replace("derived_", "").replace("_", " ").title()
 
-                        # Add the new tracking fields
-                        row_data["Failed Columns"] = ", ".join(failed_material.get("failed_columns", []))
-                        row_data["# Failures"] = failed_material.get("failure_count", 0)
+                    # Get failed materials
+                    failed_df = get_failed_materials(df, derived_id=derived_col, index_column=index_column)
 
-                        # Optionally show expectation IDs (can be verbose)
-                        if st.session_state.get("show_expectation_ids", False):
-                            row_data["Failed Expectations"] = ", ".join(failed_material.get("failed_expectations", []))
+                    if len(failed_df) > 0:
+                        with st.expander(f"📋 {status_label} - {len(failed_df)} materials", expanded=False):
+                            st.caption(
+                                f"Materials that failed the '{status_label}' derived status. "
+                                "Use the Details tab for more information."
+                            )
 
-                        detail_rows.append(row_data)
+                            # Show just material numbers
+                            display_df = failed_df[[index_column]].copy()
+                            display_df.columns = ["Material Number"]
 
-                    if detail_rows:
-                        detail_df = pd.DataFrame(detail_rows)
-                        st.dataframe(
-                            detail_df,
-                            hide_index=True,
-                            use_container_width=True,
-                            height=min(400, len(detail_rows) * 35 + 38),
-                        )
+                            st.dataframe(
+                                display_df,
+                                hide_index=True,
+                                use_container_width=True,
+                                height=min(400, len(display_df) * 35 + 38),
+                            )
 
-                        # Download option
-                        csv = detail_df.to_csv(index=False)
-                        st.download_button(
-                            label=f"⬇️ Download {status_label} failures as CSV",
-                            data=csv,
-                            file_name=f"{status_label.replace(' ', '_').lower()}_failures.csv",
-                            mime="text/csv",
-                        )
-
-        else:
-            st.info("No derived statuses were triggered for this validation run.")
+                            # Download option
+                            csv = display_df.to_csv(index=False)
+                            st.download_button(
+                                label=f"⬇️ Download {status_label} failures as CSV",
+                                data=csv,
+                                file_name=f"{status_label.replace(' ', '_').lower()}_failures.csv",
+                                mime="text/csv",
+                                key=f"download_derived_{derived_col}"
+                            )
 
     # =====================================================
     # DERIVED LISTS - Materials filtered by status exclusion
     # =====================================================
     # Load YAML to get derived_lists configuration
     import yaml
-    with open(suite_config["yaml_path"], 'r') as f:
+    with open(yaml_path, 'r') as f:
         yaml_config = yaml.safe_load(f)
 
     derived_lists_config = yaml_config.get("derived_lists", [])
@@ -739,21 +423,20 @@ if view == "Overview":
                 "These lists can be downloaded for further processing."
             )
 
+            # Get index column
+            index_column = payload.get("suite_config", {}).get("metadata", {}).get("index_column", "material_number").lower()
+
+            # Get all materials
+            all_material_numbers = set(str(m) for m in df[index_column].unique())
+
             # Build a map of status_label -> failed materials for quick lookup
             status_to_materials = {}
-            for result in derived_status_results or []:
-                status_label = result.get("status_label")
-                if not status_label:
-                    continue
+            for derived_col in derived_columns:
+                status_label = derived_col.replace("derived_", "").replace("_", " ").title()
 
-                # Collect all failed material numbers from this status
-                failed_materials = result.get("failed_materials", [])
-                material_numbers = set()
-                for fm in failed_materials:
-                    # Get material number from context columns
-                    mat_num = fm.get("MATERIAL_NUMBER") or fm.get("Material Number") or fm.get("material_number")
-                    if mat_num:
-                        material_numbers.add(str(mat_num))
+                # Get failed materials for this derived status
+                failed_df = get_failed_materials(df, derived_id=derived_col, index_column=index_column)
+                material_numbers = set(str(m) for m in failed_df[index_column].unique())
 
                 status_to_materials[status_label] = material_numbers
 
@@ -762,16 +445,6 @@ if view == "Overview":
                 list_name = derived_list.get("name", "Unnamed List")
                 description = derived_list.get("description", "")
                 exclude_statuses = derived_list.get("exclude_statuses", [])
-
-                # Calculate materials in this list (all materials minus excluded)
-                # Use validated_materials (contains all materials since we return all rows)
-                all_materials_list = payload.get("validated_materials", []) if isinstance(payload, dict) else []
-                all_material_numbers = set(str(m) for m in all_materials_list) if all_materials_list else set()
-
-                # If we don't have the materials list, we can't calculate derived lists
-                if len(all_material_numbers) == 0:
-                    st.warning(f"⚠️ Cannot calculate '{list_name}' - material list unavailable")
-                    continue
 
                 # Collect all materials to exclude
                 excluded_materials = set()
@@ -875,7 +548,7 @@ if view == "Overview":
     with col_right:
         st.write("**Top Failing Columns**")
 
-        failed_expect_counts = calc_column_fail_counts(df)
+        failed_expect_counts = calc_column_fail_counts_from_metrics(metrics, yaml_path)
 
         if not failed_expect_counts.empty:
             top_n = 15  # Show more with Plotly's better space usage
@@ -974,10 +647,26 @@ if view == "Overview":
 elif view == "Details":
     st.subheader("Drill-down by Expectation")
 
-    render_expectation_drill_down(
-        results=results,
-        df=df,
-        suite_name=suite_config["suite_name"],
-        cache_suite_name=suite_config["suite_key"],
-        show_expected_values=True,
+    # Choose between regular expectations and derived statuses
+    detail_type = st.radio(
+        "View",
+        ["Expectations", "Derived Statuses"],
+        horizontal=True,
+        label_visibility="collapsed"
     )
+
+    if detail_type == "Expectations":
+        render_columnar_drill_down(
+            df=df,
+            metrics=metrics,
+            yaml_path=yaml_path,
+            suite_config=payload.get("suite_config", {}),
+            suite_name=suite_name
+        )
+    else:
+        render_derived_status_drill_down(
+            df=df,
+            metrics=metrics,
+            yaml_path=yaml_path,
+            suite_config=payload.get("suite_config", {})
+        )
