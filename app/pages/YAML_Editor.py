@@ -1538,6 +1538,54 @@ with st.form("derived_status_form", enter_to_submit=False):
         key=f"derived_target_filter_{form_suffix}",
     )
 
+    # Advanced: Embed rules for conditional-only groups
+    st.divider()
+    embed_rules = st.checkbox(
+        "⚙️ Embed rules directly (for conditional logic only)",
+        value=bool(derived_group and derived_group.get("rules")),
+        help="Enable this to create a grouping that's ONLY used for conditional logic, without creating a separate validation rule.",
+        key=f"derived_embed_rules_{form_suffix}"
+    )
+
+    embedded_rules = None
+    if embed_rules and expectation_type == "expect_column_values_to_be_in_set":
+        st.info("💡 This derived group will define the condition without reporting validation failures")
+
+        if len(selected_targets) == 1:
+            target_col = selected_targets[0]
+
+            # Pre-populate if editing
+            default_values = []
+            if is_editing_derived and derived_group:
+                existing_rules = derived_group.get("rules", {})
+                default_values = existing_rules.get(target_col, [])
+
+            # Check if we have distinct values for this column
+            if target_col in distinct_values:
+                allowed_values = st.multiselect(
+                    f"Allowed values for {target_col}",
+                    options=distinct_values[target_col],
+                    default=[v for v in default_values if v in distinct_values[target_col]],
+                    help="Select which values define membership in this group",
+                    key=f"derived_embed_values_{form_suffix}"
+                )
+            else:
+                default_text = "\n".join(str(v) for v in default_values) if default_values else ""
+                allowed_values_text = st.text_area(
+                    f"Allowed values for {target_col} (one per line)",
+                    value=default_text,
+                    placeholder="-\nA\nB",
+                    help="Enter allowed values, one per line",
+                    key=f"derived_embed_values_text_{form_suffix}"
+                )
+                allowed_values = [line.strip() for line in allowed_values_text.split('\n') if line.strip()]
+
+            if allowed_values:
+                embedded_rules = {target_col: allowed_values}
+                st.caption(f"✓ Group will include materials where {target_col} is in: {', '.join(map(str, allowed_values))}")
+        else:
+            st.warning("Embedded rules are only supported for single-column groups with 'expect_column_values_to_be_in_set'")
+
     def _matches_target(entry_targets: list[str]) -> bool:
         if not selected_targets:
             return False  # No columns selected = no matches (explicit selection required)
@@ -1601,8 +1649,8 @@ with st.form("derived_status_form", enter_to_submit=False):
             st.error("Please provide a status label")
         elif not selected_targets:
             st.error("Please select at least one column/field to include in this derived status")
-        elif not selected_expectation_ids:
-            st.error("No expectations match your selection. Please adjust the expectation type or column selection.")
+        elif not selected_expectation_ids and not embedded_rules:
+            st.error("No expectations match your selection. Please adjust the expectation type or column selection, or enable embedded rules.")
         else:
             # Use filter-based format (columns + type) instead of pre-resolved expectation_ids
             derived_entry = {
@@ -1613,6 +1661,10 @@ with st.form("derived_status_form", enter_to_submit=False):
             # Expectation type is required for filter-based resolution
             if expectation_type and expectation_type != "(All types)":
                 derived_entry["expectation_type"] = expectation_type
+
+            # Add embedded rules if provided (for conditional-only groups)
+            if embedded_rules:
+                derived_entry["rules"] = embedded_rules
 
             # Auto-generate expectation_id if not provided (required for conditional_on)
             if expectation_id:
