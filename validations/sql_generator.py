@@ -269,7 +269,19 @@ FROM base_data
                 conditions.append(f"NOT RLIKE({col.upper()}, '{escaped_pattern}')")
 
         elif expectation_type == "expect_column_values_to_be_in_set":
+            # Check if rules are in the group_config (legacy format)
             rules = group_config.get("rules", {})
+
+            # If no rules in group_config, find matching validations (filter-based format)
+            if not rules:
+                for validation in self.validations:
+                    if validation.get("type") == "expect_column_values_to_be_in_set":
+                        val_rules = validation.get("rules", {})
+                        # Check if this validation has any of the columns we're looking for
+                        for col in columns:
+                            if col in val_rules:
+                                rules[col] = val_rules[col]
+
             for col, allowed_values in rules.items():
                 value_set = ', '.join(
                     f"'{v}'" if isinstance(v, str) else str(v) for v in allowed_values
