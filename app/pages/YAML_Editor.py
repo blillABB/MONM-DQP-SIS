@@ -1587,9 +1587,9 @@ with st.form("derived_status_form", enter_to_submit=False):
         st.warning("No validations match the current filters. Adjust the type or column selection.")
 
     expectation_id = st.text_input(
-        "Derived Expectation ID (optional)",
+        "Derived Expectation ID (auto-generated if blank)",
         value=default_expectation_id,
-        help="Provide a custom identifier for the derived group. Leave blank to auto-name during execution.",
+        help="Provide a custom identifier for the derived group. If left blank, an ID will be auto-generated from the status label. Required for conditional validations.",
         key=f"derived_expectation_id_{form_suffix}",
     )
 
@@ -1614,8 +1614,21 @@ with st.form("derived_status_form", enter_to_submit=False):
             if expectation_type and expectation_type != "(All types)":
                 derived_entry["expectation_type"] = expectation_type
 
+            # Auto-generate expectation_id if not provided (required for conditional_on)
             if expectation_id:
                 derived_entry["expectation_id"] = expectation_id
+            else:
+                # Generate a stable ID from status label
+                safe_label = re.sub(r"[^a-z0-9]+", "_", status_label.lower()).strip("_")
+                auto_id = f"exp_derived_{safe_label}"
+                # Ensure uniqueness
+                existing_ids = {d.get("expectation_id") for d in st.session_state.derived_statuses if d.get("expectation_id")}
+                counter = 1
+                final_id = auto_id
+                while final_id in existing_ids:
+                    counter += 1
+                    final_id = f"{auto_id}_{counter}"
+                derived_entry["expectation_id"] = final_id
 
             if is_editing_derived:
                 st.session_state.derived_statuses[st.session_state.editing_derived_index] = derived_entry
