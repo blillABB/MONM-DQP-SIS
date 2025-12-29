@@ -1485,7 +1485,11 @@ with st.form("derived_status_form", enter_to_submit=False):
         key=f"derived_status_label_{form_suffix}",
     )
 
-    type_options = ["(All types)"] + sorted(available_expectation_types)
+    # Add common types for embedded rules even if they don't exist in validations yet
+    embedded_rule_types = {"expect_column_values_to_be_in_set"}
+    all_available_types = available_expectation_types | embedded_rule_types
+
+    type_options = ["(All types)"] + sorted(all_available_types)
     if default_expectation_type and default_expectation_type not in type_options:
         type_options.append(default_expectation_type)
 
@@ -1512,6 +1516,10 @@ with st.form("derived_status_form", enter_to_submit=False):
             filtered_targets.update(targets)
         else:
             filtered_targets.add("(no column/field)")
+
+    # If using embedded rules and no matching validations exist, show all columns
+    if not filtered_targets and expectation_type in embedded_rule_types:
+        filtered_targets = set(columns)
 
     target_options = sorted(filtered_targets)
 
