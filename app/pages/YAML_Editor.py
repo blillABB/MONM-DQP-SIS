@@ -150,6 +150,102 @@ def annotate_session_validations_with_expectation_ids(validations: list[dict]):
             existing_ids.add(val["expectation_id"])
 
 
+def render_conditional_on_controls(editing_rule: dict = None, key_suffix: str = ""):
+    """
+    Render UI controls for conditional_on clause.
+
+    Args:
+        editing_rule: Existing rule being edited (for pre-population)
+        key_suffix: Unique suffix for widget keys
+
+    Returns:
+        dict or None: conditional_on configuration if enabled, else None
+    """
+    st.divider()
+    st.subheader("⚙️ Advanced: Conditional Logic (Optional)")
+
+    # Get available derived groups
+    available_groups = []
+    for derived in st.session_state.get("derived_statuses", []):
+        exp_id = derived.get("expectation_id")
+        status = derived.get("status")
+        if exp_id:
+            available_groups.append({
+                "id": exp_id,
+                "label": f"{status} ({exp_id})" if status else exp_id
+            })
+
+    if not available_groups:
+        st.info("💡 No derived groups available yet. Create derived status groups in Section 7 to use conditional logic.")
+        return None
+
+    # Check if editing and has existing conditional_on
+    default_enabled = False
+    default_group_id = available_groups[0]["id"] if available_groups else None
+    default_membership = "exclude"
+
+    if editing_rule and "conditional_on" in editing_rule:
+        default_enabled = True
+        cond = editing_rule["conditional_on"]
+        default_group_id = cond.get("derived_group", default_group_id)
+        default_membership = cond.get("membership", "exclude")
+
+    # Enable checkbox
+    enable_conditional = st.checkbox(
+        "Enable conditional logic",
+        value=default_enabled,
+        help="Apply this validation only when materials are in or not in a specific derived group",
+        key=f"enable_conditional_{key_suffix}"
+    )
+
+    if not enable_conditional:
+        return None
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Find index of default group
+        group_options = [g["label"] for g in available_groups]
+        group_ids = [g["id"] for g in available_groups]
+
+        try:
+            default_idx = group_ids.index(default_group_id)
+        except (ValueError, TypeError):
+            default_idx = 0
+
+        selected_group_label = st.selectbox(
+            "Derived Group",
+            options=group_options,
+            index=default_idx,
+            help="Select which derived group to use as condition",
+            key=f"conditional_group_{key_suffix}"
+        )
+
+        selected_group_id = group_ids[group_options.index(selected_group_label)]
+
+    with col2:
+        membership = st.selectbox(
+            "Membership",
+            options=["exclude", "include"],
+            index=0 if default_membership == "exclude" else 1,
+            help=(
+                "exclude: Apply validation when NOT in group\n"
+                "include: Apply validation only when IN group"
+            ),
+            key=f"conditional_membership_{key_suffix}"
+        )
+
+    st.caption(
+        f"✨ This validation will {'**only**' if membership == 'include' else '**not**'} "
+        f"apply to materials in the '{selected_group_label}' group"
+    )
+
+    return {
+        "derived_group": selected_group_id,
+        "membership": membership
+    }
+
+
 # NOTE: Catalog building has been moved to DerivedStatusResolver
 # This eliminates code duplication and ensures UI and runtime use the same logic.
 
@@ -696,6 +792,12 @@ if validation_type == "expect_column_values_to_not_be_null":
         key=widget_key
     )
 
+    # Render conditional logic controls
+    conditional_on = render_conditional_on_controls(
+        editing_rule=editing_rule,
+        key_suffix="not_null"
+    )
+
     button_label = "Update Rule" if is_editing else "Add Not Null Rule"
     if st.button(button_label, key="add_not_null"):
         if selected_columns:
@@ -703,6 +805,8 @@ if validation_type == "expect_column_values_to_not_be_null":
                 "type": validation_type,
                 "columns": selected_columns
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
@@ -767,6 +871,12 @@ elif validation_type == "expect_column_values_to_be_in_set":
                     converted_values.append(val)
         allowed_values = converted_values
 
+    # Render conditional logic controls
+    conditional_on = render_conditional_on_controls(
+        editing_rule=editing_rule,
+        key_suffix="value_in_set"
+    )
+
     button_label = "Update Rule" if is_editing else "Add Value In Set Rule"
     if st.button(button_label, key="add_value_in_set"):
         if allowed_values:
@@ -774,6 +884,8 @@ elif validation_type == "expect_column_values_to_be_in_set":
                 "type": validation_type,
                 "rules": {selected_column: allowed_values}
             }
+            if conditional_on:
+                rule["conditional_on"] = conditional_on
             if is_editing:
                 st.session_state.validations[st.session_state.editing_index] = rule
                 st.session_state.editing_index = None
