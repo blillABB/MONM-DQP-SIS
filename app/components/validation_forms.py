@@ -221,3 +221,45 @@ def get_expectation_display_name(expectation_type: str) -> str:
         "expect_column_pair_values_to_be_equal": "Column A = Column B",
     }
     return display_names.get(expectation_type, expectation_type)
+
+
+def render_expectation_type_selector(
+    default_type: str = "expect_column_values_to_not_be_null",
+    key: str = "validation_type_selector"
+) -> str:
+    """
+    Render an expectation type selector with organized categories shown in help text.
+
+    Args:
+        default_type: Default expectation type to select
+        key: Unique key for the selectbox widget
+
+    Returns:
+        Selected expectation type
+    """
+    all_types = get_flat_expectation_list()
+
+    # Find default index
+    try:
+        default_idx = all_types.index(default_type)
+    except ValueError:
+        default_idx = 0
+
+    # Build help text with categories
+    categories = get_expectation_categories()
+    help_lines = ["Available validation types by category:"]
+    for category, types in categories.items():
+        help_lines.append(f"\n{category}:")
+        for t in types:
+            help_lines.append(f"  • {get_expectation_display_name(t)}")
+
+    selected = st.selectbox(
+        "Validation Type",
+        options=all_types,
+        index=default_idx,
+        help="\n".join(help_lines),
+        key=key,
+        format_func=get_expectation_display_name
+    )
+
+    return selected
