@@ -1560,8 +1560,24 @@ with st.form("derived_status_form", enter_to_submit=False):
     if embed_rules and expectation_type == "expect_column_values_to_be_in_set":
         st.info("💡 This derived group will define the condition without reporting validation failures")
 
-        if len(selected_targets) == 1:
+        # Allow manual column input if needed (workaround for form reactivity)
+        manual_column = st.text_input(
+            "Column name (type manually if not in dropdown above)",
+            placeholder="e.g., PRODUCT_HIERARCHY",
+            help="If you can't find the column in the dropdown above, type it here manually",
+            key=f"derived_manual_column_{form_suffix}"
+        )
+
+        # Use manual input if provided, otherwise use selected_targets
+        if manual_column:
+            target_col = manual_column.strip().upper()
+            st.caption(f"Using manually entered column: {target_col}")
+        elif len(selected_targets) == 1:
             target_col = selected_targets[0]
+        else:
+            target_col = None
+
+        if target_col:
 
             # Pre-populate if editing
             default_values = []
@@ -1593,7 +1609,7 @@ with st.form("derived_status_form", enter_to_submit=False):
                 embedded_rules = {target_col: allowed_values}
                 st.caption(f"✓ Group will include materials where {target_col} is in: {', '.join(map(str, allowed_values))}")
         else:
-            st.warning("Embedded rules are only supported for single-column groups with 'expect_column_values_to_be_in_set'")
+            st.warning("⚠️ Please select exactly one column from the dropdown above, OR type a column name manually")
 
     def _matches_target(entry_targets: list[str]) -> bool:
         if not selected_targets:
@@ -1656,15 +1672,18 @@ with st.form("derived_status_form", enter_to_submit=False):
     if submitted:
         if not status_label:
             st.error("Please provide a status label")
-        elif not selected_targets:
-            st.error("Please select at least one column/field to include in this derived status")
+        elif not selected_targets and not embedded_rules:
+            st.error("Please select at least one column/field to include in this derived status, or provide embedded rules")
         elif not selected_expectation_ids and not embedded_rules:
             st.error("No expectations match your selection. Please adjust the expectation type or column selection, or enable embedded rules.")
         else:
             # Use filter-based format (columns + type) instead of pre-resolved expectation_ids
+            # If using embedded rules, extract columns from the rules
+            columns_to_use = selected_targets if selected_targets else list(embedded_rules.keys()) if embedded_rules else []
+
             derived_entry = {
                 "status": status_label,
-                "columns": selected_targets,  # Store selected columns for filtering
+                "columns": columns_to_use,  # Store selected columns for filtering
             }
 
             # Expectation type is required for filter-based resolution
