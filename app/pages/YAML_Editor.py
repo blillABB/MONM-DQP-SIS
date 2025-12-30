@@ -1498,7 +1498,20 @@ with tab3:
     with st.form("derived_status_form", enter_to_submit=False):
         # Use dynamic keys to prevent Streamlit from caching form state across submissions
         form_suffix = f"{st.session_state.editing_derived_index if is_editing_derived else f'new_{len(st.session_state.derived_statuses)}'}"
-    
+
+        # Mode selector: Standard vs Advanced
+        st.caption("💡 **Standard Mode**: Quick setup for common patterns | **Advanced Mode**: Full control with embedded rules and custom settings")
+        mode = st.radio(
+            "Creation Mode",
+            options=["Standard", "Advanced"],
+            index=0,
+            horizontal=True,
+            help="Standard: Simplified interface for common cases. Advanced: Full control with all options.",
+            key=f"derived_mode_{form_suffix}"
+        )
+        is_advanced_mode = mode == "Advanced"
+        st.divider()
+
         status_label = st.text_input(
             "Status Label",
             value=default_status_label,
@@ -1510,19 +1523,24 @@ with tab3:
         # Add common types for embedded rules even if they don't exist in validations yet
         embedded_rule_types = {"expect_column_values_to_be_in_set"}
         all_available_types = available_expectation_types | embedded_rule_types
-    
+
         type_options = ["(All types)"] + sorted(all_available_types)
         if default_expectation_type and default_expectation_type not in type_options:
             type_options.append(default_expectation_type)
-    
-        type_default_index = type_options.index(default_expectation_type) if default_expectation_type in type_options else 0
-        expectation_type = st.selectbox(
-            "Filter validations by expectation type (optional)",
-            options=type_options,
-            index=type_default_index,
-            help="Limit the selection list to a specific expectation type and store it with the derived group.",
-            key=f"derived_expectation_type_{form_suffix}",
-        )
+
+        # Expectation Type - Only show in Advanced mode
+        if is_advanced_mode:
+            type_default_index = type_options.index(default_expectation_type) if default_expectation_type in type_options else 0
+            expectation_type = st.selectbox(
+                "Filter validations by expectation type (optional)",
+                options=type_options,
+                index=type_default_index,
+                help="Limit the selection list to a specific expectation type and store it with the derived group.",
+                key=f"derived_expectation_type_{form_suffix}",
+            )
+        else:
+            # Standard mode: Auto-detect expectation type from first matching validation
+            expectation_type = "(All types)"
     
         # Build column/field filter options based on the selected expectation type
         filtered_catalog = [
@@ -1558,69 +1576,70 @@ with tab3:
             key=f"derived_target_filter_{form_suffix}",
         )
     
-        # Advanced: Embed rules for conditional-only groups
-        st.divider()
-        embed_rules = st.checkbox(
-            "⚙️ Embed rules directly (for conditional logic only)",
-            value=bool(derived_group and derived_group.get("rules")),
-            help="Enable this to create a grouping that's ONLY used for conditional logic, without creating a separate validation rule.",
-            key=f"derived_embed_rules_{form_suffix}"
-        )
-    
+        # Advanced: Embed rules for conditional-only groups (Advanced mode only)
         embedded_rules = None
-        if embed_rules and expectation_type == "expect_column_values_to_be_in_set":
-            st.info("💡 This derived group will define the condition without reporting validation failures")
-    
-            # Allow manual column input if needed (workaround for form reactivity)
-            manual_column = st.text_input(
-                "Column name (type manually if not in dropdown above)",
-                placeholder="e.g., PRODUCT_HIERARCHY",
-                help="If you can't find the column in the dropdown above, type it here manually",
-                key=f"derived_manual_column_{form_suffix}"
+        if is_advanced_mode:
+            st.divider()
+            embed_rules = st.checkbox(
+                "⚙️ Embed rules directly (for conditional logic only)",
+                value=bool(derived_group and derived_group.get("rules")),
+                help="Enable this to create a grouping that's ONLY used for conditional logic, without creating a separate validation rule.",
+                key=f"derived_embed_rules_{form_suffix}"
             )
-    
-            # Use manual input if provided, otherwise use selected_targets
-            if manual_column:
-                target_col = manual_column.strip().upper()
-                st.caption(f"Using manually entered column: {target_col}")
-            elif len(selected_targets) == 1:
-                target_col = selected_targets[0]
-            else:
-                target_col = None
-    
-            if target_col:
-    
-                # Pre-populate if editing
-                default_values = []
-                if is_editing_derived and derived_group:
-                    existing_rules = derived_group.get("rules", {})
-                    default_values = existing_rules.get(target_col, [])
-    
-                # Check if we have distinct values for this column
-                if target_col in distinct_values:
-                    allowed_values = st.multiselect(
-                        f"Allowed values for {target_col}",
-                        options=distinct_values[target_col],
-                        default=[v for v in default_values if v in distinct_values[target_col]],
-                        help="Select which values define membership in this group",
-                        key=f"derived_embed_values_{form_suffix}"
-                    )
+
+            if embed_rules and expectation_type == "expect_column_values_to_be_in_set":
+                st.info("💡 This derived group will define the condition without reporting validation failures")
+        
+                # Allow manual column input if needed (workaround for form reactivity)
+                manual_column = st.text_input(
+                    "Column name (type manually if not in dropdown above)",
+                    placeholder="e.g., PRODUCT_HIERARCHY",
+                    help="If you can't find the column in the dropdown above, type it here manually",
+                    key=f"derived_manual_column_{form_suffix}"
+                )
+        
+                # Use manual input if provided, otherwise use selected_targets
+                if manual_column:
+                    target_col = manual_column.strip().upper()
+                    st.caption(f"Using manually entered column: {target_col}")
+                elif len(selected_targets) == 1:
+                    target_col = selected_targets[0]
                 else:
-                    default_text = "\n".join(str(v) for v in default_values) if default_values else ""
-                    allowed_values_text = st.text_area(
-                        f"Allowed values for {target_col} (one per line)",
-                        value=default_text,
-                        placeholder="-\nA\nB",
-                        help="Enter allowed values, one per line",
-                        key=f"derived_embed_values_text_{form_suffix}"
-                    )
-                    allowed_values = [line.strip() for line in allowed_values_text.split('\n') if line.strip()]
-    
-                if allowed_values:
-                    embedded_rules = {target_col: allowed_values}
-                    st.caption(f"✓ Group will include materials where {target_col} is in: {', '.join(map(str, allowed_values))}")
-            else:
-                st.warning("⚠️ Please select exactly one column from the dropdown above, OR type a column name manually")
+                    target_col = None
+        
+                if target_col:
+        
+                    # Pre-populate if editing
+                    default_values = []
+                    if is_editing_derived and derived_group:
+                        existing_rules = derived_group.get("rules", {})
+                        default_values = existing_rules.get(target_col, [])
+        
+                    # Check if we have distinct values for this column
+                    if target_col in distinct_values:
+                        allowed_values = st.multiselect(
+                            f"Allowed values for {target_col}",
+                            options=distinct_values[target_col],
+                            default=[v for v in default_values if v in distinct_values[target_col]],
+                            help="Select which values define membership in this group",
+                            key=f"derived_embed_values_{form_suffix}"
+                        )
+                    else:
+                        default_text = "\n".join(str(v) for v in default_values) if default_values else ""
+                        allowed_values_text = st.text_area(
+                            f"Allowed values for {target_col} (one per line)",
+                            value=default_text,
+                            placeholder="-\nA\nB",
+                            help="Enter allowed values, one per line",
+                            key=f"derived_embed_values_text_{form_suffix}"
+                        )
+                        allowed_values = [line.strip() for line in allowed_values_text.split('\n') if line.strip()]
+        
+                    if allowed_values:
+                        embedded_rules = {target_col: allowed_values}
+                        st.caption(f"✓ Group will include materials where {target_col} is in: {', '.join(map(str, allowed_values))}")
+                else:
+                    st.warning("⚠️ Please select exactly one column from the dropdown above, OR type a column name manually")
     
         def _matches_target(entry_targets: list[str]) -> bool:
             if not selected_targets:
@@ -1669,13 +1688,18 @@ with tab3:
             st.info("Add validation rules to populate selectable expectation IDs.")
         else:
             st.warning("No validations match the current filters. Adjust the type or column selection.")
-    
-        expectation_id = st.text_input(
-            "Derived Expectation ID (auto-generated if blank)",
-            value=default_expectation_id,
-            help="Provide a custom identifier for the derived group. If left blank, an ID will be auto-generated from the status label. Required for conditional validations.",
-            key=f"derived_expectation_id_{form_suffix}",
-        )
+
+        # Custom Expectation ID - Only show in Advanced mode
+        if is_advanced_mode:
+            expectation_id = st.text_input(
+                "Derived Expectation ID (auto-generated if blank)",
+                value=default_expectation_id,
+                help="Provide a custom identifier for the derived group. If left blank, an ID will be auto-generated from the status label. Required for conditional validations.",
+                key=f"derived_expectation_id_{form_suffix}",
+            )
+        else:
+            # Standard mode: Always auto-generate
+            expectation_id = ""
     
         submit_label = "Update Derived Group" if is_editing_derived else "Add Derived Group"
         submitted = st.form_submit_button(submit_label, type="primary")
