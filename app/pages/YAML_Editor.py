@@ -1517,8 +1517,9 @@ with st.form("derived_status_form", enter_to_submit=False):
         else:
             filtered_targets.add("(no column/field)")
 
-    # If using embedded rules and no matching validations exist, show all columns
-    if not filtered_targets and expectation_type in embedded_rule_types:
+    # If type supports embedded rules, always show all columns (not just from existing validations)
+    # This allows creating conditional-only groups for any column
+    if expectation_type in embedded_rule_types:
         filtered_targets = set(columns)
 
     target_options = sorted(filtered_targets)
