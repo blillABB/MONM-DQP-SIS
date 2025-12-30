@@ -372,6 +372,24 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # TAB 1: SUITE SETUP
 # ====================================================
 with tab1:
+    # Workflow Guidance for Suite Setup
+    with st.expander("📚 How to use Suite Setup", expanded=False):
+        st.markdown("""
+        **Suite Setup Workflow:**
+
+        1. **Choose Your Mode**: Create a new suite or edit an existing one
+        2. **Configure Metadata**:
+           - Suite Name: Used for file naming (e.g., "ABB_SHOP_DATA_PRESENCE")
+           - Index Column: Usually MATERIAL_NUMBER - identifies rows in validation results
+           - Data Source: Which query function fetches your data
+        3. **Add Filters**: Narrow down the data to validate
+           - Product hierarchy filters
+           - Date range filters
+           - Status filters
+
+        💡 **Tip**: Start with broad filters, then refine as you add validations
+        """)
+
     # ----------------------------------------------------
     # Section 1: Mode Selection
     # ----------------------------------------------------
@@ -747,6 +765,26 @@ with tab1:
 # TAB 2: VALIDATIONS
 # ====================================================
 with tab2:
+    # Workflow Guidance for Validations
+    with st.expander("📚 How to create Validations", expanded=False):
+        st.markdown("""
+        **Validation Workflow:**
+
+        1. **Choose Validation Type**: Select from categorized expectations
+           - Basic Checks: Not Null, Values in Set
+           - String/Pattern: Regex matching, length checks
+           - Numeric: Value ranges, comparisons
+           - Uniqueness: Single or compound keys
+        2. **Configure Parameters**: Specify columns, values, or patterns
+        3. **Add Conditional Logic** (Optional): Apply validation only when materials are in/not in a derived group
+        4. **Review**: Check current rules list before saving
+
+        💡 **Tips**:
+        - Use conditional logic to exclude certain materials from validations
+        - Create derived groups first if you need conditional validations
+        - Not Null checks are the most common starting point
+        """)
+
     # ----------------------------------------------------
     # Section 5: Add/Edit Validation Rules
     # ----------------------------------------------------
@@ -1456,6 +1494,31 @@ with tab2:
 # TAB 3: GROUPS & LISTS
 # ====================================================
 with tab3:
+    # Workflow Guidance for Groups & Lists
+    with st.expander("📚 How to use Derived Groups & Lists", expanded=False):
+        st.markdown("""
+        **Derived Groups & Lists Explained:**
+
+        **Derived Status Groups** identify materials that fail specific validations:
+        - **Use Case**: Group materials by data quality issues (e.g., "ABP DATA INCOMPLETE")
+        - **Standard Mode**: Quick setup for common patterns
+        - **Advanced Mode**: Embedded rules for conditional logic without creating validation failures
+
+        **Derived Lists** combine multiple status groups:
+        - **Use Case**: Identify materials ready for next steps (e.g., "READY FOR ABP DATA LOAD")
+        - Excludes materials that have ANY of the selected statuses
+
+        💡 **Workflow Tips**:
+        1. Create validation rules first (in Validations tab)
+        2. Create derived status groups based on those validations
+        3. Create derived lists to combine status groups
+        4. Use derived groups for conditional validations
+
+        **Standard vs Advanced Mode**:
+        - Standard: Simpler, auto-generates settings
+        - Advanced: Full control, embedded rules, custom IDs
+        """)
+
     # ----------------------------------------------------
     # Section 7: Derived Status Groups
     # ----------------------------------------------------
@@ -1942,6 +2005,25 @@ with tab3:
 # TAB 4: PREVIEW & SAVE
 # ====================================================
 with tab4:
+    # Workflow Guidance for Preview & Save
+    with st.expander("📚 How to Preview & Save", expanded=False):
+        st.markdown("""
+        **Preview & Save Workflow:**
+
+        1. **Review YAML**: Check the generated YAML structure before saving
+           - Verify metadata is correct
+           - Confirm all validations are present
+           - Check derived groups and lists
+        2. **Save Suite**: Click "Save Suite" to write the YAML file
+        3. **No Python Generation Needed**: Validations run directly from YAML
+
+        💡 **Best Practices**:
+        - Review the YAML preview before saving to catch any issues
+        - Use meaningful suite names (they become filenames)
+        - Save frequently when making complex changes
+        - The suite can be edited again later from the Edit mode
+        """)
+
     # ----------------------------------------------------
     # Section 9: YAML Preview & Save
     # ----------------------------------------------------
