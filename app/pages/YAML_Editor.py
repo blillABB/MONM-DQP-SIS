@@ -1508,21 +1508,10 @@ with st.form("derived_status_form", enter_to_submit=False):
         if expectation_type in {"(All types)", entry["type"]}
     ]
 
-    # Get available targets from the filtered catalog only
-    filtered_targets = set()
-    for entry in filtered_catalog:
-        targets = entry.get("targets", [])
-        if targets:
-            filtered_targets.update(targets)
-        else:
-            filtered_targets.add("(no column/field)")
-
-    # If type supports embedded rules, always show all columns (not just from existing validations)
-    # This allows creating conditional-only groups for any column
-    if expectation_type in embedded_rule_types:
-        filtered_targets = set(columns)
-
-    target_options = sorted(filtered_targets)
+    # For derived groups, ALWAYS show all available columns from the table
+    # This allows creating conditional groups for any column, not just those in existing validations
+    # Users can create derived groups based on filter columns (like PRODUCT_HIERARCHY) or any other column
+    target_options = sorted(columns)
 
     # Default to existing selection when editing, empty when creating new
     default_targets = []
