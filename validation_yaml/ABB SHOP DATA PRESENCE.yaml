@@ -67,13 +67,13 @@ validations:
   columns:
   - Z01_MKT_DESIGN_CODE
   conditional_on:
-    derived_group: exp_derived_z01_mkt_design_code
+    derived_status: Z01_MKT_DESIGN_CODE
     membership: include
 - type: expect_column_values_to_not_be_null
   columns:
   - ABP_FRAMESIZE
   conditional_on:
-    derived_group: exp_derived_non_frame_materials
+    derived_status: NON_FRAME_MATERIALS
     membership: include
 derived_statuses:
 - status: ABP DATA INCOMPLETE
@@ -142,7 +142,6 @@ derived_statuses:
   rules:
     Z01_MKT_DESIGN_CODE:
     - '-'
-  expectation_id: exp_derived_z01_mkt_design_code
 - status: NON_FRAME_MATERIALS
   columns:
   - PRODUCT_HIERARCHY
@@ -153,7 +152,6 @@ derived_statuses:
     - '508009032029901600'
     - '508009032029901625'
     - '508009032029901675'
-  expectation_id: exp_derived_non_frame_materials
 derived_lists:
 - name: READY FOR ABP DATA LOAD
   exclude_statuses:

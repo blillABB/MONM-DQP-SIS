@@ -39,9 +39,18 @@ class ValidationSQLGenerator:
         self.suite_config = suite_config
         self.metadata = suite_config.get("metadata", {})
         self.data_source = suite_config.get("data_source", {})
+
+        # Auto-generate IDs for validations and derived statuses
+        suite_name = self.metadata.get("suite_name", "")
         self.validations = _annotate_expectation_ids(
-            suite_config.get("validations", []), self.metadata.get("suite_name", "")
+            suite_config.get("validations", []), suite_name
         )
+        self.derived_statuses = _annotate_derived_status_ids(
+            suite_config.get("derived_statuses", []), suite_name
+        )
+        # Update suite_config with annotated derived statuses
+        self.suite_config["derived_statuses"] = self.derived_statuses
+
         self.index_column = self.metadata.get("index_column", "MATERIAL_NUMBER")
         self.columnar_format = columnar_format
         # Deprecated: failure arrays are no longer constructed in-SQL since we now
@@ -228,12 +237,17 @@ FROM base_data
         for validation in self.validations:
             conditional_on = validation.get("conditional_on")
             if conditional_on:
-                derived_group_id = conditional_on.get("derived_group")
-                if derived_group_id and derived_group_id not in referenced_groups:
-                    # Find the derived status configuration
-                    for derived_status in self.suite_config.get("derived_statuses", []):
-                        if derived_status.get("expectation_id") == derived_group_id:
-                            referenced_groups[derived_group_id] = derived_status
+                # Support both old style (derived_group: exp_id) and new style (derived_status: status_name)
+                derived_group_ref = conditional_on.get("derived_group") or conditional_on.get("derived_status")
+                if derived_group_ref and derived_group_ref not in referenced_groups:
+                    # Find the derived status configuration by status name or expectation_id
+                    for derived_status in self.derived_statuses:
+                        # Match by status name (preferred) or expectation_id (legacy)
+                        if (derived_status.get("status") == derived_group_ref or
+                            derived_status.get("expectation_id") == derived_group_ref):
+                            # Use the auto-generated expectation_id as the key
+                            group_id = derived_status.get("expectation_id")
+                            referenced_groups[group_id] = derived_status
                             break
 
         return referenced_groups
@@ -1064,6 +1078,33 @@ def _annotate_expectation_ids(validations: List[Dict[str, Any]], suite_name: str
         expectation_id = hashlib.md5(raw_id.encode()).hexdigest()[:6]  # Shorter: 6 chars
         val_copy["expectation_id"] = f"exp_{expectation_id}"
         annotated.append(val_copy)
+
+    return annotated
+
+
+def _annotate_derived_status_ids(derived_statuses: List[Dict[str, Any]], suite_name: str) -> List[Dict[str, Any]]:
+    """Attach deterministic IDs to derived statuses (same logic as expectations).
+
+    ID format: derived_{6_hex_chars} (e.g., 'derived_a3f4b2')
+
+    IDs are stable and based on suite + status name.
+    """
+    annotated = []
+    for derived_status in derived_statuses:
+        status_copy = dict(derived_status)
+
+        # If already has an ID (from prior annotation or hardcoded), keep it for backwards compatibility
+        existing_id = status_copy.get("expectation_id")
+        if existing_id:
+            annotated.append(status_copy)
+            continue
+
+        # Stable hash: suite + status name
+        status_name = derived_status.get("status", "")
+        raw_id = f"{suite_name}|derived_status|{status_name}"
+        status_id = hashlib.md5(raw_id.encode()).hexdigest()[:6]
+        status_copy["expectation_id"] = f"derived_{status_id}"
+        annotated.append(status_copy)
 
     return annotated
 
