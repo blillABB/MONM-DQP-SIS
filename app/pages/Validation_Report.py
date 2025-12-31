@@ -384,7 +384,62 @@ if view == "Overview":
                                 "Use the Details tab for more information."
                             )
 
-                            # Show just material numbers
+                            # Get column-level breakdown
+                            # Load YAML to find which columns are in this derived status
+                            import yaml
+                            with open(yaml_path, 'r') as f:
+                                yaml_config = yaml.safe_load(f)
+
+                            derived_statuses = yaml_config.get("derived_statuses", [])
+
+                            # Find this derived status config
+                            derived_status_config = None
+                            for ds in derived_statuses:
+                                ds_label = ds.get("status", "").replace(" ", "_").lower()
+                                if derived_col.replace("derived_", "") == ds_label:
+                                    derived_status_config = ds
+                                    break
+
+                            # Show column breakdown if we found the config
+                            if derived_status_config:
+                                columns_in_status = derived_status_config.get("columns", [])
+                                expectation_type = derived_status_config.get("expectation_type", "")
+
+                                # Build column failure breakdown
+                                st.write("**Column Failure Breakdown:**")
+                                breakdown_rows = []
+
+                                for col in columns_in_status:
+                                    # Find the expectation that checks this column
+                                    # Look for exp_* columns that correspond to this column
+                                    exp_columns = [c for c in df.columns if c.startswith("exp_")]
+
+                                    # Count failures for this column among the failed materials
+                                    for exp_col in exp_columns:
+                                        # Look up metadata to see if this exp checks our column
+                                        metadata = lookup_expectation_metadata(exp_col, yaml_path)
+                                        if metadata and metadata.get("column") == col and metadata.get("expectation_type") == expectation_type:
+                                            # Count unique materials that failed this specific expectation
+                                            failures_for_col = failed_df[failed_df[exp_col] == 'FAIL'][index_column].nunique()
+                                            if failures_for_col > 0:
+                                                breakdown_rows.append({
+                                                    "Column": col,
+                                                    "Failed Materials": failures_for_col
+                                                })
+                                            break
+
+                                if breakdown_rows:
+                                    breakdown_df = pd.DataFrame(breakdown_rows)
+                                    breakdown_df = breakdown_df.sort_values("Failed Materials", ascending=False)
+                                    st.dataframe(
+                                        breakdown_df,
+                                        hide_index=True,
+                                        use_container_width=True,
+                                    )
+                                    st.divider()
+
+                            # Show material numbers
+                            st.write(f"**Failed Materials ({len(failed_df)} total):**")
                             display_df = failed_df[[index_column]].copy()
                             display_df.columns = ["Material Number"]
 
