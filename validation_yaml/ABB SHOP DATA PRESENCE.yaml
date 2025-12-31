@@ -142,6 +142,7 @@ derived_statuses:
   rules:
     Z01_MKT_DESIGN_CODE:
     - '-'
+  expectation_id: exp_derived_z01_mkt_design_code
 - status: NON_FRAME_MATERIALS
   columns:
   - PRODUCT_HIERARCHY
@@ -152,6 +153,7 @@ derived_statuses:
     - '508009032029901600'
     - '508009032029901625'
     - '508009032029901675'
+  expectation_id: exp_derived_non_frame_materials
 derived_lists:
 - name: READY FOR ABP DATA LOAD
   exclude_statuses:
