@@ -9,19 +9,19 @@ data_source:
     PRODUCT_HIERARCHY: LIKE '5%'
     OMS_FLAG: Y
     CATALOG_501: X
-  distinct: false
+    SERIAL_NUMBER_PROFILE: <> ZUS4
+    PLANT: 00A
+  distinct: true
 validations:
 - type: expect_column_values_to_not_be_null
   columns:
   - ABP_ELECTRICALDATA1
   - ABP_EFFICIENCYLEVEL
   - ABP_INSULATIONCLASS
-  - ABP_NEMADESIGNCODE
   - ABP_NUMBEROFPHASES
   - ABP_NUMBEROFPOLES
   - ABP_SERVICEFACTOR
   - ABP_ENCLOSURETYPE
-  - ABP_FRAMESIZE
   - ABP_MOTORBASETYPE
   - ABP_MOUNTINGORIENTATION
   - ABP_BRAKEPRESENT
@@ -63,7 +63,21 @@ validations:
   - ENG_BRAKE_CODE
   - ENG_AGENCY_LOGOS_READABLE
   - ABP_TYPEOFDUTY
-  expectation_id: exp_expect_column_values_to_not_be_null_cols_cda4e89d
+  expectation_id: exp_expect_column_values_to_not_be_null_cols_3da70dfc
+- type: expect_column_values_to_not_be_null
+  columns:
+  - Z01_MKT_DESIGN_CODE
+  conditional_on:
+    derived_group: exp_derived_z01_mkt_design_code
+    membership: include
+  expectation_id: exp_expect_column_values_to_not_be_null_cols_2cbd73cd
+- type: expect_column_values_to_not_be_null
+  columns:
+  - ABP_FRAMESIZE
+  conditional_on:
+    derived_group: exp_derived_non_frame_materials
+    membership: include
+  expectation_id: exp_expect_column_values_to_not_be_null_cols_b2ff53fd
 derived_statuses:
 - status: ABP DATA INCOMPLETE
   columns:
@@ -72,16 +86,17 @@ derived_statuses:
   - ABP_EFFICIENCYLEVEL
   - ABP_ELECTRICALDATA1
   - ABP_ENCLOSURETYPE
-  - ABP_FRAMESIZE
   - ABP_INSULATIONCLASS
   - ABP_MOTORBASETYPE
   - ABP_MOUNTINGORIENTATION
-  - ABP_NEMADESIGNCODE
   - ABP_NUMBEROFPHASES
   - ABP_NUMBEROFPOLES
   - ABP_SERVICEFACTOR
   - ABP_TYPEOFDUTY
+  - ABP_FRAMESIZE
+  - ABP_NEMADESIGNCODE
   expectation_type: expect_column_values_to_not_be_null
+  expectation_id: exp_derived_abp_data_incomplete
 - status: Z01 DATA INCOMPLETE
   columns:
   - Z01_MKT_AGENCY_LOGOS
@@ -124,6 +139,25 @@ derived_statuses:
   - ENG_SERVICE_FACTOR
   - ENG_VOLTAGE
   expectation_type: expect_column_values_to_not_be_null
+- status: Z01_MKT_DESIGN_CODE
+  columns:
+  - Z01_MKT_DESIGN_CODE
+  expectation_type: expect_column_values_to_be_in_set
+  rules:
+    Z01_MKT_DESIGN_CODE:
+    - '-'
+  expectation_id: exp_derived_z01_mkt_design_code
+- status: NON_FRAME_MATERIALS
+  columns:
+  - PRODUCT_HIERARCHY
+  expectation_type: expect_column_values_to_be_in_set
+  rules:
+    PRODUCT_HIERARCHY:
+    - '508009032029901650'
+    - '508009032029901600'
+    - '508009032029901625'
+    - '508009032029901675'
+  expectation_id: exp_derived_non_frame_materials
 derived_lists:
 - name: READY FOR ABP DATA LOAD
   exclude_statuses:

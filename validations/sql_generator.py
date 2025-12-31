@@ -121,9 +121,25 @@ FROM base_data
                 parsed_date_condition = self._parse_date_filter(column, condition)
                 if parsed_date_condition:
                     conditions.append(parsed_date_condition)
-                elif condition.startswith(("LIKE", "IN", "=", "<", ">", "!=", "<=", ">=")):
-                    # Already has operator
-                    conditions.append(f"{column} {condition}")
+                elif condition.startswith(("LIKE", "IN", "=", "<>", "<", ">", "!=", "<=", ">=")):
+                    # Already has operator - need to quote value for <>, !=, =, <, >, <=, >=
+                    if condition.startswith("<>"):
+                        # Extract value after "<> " and quote it
+                        value = condition[3:].strip()  # Remove "<> " prefix
+                        conditions.append(f"{column} <> '{value}'")
+                    elif condition.startswith(("!=", "<=", ">=")):
+                        # Two-character operators
+                        operator = condition[:2]
+                        value = condition[2:].strip()
+                        conditions.append(f"{column} {operator} '{value}'")
+                    elif condition.startswith(("=", "<", ">")):
+                        # Single-character operators
+                        operator = condition[0]
+                        value = condition[1:].strip()
+                        conditions.append(f"{column} {operator} '{value}'")
+                    else:
+                        # LIKE or IN - already properly formatted
+                        conditions.append(f"{column} {condition}")
                 else:
                     # Assume equality
                     conditions.append(f"{column} = '{condition}'")
@@ -269,7 +285,19 @@ FROM base_data
                 conditions.append(f"NOT RLIKE({col.upper()}, '{escaped_pattern}')")
 
         elif expectation_type == "expect_column_values_to_be_in_set":
+            # Check if rules are in the group_config (legacy format)
             rules = group_config.get("rules", {})
+
+            # If no rules in group_config, find matching validations (filter-based format)
+            if not rules:
+                for validation in self.validations:
+                    if validation.get("type") == "expect_column_values_to_be_in_set":
+                        val_rules = validation.get("rules", {})
+                        # Check if this validation has any of the columns we're looking for
+                        for col in columns:
+                            if col in val_rules:
+                                rules[col] = val_rules[col]
+
             for col, allowed_values in rules.items():
                 value_set = ', '.join(
                     f"'{v}'" if isinstance(v, str) else str(v) for v in allowed_values
