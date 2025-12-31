@@ -31,15 +31,28 @@ def calculate_validation_metrics(
             "total_rows": int,
             "total_materials": int,
             "expectation_metrics": {
-                "exp_a3f": {"total": 100, "failures": 5, "pass_rate": 95.0},
+                "exp_a3f": {
+                    "total": 100,  # Total unique materials
+                    "failures": 5,  # Unique materials with FAIL
+                    "passes": 95,  # Unique materials with PASS
+                    "pass_rate": 95.0
+                },
                 ...
             },
             "derived_metrics": {
-                "derived_abp_incomplete": {"total": 100, "failures": 10, "pass_rate": 90.0},
+                "derived_abp_incomplete": {
+                    "total": 100,  # Total unique materials
+                    "failures": 10,  # Unique materials with FAIL
+                    "passes": 90,  # Unique materials with PASS
+                    "pass_rate": 90.0
+                },
                 ...
             },
-            "overall_pass_rate": float
+            "overall_pass_rate": float  # % of materials passing ALL expectations
         }
+
+        Note: All counts are based on UNIQUE MATERIALS, not row-level checks.
+        Overall pass rate = (materials with zero failures / total materials) * 100
     """
     if df.empty:
         return {
@@ -62,50 +75,66 @@ def calculate_validation_metrics(
     if index_column in df.columns:
         total_materials = df[index_column].nunique()
 
-    # Calculate metrics for expectation columns
+    # Calculate metrics for expectation columns (count UNIQUE MATERIALS with failures)
     exp_columns = [col for col in df.columns if col.startswith("exp_")]
     expectation_metrics = {}
 
     for exp_col in exp_columns:
-        failures = (df[exp_col] == 'FAIL').sum()
-        passes = (df[exp_col] == 'PASS').sum()
-        total = failures + passes
-        pass_rate = (passes / total * 100) if total > 0 else 0.0
+        # Count unique materials with FAIL for this expectation
+        if index_column in df.columns:
+            failed_materials = df[df[exp_col] == 'FAIL'][index_column].nunique()
+            total = total_materials
+        else:
+            # Fallback if no index column
+            failed_materials = (df[exp_col] == 'FAIL').sum()
+            total = len(df)
+
+        passed_materials = total - failed_materials
+        pass_rate = (passed_materials / total * 100) if total > 0 else 0.0
 
         expectation_metrics[exp_col] = {
             "total": int(total),
-            "failures": int(failures),
-            "passes": int(passes),
+            "failures": int(failed_materials),
+            "passes": int(passed_materials),
             "pass_rate": round(pass_rate, 2),
         }
 
-    # Calculate metrics for derived status columns
+    # Calculate metrics for derived status columns (count UNIQUE MATERIALS with failures)
     derived_columns = [col for col in df.columns if col.startswith("derived_")]
     derived_metrics = {}
 
     for derived_col in derived_columns:
-        failures = (df[derived_col] == 'FAIL').sum()
-        passes = (df[derived_col] == 'PASS').sum()
-        total = failures + passes
-        pass_rate = (passes / total * 100) if total > 0 else 0.0
+        # Count unique materials with FAIL for this derived status
+        if index_column in df.columns:
+            failed_materials = df[df[derived_col] == 'FAIL'][index_column].nunique()
+            total = total_materials
+        else:
+            # Fallback if no index column
+            failed_materials = (df[derived_col] == 'FAIL').sum()
+            total = len(df)
+
+        passed_materials = total - failed_materials
+        pass_rate = (passed_materials / total * 100) if total > 0 else 0.0
 
         derived_metrics[derived_col] = {
             "total": int(total),
-            "failures": int(failures),
-            "passes": int(passes),
+            "failures": int(failed_materials),
+            "passes": int(passed_materials),
             "pass_rate": round(pass_rate, 2),
         }
 
-    # Calculate overall pass rate (all expectations + derived)
+    # Calculate overall pass rate: materials that pass ALL expectations (have zero failures)
     all_validation_cols = exp_columns + derived_columns
-    if all_validation_cols:
-        total_checks = sum(expectation_metrics.get(col, {}).get("total", 0) for col in exp_columns)
-        total_checks += sum(derived_metrics.get(col, {}).get("total", 0) for col in derived_columns)
+    if all_validation_cols and total_materials > 0 and index_column in df.columns:
+        # Find all unique materials that have at least one FAIL in any column
+        materials_with_failures = set()
+        for col in all_validation_cols:
+            failed_mats = set(df[df[col] == 'FAIL'][index_column].unique())
+            materials_with_failures.update(failed_mats)
 
-        total_failures = sum(expectation_metrics.get(col, {}).get("failures", 0) for col in exp_columns)
-        total_failures += sum(derived_metrics.get(col, {}).get("failures", 0) for col in derived_columns)
-
-        overall_pass_rate = ((total_checks - total_failures) / total_checks * 100) if total_checks > 0 else 100.0
+        # Materials passing all = total - materials with any failures
+        materials_passing_all = total_materials - len(materials_with_failures)
+        overall_pass_rate = (materials_passing_all / total_materials * 100) if total_materials > 0 else 100.0
     else:
         overall_pass_rate = 100.0
 
