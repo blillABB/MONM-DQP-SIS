@@ -122,8 +122,24 @@ FROM base_data
                 if parsed_date_condition:
                     conditions.append(parsed_date_condition)
                 elif condition.startswith(("LIKE", "IN", "=", "<>", "<", ">", "!=", "<=", ">=")):
-                    # Already has operator
-                    conditions.append(f"{column} {condition}")
+                    # Already has operator - need to quote value for <>, !=, =, <, >, <=, >=
+                    if condition.startswith("<>"):
+                        # Extract value after "<> " and quote it
+                        value = condition[3:].strip()  # Remove "<> " prefix
+                        conditions.append(f"{column} <> '{value}'")
+                    elif condition.startswith(("!=", "<=", ">=")):
+                        # Two-character operators
+                        operator = condition[:2]
+                        value = condition[2:].strip()
+                        conditions.append(f"{column} {operator} '{value}'")
+                    elif condition.startswith(("=", "<", ">")):
+                        # Single-character operators
+                        operator = condition[0]
+                        value = condition[1:].strip()
+                        conditions.append(f"{column} {operator} '{value}'")
+                    else:
+                        # LIKE or IN - already properly formatted
+                        conditions.append(f"{column} {condition}")
                 else:
                     # Assume equality
                     conditions.append(f"{column} = '{condition}'")
