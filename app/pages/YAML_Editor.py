@@ -659,7 +659,7 @@ with tab1:
         )
         filter_type = col2.selectbox(
             "Filter Type",
-            options=["Equals", "One of (IN)", "LIKE pattern", "Date Comparison"],
+            options=["Equals", "Not Equals", "One of (IN)", "LIKE pattern", "Date Comparison"],
             help="How should the filter be applied?",
         )
     
@@ -674,6 +674,17 @@ with tab1:
                 filter_value = st.text_input(
                     "Value",
                     placeholder="Exact match value",
+                )
+        elif filter_type == "Not Equals":
+            if selected_field in distinct_values:
+                filter_value = st.selectbox(
+                    "Value",
+                    options=distinct_values[selected_field],
+                )
+            else:
+                filter_value = st.text_input(
+                    "Value",
+                    placeholder="Value to exclude",
                 )
         elif filter_type == "One of (IN)":
             if selected_field in distinct_values:
@@ -734,6 +745,14 @@ with tab1:
                     selected_field
                 ] = filter_value
                 st.success(f"Added filter: {selected_field} = {filter_value}")
+                st.rerun()
+            elif filter_type == "Not Equals" and filter_value:
+                # Store as "<> value" to indicate not-equal comparison
+                not_equal_value = f"<> {filter_value}"
+                st.session_state.data_source.setdefault("filters", {})[
+                    selected_field
+                ] = not_equal_value
+                st.success(f"Added filter: {selected_field} <> {filter_value}")
                 st.rerun()
             elif filter_type == "One of (IN)" and filter_value:
                 st.session_state.data_source.setdefault("filters", {})[

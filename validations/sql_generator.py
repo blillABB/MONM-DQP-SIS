@@ -121,7 +121,7 @@ FROM base_data
                 parsed_date_condition = self._parse_date_filter(column, condition)
                 if parsed_date_condition:
                     conditions.append(parsed_date_condition)
-                elif condition.startswith(("LIKE", "IN", "=", "<", ">", "!=", "<=", ">=")):
+                elif condition.startswith(("LIKE", "IN", "=", "<>", "<", ">", "!=", "<=", ">=")):
                     # Already has operator
                     conditions.append(f"{column} {condition}")
                 else:
