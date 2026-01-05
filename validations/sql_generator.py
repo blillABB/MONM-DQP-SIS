@@ -126,12 +126,18 @@ FROM base_data
                     if condition.startswith("<>"):
                         # Extract value after "<> " and quote it
                         value = condition[3:].strip()  # Remove "<> " prefix
-                        conditions.append(f"{column} <> '{value}'")
+                        # Include NULL values when using <> (not equals) since NULL <> 'value' evaluates to NULL (not TRUE)
+                        # This ensures materials with NULL values are not incorrectly filtered out
+                        conditions.append(f"({column} <> '{value}' OR {column} IS NULL)")
                     elif condition.startswith(("!=", "<=", ">=")):
                         # Two-character operators
                         operator = condition[:2]
                         value = condition[2:].strip()
-                        conditions.append(f"{column} {operator} '{value}'")
+                        # Include NULL values for != (not equals) operator
+                        if operator == "!=":
+                            conditions.append(f"({column} != '{value}' OR {column} IS NULL)")
+                        else:
+                            conditions.append(f"{column} {operator} '{value}'")
                     elif condition.startswith(("=", "<", ">")):
                         # Single-character operators
                         operator = condition[0]
@@ -156,7 +162,11 @@ FROM base_data
                     if parsed_date_condition:
                         conditions.append(parsed_date_condition)
                     else:
-                        conditions.append(f"{column} {operator} '{value}'")
+                        # Include NULL values for != and <> operators
+                        if operator in ("<>", "!="):
+                            conditions.append(f"({column} {operator} '{value}' OR {column} IS NULL)")
+                        else:
+                            conditions.append(f"{column} {operator} '{value}'")
 
         if conditions:
             return "WHERE " + " AND ".join(conditions)
